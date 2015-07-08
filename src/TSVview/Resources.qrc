@@ -1,0 +1,27 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Icons/Icon.png</file>
+        <file>Icons/SaveAsPng.png</file>
+        <file>Icons/SaveAsSvg.png</file>
+        <file>Icons/Settings.png</file>
+        <file>Icons/Paste.png</file>
+        <file>Icons/Formula.png</file>
+        <file>Icons/Remove.png</file>
+        <file>Icons/Rename.png</file>
+        <file>Icons/Copy.png</file>
+        <file>Icons/Histogram.png</file>
+        <file>Icons/Scatterplot.png</file>
+        <file>Icons/Boxplot.png</file>
+        <file>Icons/Lineplot.png</file>
+        <file>Icons/New.png</file>
+        <file>Icons/Open.png</file>
+        <file>Icons/Save.png</file>
+        <file>Icons/Sort.png</file>
+        <file>Icons/Filter.png</file>
+        <file>Icons/CopyToClipboard.png</file>
+        <file>Icons/Merge.png</file>
+        <file>Icons/Enabled.png</file>
+        <file>Icons/ReduceData.png</file>
+        <file>Resources/ChangeLog.html</file>
+    </qresource>
+</RCC>

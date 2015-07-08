@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="Resources.qrc">
+    <normaloff>:/Icons/Icon.png</normaloff>:/Icons/Icon.png</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <widget class="QMenu" name="menuImport">
+     <property name="title">
+      <string>Open</string>
+     </property>
+     <property name="icon">
+      <iconset resource="Resources.qrc">
+       <normaloff>:/Icons/Open.png</normaloff>:/Icons/Open.png</iconset>
+     </property>
+     <addaction name="openTXT"/>
+     <addaction name="openXML"/>
+     <addaction name="openZXV"/>
+    </widget>
+    <addaction name="newFile"/>
+    <addaction name="menuImport"/>
+    <addaction name="saveFile"/>
+    <addaction name="saveFileAs"/>
+    <addaction name="recentlyOpened"/>
+    <addaction name="separator"/>
+    <addaction name="exit"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="addToContext"/>
+    <addaction name="clearSettings"/>
+    <addaction name="separator"/>
+    <addaction name="changelog"/>
+    <addaction name="about"/>
+   </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <addaction name="goToRow"/>
+    <addaction name="findText"/>
+    <addaction name="filter"/>
+    <addaction name="separator"/>
+    <addaction name="transpose"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="resizeColumns"/>
+    <addaction name="resizeRows"/>
+    <addaction name="separator"/>
+    <addaction name="toggleColumnIndex"/>
+    <addaction name="toggleRowColors"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuTools"/>
+   <addaction name="menuView"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+  <action name="openTXT">
+   <property name="text">
+    <string>Text file</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="exit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="openXML">
+   <property name="text">
+    <string>XML file</string>
+   </property>
+  </action>
+  <action name="actionBla">
+   <property name="text">
+    <string>bla</string>
+   </property>
+  </action>
+  <action name="histogram">
+   <property name="text">
+    <string>Histogram</string>
+   </property>
+  </action>
+  <action name="debugLoad">
+   <property name="text">
+    <string>Load</string>
+   </property>
+  </action>
+  <action name="basicStatistics">
+   <property name="text">
+    <string>Basic Statistics</string>
+   </property>
+  </action>
+  <action name="about">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+  <action name="importClipboard">
+   <property name="text">
+    <string>Clipboard</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+V</string>
+   </property>
+  </action>
+  <action name="exportXML">
+   <property name="text">
+    <string>XML file</string>
+   </property>
+  </action>
+  <action name="exportText">
+   <property name="text">
+    <string>Text file</string>
+   </property>
+  </action>
+  <action name="clearSettings">
+   <property name="text">
+    <string>Clear settings</string>
+   </property>
+  </action>
+  <action name="openZXV">
+   <property name="text">
+    <string>ZXV file</string>
+   </property>
+  </action>
+  <action name="saveFile">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/Icons/Save.png</normaloff>:/Icons/Save.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="newFile">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/Icons/New.png</normaloff>:/Icons/New.png</iconset>
+   </property>
+   <property name="text">
+    <string>New</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="saveFileAs">
+   <property name="text">
+    <string>Save as ...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
+  <action name="recentlyOpened">
+   <property name="text">
+    <string>Recently opened</string>
+   </property>
+  </action>
+  <action name="resizeColumns">
+   <property name="text">
+    <string>Resize columns to content</string>
+   </property>
+  </action>
+  <action name="goToRow">
+   <property name="text">
+    <string>Go to row</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+G</string>
+   </property>
+  </action>
+  <action name="toggleColumnIndex">
+   <property name="text">
+    <string>Toggle column index</string>
+   </property>
+  </action>
+  <action name="resizeRows">
+   <property name="text">
+    <string>Resize rows to content</string>
+   </property>
+  </action>
+  <action name="toggleRowColors">
+   <property name="text">
+    <string>Toggle alternating row colors</string>
+   </property>
+  </action>
+  <action name="findText">
+   <property name="text">
+    <string>Find text</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
+   </property>
+  </action>
+  <action name="filter">
+   <property name="text">
+    <string>Filters</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+H</string>
+   </property>
+  </action>
+  <action name="addToContext">
+   <property name="text">
+    <string>Add to Windows context menu</string>
+   </property>
+  </action>
+  <action name="transpose">
+   <property name="text">
+    <string>Transpose</string>
+   </property>
+  </action>
+  <action name="actionWebsite">
+   <property name="text">
+    <string>Open TSVview website</string>
+   </property>
+  </action>
+  <action name="changelog">
+   <property name="text">
+    <string>ChangeLog</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="Resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>
