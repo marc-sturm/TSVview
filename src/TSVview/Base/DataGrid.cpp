@@ -22,6 +22,7 @@
 #include "ReplacementDialog.h"
 #include "MergeDialog.h"
 #include "GUIHelper.h"
+#include "AddColumnDialog.h"
 
 DataGrid::DataGrid(QWidget* parent)
 	: QTableWidget(parent)
@@ -248,7 +249,7 @@ QMenu* DataGrid::createStandardContextMenu()
 		action->setEnabled(data_!=0);
 		action = menu->addAction(QIcon(":/Icons/Remove.png"), "Remove column(s)", this, SLOT(removeSelectedColumns()));
 		action->setEnabled(selected_count>0);
-		action = menu->addAction(QIcon(":/Icons/Formula.png"), "Calculate column", this, SLOT(calculateColumn_()));
+		action = menu->addAction(QIcon(":/Icons/Add.png"), "Add column", this, SLOT(addColumn_()));
 		action->setEnabled(data_!=0 && data_->columnCount()!=0);
 
 		menu->addSeparator();
@@ -533,7 +534,7 @@ void DataGrid::sortByColumnReverse_()
 	sortByColumn_(true);
 }
 
-void DataGrid::calculateColumn_()
+void DataGrid::addColumn_()
 {
 	if(data_==0 || data_->columnCount()==0)
 	{
@@ -541,13 +542,21 @@ void DataGrid::calculateColumn_()
 		return;
 	}
 
-	bool ok = true;
-	QString formula = QInputDialog::getText(this, "Calculate column", "Hint: To sum up the value in the first two\ncolumns the formula '[0] + [1]' would be used.\n\nFormula:", QLineEdit::Normal, "", &ok);
-	if (!ok) return;
+	AddColumnDialog dlg(data_->headers(), this);
+	if (!dlg.exec()) return;
 
+	//no formula - fixed text
+	if (!dlg.isFormula())
+	{
+		QVector<QString> new_values(data_->rowCount(), dlg.value());
+		data_->addColumn(dlg.name(), new_values, true, dlg.insertBefore());
+		return;
+	}
+	//formula
 	try
 	{
 		//make space around brackets
+		QString formula = dlg.value();
 		formula.replace("[", " [");
 		formula.replace("]", "] ");
 
@@ -605,9 +614,7 @@ void DataGrid::calculateColumn_()
 			new_values.append(value.toNumber());
 		}
 
-		//Add new values
-		QString header = QInputDialog::getText(this, "Column header", "Please provide the column name:", QLineEdit::Normal, "", &ok);
-		data_->addColumn(header, new_values);
+		data_->addColumn(dlg.name(), new_values, true, dlg.insertBefore());
 	}
 	catch (Exception& e)
 	{

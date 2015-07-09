@@ -100,6 +100,16 @@ NumericColumn& DataSet::numericColumn(int column)
 	return *dynamic_cast<NumericColumn*>(columns_[column]);
 }
 
+QStringList DataSet::headers()
+{
+	QStringList output;
+	foreach(BaseColumn* col, columns_)
+	{
+		output << col->header();
+	}
+	return output;
+}
+
 int DataSet::indexOf(QString name)
 {
 	for (int i=0; i<columns_.count(); ++i)

@@ -21,6 +21,9 @@ public:
 	const NumericColumn& numericColumn(int column) const;
 	NumericColumn& numericColumn(int column);
 
+	/// Retruns the column header list.
+	QStringList headers();
+
 	/// Returns the index of the column with the given name, or -1 if no such column exists.
 	int indexOf(QString name);
 

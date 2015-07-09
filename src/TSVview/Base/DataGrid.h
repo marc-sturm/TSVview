@@ -69,7 +69,7 @@ protected slots:
 	void copySelectionToClipboard_();
 	void pasteColumn_();
 	void pasteDataset_();
-	void calculateColumn_();
+	void addColumn_();
 	void renameColumn_();
 	void mergeColumns_();
 	void setColumnFormat_();

@@ -5,7 +5,6 @@
         <file>Icons/SaveAsSvg.png</file>
         <file>Icons/Settings.png</file>
         <file>Icons/Paste.png</file>
-        <file>Icons/Formula.png</file>
         <file>Icons/Remove.png</file>
         <file>Icons/Rename.png</file>
         <file>Icons/Copy.png</file>
@@ -23,5 +22,6 @@
         <file>Icons/Enabled.png</file>
         <file>Icons/ReduceData.png</file>
         <file>Resources/ChangeLog.html</file>
+        <file>Icons/Add.png</file>
     </qresource>
 </RCC>

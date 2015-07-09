@@ -44,7 +44,8 @@ SOURCES += \
     Base/ReplacementDialog.cpp \
     Base/MergeDialog.cpp \
     Statistics/StatisticsSummary.cpp \
-    Statistics/StatisticsSummaryWidget.cpp
+    Statistics/StatisticsSummaryWidget.cpp \
+    AddColumnDialog.cpp
     
 HEADERS += \
     MainWindow.h \
@@ -77,7 +78,8 @@ HEADERS += \
     Base/ReplacementDialog.h \
     Base/MergeDialog.h \
     Statistics/StatisticsSummary.h \
-    Statistics/StatisticsSummaryWidget.h
+    Statistics/StatisticsSummaryWidget.h \
+    AddColumnDialog.h
 
 FORMS += \
     MainWindow.ui \
@@ -90,7 +92,8 @@ FORMS += \
     FilterDialog.ui \
     Base/ReplacementDialog.ui \
     Base/MergeDialog.ui \
-    Statistics/StatisticsSummaryWidget.ui
+    Statistics/StatisticsSummaryWidget.ui \
+    AddColumnDialog.ui
 
 RESOURCES += \
     Resources.qrc
