@@ -18,3 +18,8 @@ Features:
  * Basic statistics of column values.
  * Own ZXV (Zipped XML Value) data format that allows to store filter along with the data.
 
+### Building
+
+TSVview can be built on Windows only.  
+Just clone the repository and open the `src/TSVview.pro` file in QtCreator.
+
