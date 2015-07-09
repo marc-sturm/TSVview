@@ -21,5 +21,5 @@ Features:
 ### Building
 
 TSVview can be built on Windows only.  
-Just clone the repository and open the `src/TSVview.pro` file in QtCreator.
-
+Just clone the repository and open the `src/TSVview.pro` file in QtCreator.  
+After a successful build, the executable and libraries are in the `bin` folder.
