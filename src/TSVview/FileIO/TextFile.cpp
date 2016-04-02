@@ -59,7 +59,7 @@ void TextFile::fromStream(DataSet& data, QTextStream& stream, Parameters params,
 		separator = quote + separator + quote;
 	}
 
-	QVector<QString> comments;
+	QStringList comments;
 	bool is_first_content_line = true;
 	while (!stream.atEnd() && (preview_lines==-1 || row<preview_lines))
 	{
@@ -163,6 +163,9 @@ void TextFile::fromStream(DataSet& data, QTextStream& stream, Parameters params,
 	{
 		data.column(i).autoFormat();
 	}
+
+	//store comments
+	data.setComments(comments);
 
 	data.setModified(false);
 }

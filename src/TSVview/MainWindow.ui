@@ -73,6 +73,7 @@
     <addaction name="filter"/>
     <addaction name="separator"/>
     <addaction name="transpose"/>
+    <addaction name="showComments"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -264,6 +265,11 @@
   <action name="changelog">
    <property name="text">
     <string>ChangeLog</string>
+   </property>
+  </action>
+  <action name="showComments">
+   <property name="text">
+    <string>Show Comments</string>
    </property>
   </action>
  </widget>

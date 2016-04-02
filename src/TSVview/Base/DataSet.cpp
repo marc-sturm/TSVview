@@ -424,3 +424,13 @@ QBitArray DataSet::getRowFilter(bool update) const
 
 	return filtered_rows_;
 }
+
+void DataSet::setComments(QStringList& comments)
+{
+	comments_ = comments;
+}
+
+QStringList DataSet::comments() const
+{
+	return comments_;
+}

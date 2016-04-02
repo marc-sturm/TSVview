@@ -46,6 +46,8 @@ public:
 	bool filtersPresent() const;
 	QBitArray getRowFilter(bool update = true) const;
 
+	void setComments(QStringList& comments);
+	QStringList comments() const;
 
 signals:
 	void headersChanged();
@@ -59,6 +61,7 @@ protected slots:
 
 protected:
 	QVector<BaseColumn*> columns_;
+	QStringList comments_;
 	bool modified_;
 	bool filters_enabled_;
 	mutable QBitArray filtered_rows_;

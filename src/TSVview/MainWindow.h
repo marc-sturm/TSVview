@@ -41,6 +41,7 @@ public slots:
 	void on_filter_triggered(bool);
 	void on_toggleColumnIndex_triggered(bool);
 	void on_toggleRowColors_triggered(bool);
+	void on_showComments_triggered(bool);
 
 	void tableContextMenu(QPoint point);
 
