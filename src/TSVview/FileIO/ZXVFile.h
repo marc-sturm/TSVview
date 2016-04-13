@@ -25,6 +25,7 @@ private:
 		virtual bool startElement(const QString&, const QString&, const QString& name, const QXmlAttributes& attrs);
 		virtual bool error(const QXmlParseException& exception);
 		virtual bool fatalError(const QXmlParseException& exception);
+		virtual QString errorString();
 
 	private:
 		DataSet* data_;

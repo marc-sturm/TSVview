@@ -276,6 +276,11 @@ bool XMLFile::RowWiseXMLParser::fatalError(const QXmlParseException& exception)
 	return false;
 }
 
+QString XMLFile::RowWiseXMLParser::errorString()
+{
+	return "Dummy";
+}
+
 bool XMLFile::RowWiseXMLParser::convertToDouble_(QString characters)
 {
 	bool ok;
@@ -436,6 +441,11 @@ bool XMLFile::ColumnWiseXMLParser::fatalError(const QXmlParseException& exceptio
 	error_string_ = exception.message();
 
 	return false;
+}
+
+QString XMLFile::ColumnWiseXMLParser::errorString()
+{
+	return "Dummy";
 }
 
 bool XMLFile::ColumnWiseXMLParser::convertToDouble_(QString characters)

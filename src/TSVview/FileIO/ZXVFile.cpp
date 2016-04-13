@@ -192,3 +192,8 @@ bool ZXVFile::ZXVParser::fatalError(const QXmlParseException& exception)
 
 	return false;
 }
+
+QString ZXVFile::ZXVParser::errorString()
+{
+	return "Dummy";
+}

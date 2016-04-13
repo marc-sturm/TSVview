@@ -29,6 +29,7 @@ private:
 		virtual bool characters(const QString& ch);
 		virtual bool error(const QXmlParseException& exception);
 		virtual bool fatalError(const QXmlParseException& exception);
+		virtual QString errorString();
 
 		bool convertToDouble_(QString string);
 
@@ -57,6 +58,7 @@ private:
 		virtual bool characters(const QString& ch);
 		virtual bool error(const QXmlParseException& exception);
 		virtual bool fatalError(const QXmlParseException& exception);
+		virtual QString errorString();
 
 		bool convertToDouble_(QString string);
 
