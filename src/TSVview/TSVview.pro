@@ -27,7 +27,6 @@ SOURCES += \
     Plots/ScatterPlot.cpp \
     Plots/HistogramPlot.cpp \
     Plots/DataPlot.cpp \
-    Statistics/Histogram.cpp \
     Base/DataGrid.cpp \
     Plots/BoxPlot.cpp \
     Signal/Smoothing.cpp \
@@ -61,7 +60,6 @@ HEADERS += \
     Plots/ScatterPlot.h \
     Plots/HistogramPlot.h \
     Plots/DataPlot.h \
-    Statistics/Histogram.h \
     Base/DataGrid.h \
     Plots/BoxPlot.h \
     Signal/Smoothing.h \

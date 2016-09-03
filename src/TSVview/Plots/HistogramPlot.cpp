@@ -105,7 +105,7 @@ int HistogramPlot::rtti() const
 void HistogramPlot::draw(QPainter* painter, const QwtScaleMap& xMap, const QwtScaleMap& yMap, const QRectF& rect) const
 {
 	bool show_filtered = params_.getBool("filtered");
-	double half_bin_size = 0.4 * hist_.binSize();
+    double border = 0.05 * hist_.binSize();
 
 	//filtered hist (below)
 	if (show_filtered)
@@ -121,9 +121,9 @@ void HistogramPlot::draw(QPainter* painter, const QwtScaleMap& xMap, const QwtSc
 			QRectF r = rect;
 			r.setTop(yMap.transform(value) + 1);
 			r.setBottom(yMap.transform(0.0) + 1);
-			double center = hist2_.centerOfBin(i);
-			r.setLeft(xMap.transform(center - half_bin_size) + 1);
-			r.setRight(xMap.transform(center + half_bin_size) + 1);
+            double start = hist2_.startOfBin(i);
+            r.setLeft(xMap.transform(start + border) + 1);
+            r.setRight(xMap.transform(start + hist_.binSize() - 2*border) + 1);
 			painter->fillRect(r, color);
 		}
 	}
@@ -139,10 +139,10 @@ void HistogramPlot::draw(QPainter* painter, const QwtScaleMap& xMap, const QwtSc
 
 		QRectF r = rect;
 		r.setTop(yMap.transform(value));
-		r.setBottom(yMap.transform(0.0));
-		double center = hist_.centerOfBin(i);
-		r.setLeft(xMap.transform(center - half_bin_size));
-		r.setRight(xMap.transform(center + half_bin_size));
+        r.setBottom(yMap.transform(0.0));
+        double start = hist_.startOfBin(i);
+        r.setLeft(xMap.transform(start + border));
+        r.setRight(xMap.transform(start + hist_.binSize() - 2 * border));
 		painter->fillRect(r, color);
 	}
 }
