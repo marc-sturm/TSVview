@@ -47,7 +47,7 @@ void HistogramPlot::replot_()
 {
 	bool show_filtered = params_.getBool("filtered");
 	double bins = (double)params_.getInt("bins");
-	bool percentage = params_.getBool("percentage");
+	percentage_ = params_.getBool("percentage");
 
 	//format x-axis
 	double min = params_.getDouble("min");
@@ -65,20 +65,18 @@ void HistogramPlot::replot_()
 
 	//create histogram
 	if (show_filtered) filter = data_->getRowFilter(false);
-	hist_ = Histogram();
-	hist_.init(min, max, (max-min)/bins, percentage);
-	hist_.inc(data_->numericColumn(column_).values(filter), true);
+	hist_ = QSharedPointer<Histogram>(new Histogram(min, max, (max-min)/bins));
+	hist_->inc(data_->numericColumn(column_).values(filter), true);
 
 	//create filtered histogram
-	hist2_ = Histogram();
+	hist2_ = QSharedPointer<Histogram>(new Histogram(min, max, (max-min)/bins));
 	if (show_filtered)
 	{
-		hist2_.init(min, max, (max-min)/bins, percentage);
-		hist2_.inc(data_->numericColumn(column_).values(~filter), true);
+		hist2_->inc(data_->numericColumn(column_).values(~filter), true);
 	}
 
 	//format y-axis
-	if (percentage)
+	if (percentage_)
 	{
 		plot_->setAxisTitle(QwtPlot::yLeft, "Percentage");
 	}
@@ -86,10 +84,10 @@ void HistogramPlot::replot_()
 	{
 		plot_->setAxisTitle(QwtPlot::yLeft, "Counts");
 	}
-	double maxBin = hist_.maxValue();
+	double maxBin = hist_->maxValue(percentage_);
 	if (show_filtered)
 	{
-		maxBin = std::max(maxBin, hist2_.maxValue());
+		maxBin = std::max(maxBin, hist2_->maxValue(percentage_));
 	}
 	plot()->setAxisScale(QwtPlot::yLeft, -0.01*maxBin, 1.01*maxBin);
 
@@ -105,25 +103,25 @@ int HistogramPlot::rtti() const
 void HistogramPlot::draw(QPainter* painter, const QwtScaleMap& xMap, const QwtScaleMap& yMap, const QRectF& rect) const
 {
 	bool show_filtered = params_.getBool("filtered");
-    double border = 0.05 * hist_.binSize();
+	double border = 0.05 * hist_->binSize();
 
 	//filtered hist (below)
 	if (show_filtered)
 	{
 		QColor color = params_.getColor("filtered color");
 		color.setAlpha(180);
-		for (int i = 0; i<hist2_.binCount(); ++i)
+		for (int i = 0; i<hist2_->binCount(); ++i)
 		{
 			//do not paint a bar if there is no element in the bin
-			double value = hist2_.binValue(i);
+			double value = hist2_->binValue(i, percentage_);
 			if (value==0.0) continue;
 
 			QRectF r = rect;
 			r.setTop(yMap.transform(value) + 1);
 			r.setBottom(yMap.transform(0.0) + 1);
-            double start = hist2_.startOfBin(i);
+			double start = hist2_->startOfBin(i);
             r.setLeft(xMap.transform(start + border) + 1);
-            r.setRight(xMap.transform(start + hist_.binSize() - 2*border) + 1);
+			r.setRight(xMap.transform(start + hist_->binSize() - 2*border) + 1);
 			painter->fillRect(r, color);
 		}
 	}
@@ -131,18 +129,18 @@ void HistogramPlot::draw(QPainter* painter, const QwtScaleMap& xMap, const QwtSc
 	//main hist
 	QColor color = params_.getColor("color");
 	color.setAlpha(180);
-	for (int i = 0; i<hist_.binCount(); ++i)
+	for (int i = 0; i<hist_->binCount(); ++i)
 	{
 		//do not paint a bar if there is no element in the bin
-		double value = hist_.binValue(i);
+		double value = hist_->binValue(i, percentage_);
 		if (value==0.0) continue;
 
 		QRectF r = rect;
 		r.setTop(yMap.transform(value));
         r.setBottom(yMap.transform(0.0));
-        double start = hist_.startOfBin(i);
+		double start = hist_->startOfBin(i);
         r.setLeft(xMap.transform(start + border));
-        r.setRight(xMap.transform(start + hist_.binSize() - 2 * border));
+		r.setRight(xMap.transform(start + hist_->binSize() - 2 * border));
 		painter->fillRect(r, color);
 	}
 }

@@ -4,6 +4,7 @@
 #include "Histogram.h"
 #include "BasePlot.h"
 #include "DataSet.h"
+#include <QSharedPointer>
 
 class HistogramPlot
 		: public BasePlot
@@ -22,8 +23,9 @@ protected:
 private:
 	DataSet* data_;
 	int column_;
-	Histogram hist_;
-	Histogram hist2_;
+	bool percentage_;
+	QSharedPointer<Histogram> hist_;
+	QSharedPointer<Histogram> hist2_;
 
 private slots:
 	void replot_();
