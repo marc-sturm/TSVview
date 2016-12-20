@@ -744,11 +744,11 @@ void MainWindow::on_toggleRowColors_triggered(bool)
 
 void MainWindow::on_showComments_triggered(bool)
 {
-	QTextBrowser browser;
-	browser.setText(data_.comments().join("\n"));
-	browser.setReadOnly(true);
-	browser.setLineWrapMode(QTextBrowser::NoWrap);
-	GUIHelper::showWidgetAsDialog(&browser, "Comments", false);
+	QTextBrowser* browser = new QTextBrowser();
+	browser->setText(data_.comments().join("\n"));
+	browser->setReadOnly(true);
+	browser->setLineWrapMode(QTextBrowser::NoWrap);
+	GUIHelper::showWidgetAsDialog(browser, "Comments", false);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* e)
