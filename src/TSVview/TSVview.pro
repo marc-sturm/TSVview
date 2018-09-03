@@ -6,6 +6,8 @@ TARGET = TSVview
 TEMPLATE = app
 RC_FILE	 = icon.rc
 
+CONFIG += c++11
+
 INCLUDEPATH += Base
 INCLUDEPATH += FileIO
 INCLUDEPATH += Plots
