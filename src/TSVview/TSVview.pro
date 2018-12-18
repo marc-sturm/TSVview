@@ -1,7 +1,7 @@
 # -------------------------------------------------
 # Project created by QtCreator 2010-03-29T13:28:53
 # -------------------------------------------------
-QT += core widgets gui xml script svg
+QT += core widgets gui xml svg qml
 TARGET = TSVview
 TEMPLATE = app
 RC_FILE	 = icon.rc

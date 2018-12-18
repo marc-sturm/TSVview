@@ -1,6 +1,6 @@
 #include <QMenu>
 #include <QInputDialog>
-#include <QtScript/QScriptEngine>
+#include <QJSEngine>
 #include <QMessageBox>
 #include <QApplication>
 #include <QClipboard>
@@ -594,7 +594,7 @@ void DataGrid::addColumn_()
 		int rows_count = data_->rowCount();
 		QVector<double> new_values;
 		new_values.reserve(rows_count);
-		QScriptEngine engine;
+		QJSEngine engine;
 		for (int row=0; row<rows_count; ++row)
 		{
 			QString row_formula = formula;
@@ -605,8 +605,9 @@ void DataGrid::addColumn_()
 				i.next();
 				row_formula.replace(i.value(), QString::number(data_->numericColumn(i.key()).value(row), 'f', 10));
 			}
-			QScriptValue value = engine.evaluate(row_formula);
-			if (engine.hasUncaughtException())
+
+			QJSValue value = engine.evaluate(row_formula);
+			if (value.isError())
 			{
 				THROW(Exception,"The formula '" + row_formula + "' could not be evaluated.");
 			}
