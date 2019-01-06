@@ -314,7 +314,7 @@ void MainWindow::on_saveFileAs_triggered(bool)
 	{
 		// get parameters
 		Parameters params = TextFile::defaultParameters();
-		if (!ParameterEditor::asDialog("Text file parameters", params))
+		if (!ParameterEditor::asDialog(this->windowIcon(), "Text file parameters", params))
 		{
 			return;
 		}
@@ -325,7 +325,7 @@ void MainWindow::on_saveFileAs_triggered(bool)
 	{
 		// get parameters
 		Parameters params = XMLFile::defaultParameters();
-		if (!ParameterEditor::asDialog("XML file parameters", params))
+		if (!ParameterEditor::asDialog(this->windowIcon(), "XML file parameters", params))
 		{
 			return;
 		}
@@ -605,7 +605,7 @@ void MainWindow::smoothBessel()
 void MainWindow::smooth_(Smoothing::Type type, QString suffix)
 {
 	Parameters params = Smoothing::defaultParameters(type);
-	if (!ParameterEditor::asDialog("Moving average parameters", params))
+	if (!ParameterEditor::asDialog(this->windowIcon(), "Moving average parameters", params))
 	{
 		return;
 	}
@@ -635,7 +635,8 @@ void MainWindow::histogram()
 
 	HistogramPlot* hist = new HistogramPlot();
 	hist->setData(data_, index, QFileInfo(file_.name).baseName());
-	GUIHelper::showWidgetAsDialog(hist, "Histogram of '" + data_.column(index).headerOrIndex(index) + fileNameLabel(), false);
+	auto dlg = GUIHelper::createDialog(hist, "Histogram of '" + data_.column(index).headerOrIndex(index) + fileNameLabel());
+	dlg->exec();
 }
 
 void MainWindow::basicStatistics()
@@ -644,7 +645,8 @@ void MainWindow::basicStatistics()
 
 	StatisticsSummaryWidget* stats = new StatisticsSummaryWidget();
 	stats->setData(data_.numericColumn(index).statistics(data_.getRowFilter()));
-	GUIHelper::showWidgetAsDialog(stats, "Basic statistics of '" + data_.column(index).headerOrIndex(index) + fileNameLabel(), false);
+	auto dlg = GUIHelper::createDialog(stats, "Basic statistics of '" + data_.column(index).headerOrIndex(index) + fileNameLabel());
+	dlg->exec();
 }
 
 void MainWindow::scatterPlot()
@@ -654,21 +656,24 @@ void MainWindow::scatterPlot()
 
 	ScatterPlot* plot = new ScatterPlot();
 	plot->setData(data_, x, y, QFileInfo(file_.name).baseName());
-	GUIHelper::showWidgetAsDialog(plot, "Scatterplot of '" + data_.column(x).headerOrIndex(x) + "' and '" + data_.column(y).headerOrIndex(y) + "'" + fileNameLabel(), false);
+	auto dlg = GUIHelper::createDialog(plot, "Scatterplot of '" + data_.column(x).headerOrIndex(x) + "' and '" + data_.column(y).headerOrIndex(y) + "'" + fileNameLabel());
+	dlg->exec();
 }
 
 void MainWindow::dataPlot()
 {
 	DataPlot* plot = new DataPlot();
 	plot->setData(data_, grid_->selectedColumns(), QFileInfo(file_.name).baseName());
-	GUIHelper::showWidgetAsDialog(plot, "Plot" + fileNameLabel(), false);
+	auto dlg = GUIHelper::createDialog(plot, "Plot" + fileNameLabel());
+	dlg->exec();
 }
 
 void MainWindow::boxPlot()
 {
 	BoxPlot* plot = new BoxPlot();
 	plot->setData(data_, grid_->selectedColumns(), QFileInfo(file_.name).baseName());
-	GUIHelper::showWidgetAsDialog(plot, "BoxPlot" + fileNameLabel(), false);
+	auto dlg = GUIHelper::createDialog(plot, "BoxPlot" + fileNameLabel());
+	dlg->exec();
 }
 
 void MainWindow::on_about_triggered(bool /*checked*/)
@@ -748,7 +753,8 @@ void MainWindow::on_showComments_triggered(bool)
 	browser->setText(data_.comments().join("\n"));
 	browser->setReadOnly(true);
 	browser->setLineWrapMode(QTextBrowser::NoWrap);
-	GUIHelper::showWidgetAsDialog(browser, "Comments", false);
+	auto dlg = GUIHelper::createDialog(browser, "Comments");
+	dlg->exec();
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* e)

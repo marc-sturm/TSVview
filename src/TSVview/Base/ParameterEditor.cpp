@@ -335,10 +335,12 @@ void ParameterEditor::changeChar_(const QString& value)
 	}
 }
 
-bool ParameterEditor::asDialog(QString window_title, Parameters& parameters)
+bool ParameterEditor::asDialog(QIcon icon, QString window_title, Parameters& parameters)
 {
 	ParameterEditor* editor = new ParameterEditor();
 	editor->setParameters(parameters);
-	return GUIHelper::showWidgetAsDialog(editor, window_title, true);
+	auto dlg = GUIHelper::createDialog(editor, window_title, "", true);
+	dlg->setWindowIcon(icon);
+	return dlg->exec()==QDialog::Accepted;
 }
 

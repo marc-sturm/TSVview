@@ -1210,8 +1210,8 @@ void DataGrid::deleteFilter()
 	//show dialog
 	QComboBox* box = new QComboBox();
 	box->addItems(filters.keys());
-	bool accept = GUIHelper::showWidgetAsDialog(box, "Delete filter set", true);
-	if (!accept) return;
+	auto dlg = GUIHelper::createDialog(box, "Delete filter set", "", true);
+	if (dlg->exec()!=QDialog::Accepted) return;
 
 	//remove filter set
 	QString name = box->currentText();

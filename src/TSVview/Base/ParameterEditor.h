@@ -17,7 +17,7 @@ public:
 
 	void setParameters(Parameters& parameters);
 
-	static bool asDialog(QString window_title, Parameters& parameters);
+	static bool asDialog(QIcon icon, QString window_title, Parameters& parameters);
 
 protected slots:
 	void change_(double value);
