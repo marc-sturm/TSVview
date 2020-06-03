@@ -52,7 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(&data_, SIGNAL(headersChanged()), this, SLOT(updateFilters()));
 	grid_->setData(data_);
 
-	recent_files_ = Settings::stringList("recent_files");
+	recent_files_ = Settings::stringList("recent_files", true);
 	updateRecentFilesMenu_();
 
 	//create goto dock widget
@@ -148,7 +148,7 @@ void MainWindow::on_openZXV_triggered(bool)
 {
 	storeModifiedDataset_();
 
-	QString filename = QFileDialog::getOpenFileName(this, "Open ZXV file", Settings::path("path_open"), "Zipped XML value files (*.zxv);;All files (*.*)");
+	QString filename = QFileDialog::getOpenFileName(this, "Open ZXV file", Settings::path("path_open", true), "Zipped XML value files (*.zxv);;All files (*.*)");
 	if (filename==QString::null)
 	{
 		return;
@@ -161,7 +161,7 @@ void MainWindow::on_openTXT_triggered(bool)
 {
 	storeModifiedDataset_();
 
-	QString filename = QFileDialog::getOpenFileName(this, "Open text file", Settings::path("path_open"), "All files (*.*);;Text files (*.txt);;CSV files (*.csv);;TSV files (*.tsv)");
+	QString filename = QFileDialog::getOpenFileName(this, "Open text file", Settings::path("path_open", true), "All files (*.*);;Text files (*.txt);;CSV files (*.csv);;TSV files (*.tsv)");
 	if (filename==QString::null)
 	{
 		return;
@@ -174,7 +174,7 @@ void MainWindow::on_openXML_triggered(bool)
 {
 	storeModifiedDataset_();
 
-	QString filename = QFileDialog::getOpenFileName(this, "Open XML file", Settings::path("path_open"), "All files (*.*);;XML files (*.xml)");
+	QString filename = QFileDialog::getOpenFileName(this, "Open XML file", Settings::path("path_open", true), "All files (*.*);;XML files (*.xml)");
 	if (filename==QString::null)
 	{
 		return;
@@ -302,7 +302,7 @@ void MainWindow::on_saveFile_triggered(bool)
 void MainWindow::on_saveFileAs_triggered(bool)
 {
 	QString selected_filter = "";
-	QString filename = QFileDialog::getSaveFileName(this, "Save file", Settings::path("path_open") + file_.name, "Text files (*.txt *.csv *.tsv);;XML files (*.xml);;Zipped XML value files (*.zxv)", &selected_filter);
+	QString filename = QFileDialog::getSaveFileName(this, "Save file", Settings::path("path_open", true) + file_.name, "Text files (*.txt *.csv *.tsv);;XML files (*.xml);;Zipped XML value files (*.zxv)", &selected_filter);
 	if (filename==QString::null)
 	{
 		return;
@@ -735,7 +735,7 @@ void MainWindow::openRecentFile()
 
 void MainWindow::on_toggleColumnIndex_triggered(bool)
 {
-	bool show_cols = Settings::boolean("show_column_index");
+	bool show_cols = Settings::contains("show_column_index") && Settings::boolean("show_column_index");
 
 	Settings::setBoolean("show_column_index", !show_cols);
 

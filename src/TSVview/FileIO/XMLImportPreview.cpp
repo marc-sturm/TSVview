@@ -34,7 +34,7 @@ XMLImportPreview::XMLImportPreview(QString filename, QWidget *parent)
 	connect(ui_.saveButton, SIGNAL(clicked()), this, SLOT(saveSettings()));
 	ui_.ori_row->setChecked(true);
 
-	settings_ = Settings::map("xml_import_settings", QMap<QString,QVariant>());
+	settings_ = Settings::map("xml_import_settings", true);
 	updateRestoreButton();
 
 	tryImport();

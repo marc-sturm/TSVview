@@ -806,7 +806,7 @@ void DataGrid::keyPressEvent(QKeyEvent* event)
 
 void DataGrid::renderHeaders()
 {
-	bool show_column_index = Settings::boolean("show_column_index");
+	bool show_column_index = Settings::contains("show_column_index") && Settings::boolean("show_column_index");
 
 	for (int c=0; c<data_->columnCount(); ++c)
 	{
@@ -1150,7 +1150,7 @@ bool DataGrid::isNumeric_(QString string)
 void DataGrid::loadFilter()
 {
 	//get list of available filters
-	QMap<QString, QVariant> filters = Settings::map("filters", QMap<QString, QVariant>());
+	QMap<QString, QVariant> filters = Settings::map("filters", true);
 
 	//abort if there are no filters
 	if (filters.count()==0)
@@ -1183,7 +1183,7 @@ void DataGrid::storeFilter()
 	if (name=="") return;
 
 	//get list of available filters
-	QMap<QString, QVariant> filters = Settings::map("filters", QMap<QString, QVariant>());
+	QMap<QString, QVariant> filters = Settings::map("filters", true);
 
 	//check before overwriting
 	if (filters.contains(name))
@@ -1200,7 +1200,7 @@ void DataGrid::storeFilter()
 void DataGrid::deleteFilter()
 {
 	//get list of available filters
-	QMap<QString, QVariant> filters = Settings::map("filters", QMap<QString, QVariant>());
+	QMap<QString, QVariant> filters = Settings::map("filters", true);
 	if (filters.count()==0)
 	{
 		QMessageBox::information(this, "Delete filter set", "There are no filter sets to delete!");

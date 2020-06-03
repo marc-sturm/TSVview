@@ -129,7 +129,7 @@ void BasePlot::copyToClipboard()
 
 void BasePlot::saveAsPng()
 {
-	QString path = Settings::path("path_images");
+	QString path = Settings::path("path_images", true);
 	QString selected_filter = "PNG file (*.png)";
 	QString filename = QFileDialog::getSaveFileName(this, "Save plot in PNG format",  path+filename_+".png", "All files (*.*);;"+selected_filter, &selected_filter);
 	if (filename!="")
@@ -158,7 +158,7 @@ void BasePlot::saveAsPng()
 
 void BasePlot::saveAsSvg()
 {
-	QString path = Settings::path("path_images");
+	QString path = Settings::path("path_images", true);
 	QString selected_filter = "SVG file (*.svg)";
 	QString filename = QFileDialog::getSaveFileName(this, "Save plot in SVG format",  path+filename_+".svg", "All files (*.*);;"+selected_filter, &selected_filter);
 	if (filename!="")
