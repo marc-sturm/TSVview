@@ -125,12 +125,10 @@ int DataSet::indexOf(QString name)
 
 void DataSet::removeColumn(int column)
 {
-	QList<int> list;
-	list.append(column);
-	removeColumns(list);
+	removeColumns(QSet<int>() << column);
 }
 
-void DataSet::removeColumns(QList<int> columns)
+void DataSet::removeColumns(QSet<int> columns)
 {
 	//special case: removing all columns
 	if (columns.count()==columnCount())
@@ -140,12 +138,13 @@ void DataSet::removeColumns(QList<int> columns)
 	}
 
 	//sort coumns in reverse order
-	std::sort(columns.begin(), columns.end(), std::greater<int>());
+	QList<int> column_list = columns.toList();
+	std::sort(column_list.begin(), column_list.end(), std::greater<int>());
 
 	//remove columns
-	for (int i=0; i<columns.count(); ++i)
+	for (int i=0; i<column_list.count(); ++i)
 	{
-		int col = columns[i];
+		int col = column_list[i];
 		Q_ASSERT(col<columns_.size());
 
 		delete(columns_[col]);
@@ -367,8 +366,50 @@ void DataSet::mergeColumns(QList<int> cols, QString header, QString sep)
 	}
 
 	//remove old columns and add new one
-	removeColumns(cols);
+	removeColumns(cols.toSet());
 	addColumn(header, new_col, true, first_col);
+}
+
+void DataSet::reduceToRows(QSet<int> rows)
+{
+	//convert rows set to ordered list
+	QList<int> keep_rows = rows.toList();
+	qSort(keep_rows.begin(), keep_rows.end());
+
+	//update all columns
+	blockSignals(true);
+	for (int c=0; c<columnCount(); ++c)
+	{
+		//numeric column
+		if (column(c).type()==BaseColumn::NUMERIC)
+		{
+			NumericColumn& column = numericColumn(c);
+
+			QVector<double> values;
+			values.reserve(keep_rows.count());
+			for (int r=0; r<keep_rows.count(); ++r)
+			{
+				values.append(column.value(keep_rows[r]));
+			}
+			column.setValues(values);
+		}
+		//string column
+		else
+		{
+			StringColumn& column = stringColumn(c);
+
+			QVector<QString> values;
+			values.reserve(keep_rows.count());
+			for (int r=0; r<keep_rows.count(); ++r)
+			{
+				values.append(column.value(keep_rows[r]));
+			}
+			column.setValues(values);
+		}
+	}
+	blockSignals(false);
+
+	emit dataChanged();
 }
 
 bool DataSet::filtersEnabled() const

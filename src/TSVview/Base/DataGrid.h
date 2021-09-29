@@ -3,6 +3,7 @@
 
 #include <QTableWidget>
 #include <QBitArray>
+#include <QSet>
 
 #include "DataSet.h"
 
@@ -83,6 +84,7 @@ protected slots:
 	void editFilter_();
 	void removeFilter_();
 	void removeDuplicates_();
+	void keepDuplicates_();
 	void columnChanged(int column, bool until_end);
 	void horizontalHeaderContextMenu(const QPoint&);
 	void verticalHeaderContextMenu(const QPoint&);
@@ -95,7 +97,7 @@ protected:
 	void keyPressEvent(QKeyEvent* event);
 	void renderItem_(int row, int column, QBitArray rows_to_render = QBitArray());
 	void renderColumn_(int column, QBitArray rows_to_render = QBitArray());
-	bool isNumeric_(QString string);
+	static bool isNumeric_(QString string);
 };
 
 #endif

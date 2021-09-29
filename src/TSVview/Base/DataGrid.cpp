@@ -261,6 +261,7 @@ QMenu* DataGrid::createStandardContextMenu()
 		action = edit_menu->addAction("Set number format", this, SLOT(setColumnFormat_()));
 		action->setEnabled(selected_count==1 && text_count==0);
 		action = edit_menu->addAction("Remove duplicates", this, SLOT(removeDuplicates_()));
+		action = edit_menu->addAction("Keep duplicates", this, SLOT(keepDuplicates_()));
 		action->setEnabled(selected_count==1);
 
 		QMenu* convert_menu = menu->addMenu("Convert to numeric column");
@@ -304,7 +305,7 @@ void DataGrid::removeSelectedColumns()
 		return;
 	}
 
-	data_->removeColumns(selectedColumns());
+	data_->removeColumns(selectedColumns().toSet());
 }
 
 void DataGrid::renameColumn_()
@@ -835,55 +836,51 @@ void DataGrid::removeFilter_()
 
 void DataGrid::removeDuplicates_()
 {
-	data_->blockSignals(true);
-
-	//determine rows to filter
 	int col = selectedColumns()[0];
-	QVector<int> keep_rows;
-	keep_rows.reserve(data_->rowCount());
-	keep_rows.push_back(0);
-	for (int r=1; r<data_->rowCount(); ++r)
+
+	//count values
+	QHash<QString, QList<int>> value_to_rows;
+	for (int r=0; r<data_->rowCount(); ++r)
 	{
-		if (data_->column(col).string(r-1) != data_->column(col).string(r))
+		QString value = data_->column(col).string(r);
+		value_to_rows[value].append(r);
+	}
+
+	//remove duplicates
+	QSet<int> rows_to_keep;
+	for (auto it=value_to_rows.begin(); it!=value_to_rows.end(); ++it)
+	{
+		rows_to_keep << it.value()[0];
+	}
+
+	//reduce to rows without duplicates
+	data_->reduceToRows(rows_to_keep);
+}
+
+void DataGrid::keepDuplicates_()
+{
+	int col = selectedColumns()[0];
+
+	//count values
+	QHash<QString, QSet<int>> value_to_rows;
+	for (int r=0; r<data_->rowCount(); ++r)
+	{
+		QString value = data_->column(col).string(r);
+		value_to_rows[value].insert(r);
+	}
+
+	//determine duplicates
+	QSet<int> rows_to_keep;
+	for (auto it=value_to_rows.begin(); it!=value_to_rows.end(); ++it)
+	{
+		if (it.value().count()>1)
 		{
-			keep_rows.append(r);
+			rows_to_keep.unite(it.value());
 		}
 	}
 
-	for (int c=0; c<data_->columnCount(); ++c)
-	{
-		//numeric column
-		if (data_->column(c).type()==BaseColumn::NUMERIC)
-		{
-			NumericColumn& column = data_->numericColumn(c);
-
-			QVector<double> values;
-			values.reserve(keep_rows.count());
-			for (int r=0; r<keep_rows.count(); ++r)
-			{
-				values.append(column.value(keep_rows[r]));
-			}
-			column.setValues(values);
-		}
-		//string column
-		else
-		{
-			StringColumn& column = data_->stringColumn(c);
-
-			QVector<QString> values;
-			values.reserve(keep_rows.count());
-			for (int r=0; r<keep_rows.count(); ++r)
-			{
-				values.append(column.value(keep_rows[r]));
-			}
-			column.setValues(values);
-		}
-	}
-
-	data_->blockSignals(false);
-
-	// trigger rendering (signal have been blocked)
-	render();
+	//reduce to rows with duplicates
+	data_->reduceToRows(rows_to_keep);
 }
 
 void DataGrid::editFilter(int column)

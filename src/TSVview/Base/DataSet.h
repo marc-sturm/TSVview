@@ -31,12 +31,13 @@ public:
 	int rowCount() const;
 	void clear(bool emit_signals);
 	void removeColumn(int column);
-	void removeColumns(QList<int> columns);
+	void removeColumns(QSet<int> columns);
 	void addColumn(QString header, QVector<double> data, bool auto_format = true, int index = -1);
 	void addColumn(QString header, QVector<QString> data, bool auto_format = true, int index = -1);
 	void replaceColumn(int index, QString header, QVector<double> data, bool auto_format = true);
 	void sortByColumn(int column, bool reverse);
 	void mergeColumns(QList<int> cols, QString header, QString sep);
+	void reduceToRows(QSet<int> rows);
 
 	bool modified() const;
 	void setModified(bool changed);
