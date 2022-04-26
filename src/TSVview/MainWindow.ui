@@ -61,7 +61,6 @@
     <addaction name="addToContext"/>
     <addaction name="clearSettings"/>
     <addaction name="separator"/>
-    <addaction name="changelog"/>
     <addaction name="about"/>
    </widget>
    <widget class="QMenu" name="menuTools">
