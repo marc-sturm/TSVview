@@ -23,7 +23,6 @@ public:
 
 public slots:
 	void on_about_triggered(bool checked = false);
-	void on_changelog_triggered(bool checked = false);
 	void on_clearSettings_triggered(bool checked = false);
 	void on_addToContext_triggered(bool checked = false);
 	void on_transpose_triggered(bool checked = false);

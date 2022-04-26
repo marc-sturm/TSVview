@@ -681,14 +681,6 @@ void MainWindow::on_about_triggered(bool /*checked*/)
 	QMessageBox::about(this, "About " + QApplication::applicationName(), QApplication::applicationName() + " " + QApplication::applicationVersion() +"\n\nThis program is free software.\n\nThis program is provided as is with no warranty of any kind, including the warranty of design, merchantability and fitness for a particular purpose.\n\nThis program is based in part on the work of the Qwt project (http://qwt.sf.net).");
 }
 
-void MainWindow::on_changelog_triggered(bool /*checked*/)
-{
-	ScrollableTextDialog dlg(this);
-	dlg.setWindowTitle("ChangeLog " + QApplication::applicationName());
-	dlg.setText(Helper::loadTextFile("://Resources/ChangeLog.html").join("\n"));
-	dlg.exec();
-}
-
 void MainWindow::addToRecentFiles_(QString filename, FileType type)
 {
 	QString filename_and_type = filename + "|" + QString::number(type);

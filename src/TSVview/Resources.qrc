@@ -21,7 +21,6 @@
         <file>Icons/Merge.png</file>
         <file>Icons/Enabled.png</file>
         <file>Icons/ReduceData.png</file>
-        <file>Resources/ChangeLog.html</file>
         <file>Icons/Add.png</file>
     </qresource>
 </RCC>

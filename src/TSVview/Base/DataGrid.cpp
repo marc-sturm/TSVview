@@ -23,6 +23,7 @@
 #include "MergeDialog.h"
 #include "GUIHelper.h"
 #include "AddColumnDialog.h"
+#include "TextItemEditDialog.h"
 
 DataGrid::DataGrid(QWidget* parent)
 	: QTableWidget(parent)
@@ -43,6 +44,11 @@ DataGrid::DataGrid(QWidget* parent)
 	connect(verticalHeader(), SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(verticalHeaderContextMenu(const QPoint&)));
 
 	setAlternatingRowColors(true);
+
+	//make sure the selection is visible when the table looses focus
+	QString fg = GUIHelper::colorToQssFormat(palette().color(QPalette::Active, QPalette::HighlightedText));
+	QString bg = GUIHelper::colorToQssFormat(palette().color(QPalette::Active, QPalette::Highlight));
+	setStyleSheet(QString("QTableWidget:!active { selection-color: %1; selection-background-color: %2; }").arg(fg).arg(bg));
 
 	connect(this, SIGNAL(itemDoubleClicked(QTableWidgetItem*)), this, SLOT(editCurrentItem(QTableWidgetItem*)));
 }
@@ -1119,7 +1125,7 @@ void DataGrid::editCurrentItem(QTableWidgetItem* item)
 	if (data_->column(col).type() == BaseColumn::NUMERIC)
 	{
 		double value = data_->numericColumn(col).value(row);
-		double new_value = QInputDialog::getDouble(this, "Edit numeric value", "Value", value, -std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), 5);
+		double new_value = QInputDialog::getDouble(this, "Edit numeric item", "Value", value, -std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), 5);
 		if (new_value != value)
 		{
 			data_->numericColumn(col).setValue(row, new_value);
@@ -1128,11 +1134,11 @@ void DataGrid::editCurrentItem(QTableWidgetItem* item)
 	//edit string column
 	else
 	{
-		QString value = data_->stringColumn(col).value(row);
-		QString new_value = QInputDialog::getText(this, "Edit string value", "Value", QLineEdit::Normal, value);
-		if (!new_value.isNull() && new_value != value)
+		TextItemEditDialog dlg(this);
+		dlg.setText(data_->stringColumn(col).value(row));
+		if (dlg.exec()==QDialog::Accepted)
 		{
-			data_->stringColumn(col).setValue(row, new_value);
+			data_->stringColumn(col).setValue(row, dlg.text());
 		}
 	}
 }
