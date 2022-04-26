@@ -340,46 +340,12 @@ void MainWindow::on_saveFileAs_triggered(bool)
 	on_saveFile_triggered(true);
 }
 
-/*
-void MainWindow::appendColumns_(const DataSet& dataset)
-{
-  int current_rows = data_.rowCount();
-  if (current_rows>0 && dataset.rowCount()!=current_rows)
-  {
-	QMessageBox::warning(this, "Error", "Row count does not match! Append columns to empty datasets or datasets with the same number of rows.");
-	return;
-  }
-
-  int columns_before = data_.columnCount();
-  if (data_.rowCount()==0)
-  {
-	data_ = dataset;
-  }
-  else
-  {
-	for (int i=0; i<dataset.columnCount(); ++i)
-	{
-			if (dataset.column(i).type()==BaseColumn::NUMERIC)
-			{
-		data_.addColumn(dataset.column(i).header(), dataset.numericColumn(i).values());
-			}
-			else
-			{
-		data_.addColumn(dataset.column(i).header(), dataset.stringColumn(i).values());
-			}
-	}
-  }
-
-	grid_->render(columns_before);
-}
-*/
-
 void  MainWindow::on_resizeColumns_triggered(bool)
 {
 	grid_->resizeColumnsToContents();
 
-	//limit column width to 80% of window width
-	int max_width = 0.8 * width();
+	//limit column width to 50% of window width
+	int max_width = 0.5 * width();
 	for (int i=0; i<grid_->columnCount(); ++i)
 	{
 		if (grid_->columnWidth(i)>max_width)
