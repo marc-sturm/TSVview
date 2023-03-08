@@ -2,6 +2,7 @@
 #include "ui_ReplacementDialog.h"
 
 #include <math.h>
+#include <QDoubleValidator>
 
 #include "QLabel"
 #include "QLineEdit"
@@ -26,7 +27,7 @@ void ReplacementDialog::setKeys(QSet<QString> keys)
 
 	//add labels and line edits
 	int row = 0;
-	for (QSet<QString>::const_iterator it=keys.begin(); it!=keys.end(); ++it)
+	for (QSet<QString>::const_iterator it=keys.cbegin(); it!=keys.cend(); ++it)
 	{
 		QLabel* label = new QLabel("'" + *it + "' => ");
 		label->setObjectName("l" + QString::number(row));

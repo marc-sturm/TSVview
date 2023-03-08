@@ -2,6 +2,7 @@
 #define REPLACEMENTDIALOG_H
 
 #include <QDialog>
+#include <QSet>
 
 #include "ui_ReplacementDialog.h"
 

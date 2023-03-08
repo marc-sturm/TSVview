@@ -1,6 +1,7 @@
 #include "FilterDialog.h"
 
 #include <QMenu>
+#include <QSet>
 
 FilterDialog::FilterDialog(BaseColumn* column, QWidget* parent)
 	: QDialog(parent)
