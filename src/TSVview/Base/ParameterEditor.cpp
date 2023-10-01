@@ -259,7 +259,7 @@ QWidget* ParameterEditor::createWidget_(QString key, QWidget* parent)
 				QPixmap pixmap(13,13);
 				pixmap.fill(Qt::white);
 				QPainter painter(&pixmap);
-				QwtSymbol symbol((QwtSymbol::Style)i, Qt::NoBrush, QPen(1), QSize(11,11));
+				QwtSymbol symbol((QScatterSeries::MarkerShape)i, Qt::NoBrush, QPen(1), QSize(11,11));
 				symbol.drawSymbol(&painter, QPointF(6, 6));
 				widget->addItem(QIcon(pixmap),"");
 			}
@@ -300,7 +300,7 @@ void ParameterEditor::change_(QColor value)
 
 void ParameterEditor::changeSymbol_(int value)
 {
-	params_->setSymbol(sender()->objectName(), (QwtSymbol::Style)(value-1));
+	params_->setSymbol(sender()->objectName(), (QScatterSeries::MarkerShape)(value-1));
 }
 
 void ParameterEditor::changeString_(int value)

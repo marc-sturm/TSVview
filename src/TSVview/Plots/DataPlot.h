@@ -1,9 +1,6 @@
 #ifndef DATAPLOT_H
 #define DATAPLOT_H
 
-#include <qwt_plot_curve.h>
-#include <qwt_series_data.h>
-
 #include "BasePlot.h"
 #include "DataSet.h"
 

@@ -10,11 +10,6 @@
 #include <QDebug>
 #include <QMouseEvent>
 #include <QClipboard>
-
-#include <qwt_painter.h>
-#include <qwt_plot_canvas.h>
-#include <qwt_plot_renderer.h>
-
 #include "BasePlot.h"
 #include "Settings.h"
 

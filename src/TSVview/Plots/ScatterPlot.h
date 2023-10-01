@@ -1,9 +1,6 @@
 #ifndef SCATTERPLOT_H
 #define SCATTERPLOT_H
 
-#include <qwt_plot_curve.h>
-#include <qwt_plot_marker.h>
-
 #include "BasePlot.h"
 #include "DataSet.h"
 

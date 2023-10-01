@@ -1,5 +1,3 @@
-#include <qwt_symbol.h>
-#include <qwt_legend.h>
 #include <QDebug>
 
 #include "Helper.h"

@@ -1,10 +1,4 @@
 #include <limits>
-
-#include <qwt_legend.h>
-#include <qwt_symbol.h>
-#include <qwt_plot_panner.h>
-#include <qwt_plot_zoomer.h>
-
 #include "DataPlot.h"
 #include "BasicStatistics.h"
 

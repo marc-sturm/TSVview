@@ -5,7 +5,6 @@
 #include <QToolBar>
 #include <QToolButton>
 #include <QLabel>
-#include <qwt_plot.h>
 
 #include "Parameters.h"
 #include "ParameterEditor.h"

@@ -1,7 +1,7 @@
 # -------------------------------------------------
 # Project created by QtCreator 2010-03-29T13:28:53
 # -------------------------------------------------
-QT += core widgets gui xml svg qml
+QT += core widgets gui xml svg qml charts
 TARGET = TSVview
 TEMPLATE = app
 RC_FILE	 = icon.rc
@@ -111,23 +111,3 @@ LIBS += -L$$PWD/../../bin -lcppGUI
 
 #copy EXE to bin folder
 DESTDIR = $$PWD/../../bin
-
-# -------------------------------------------------
-# include QWT
-# -------------------------------------------------
-INCLUDEPATH +=$$PWD\\..\\qwt\\include
-LIBS += -L$$PWD\\..\\qwt\\lib -lqwt
-
-
-
-
-
-
-
-
-
-
-
-
-
-
