@@ -254,16 +254,8 @@ QWidget* ParameterEditor::createWidget_(QString key, QWidget* parent)
 		{
 			QComboBox* widget = new QComboBox(parent);
 			widget->setObjectName(key);
-			for (int i=-1; i<=QwtSymbol::Hexagon; ++i)
-			{
-				QPixmap pixmap(13,13);
-				pixmap.fill(Qt::white);
-				QPainter painter(&pixmap);
-				QwtSymbol symbol((QScatterSeries::MarkerShape)i, Qt::NoBrush, QPen(1), QSize(11,11));
-				symbol.drawSymbol(&painter, QPointF(6, 6));
-				widget->addItem(QIcon(pixmap),"");
-			}
-			widget->setCurrentIndex(params_->getSymbol(key)+1);
+			widget->addItems(QStringList()<< "None" << "Circle" << "Square");
+			widget->setCurrentIndex((int)params_->getSymbol(key));
 			connect(widget, SIGNAL(currentIndexChanged(int)), this, SLOT(changeSymbol_(int)));
 			return widget;
 		}
@@ -300,7 +292,7 @@ void ParameterEditor::change_(QColor value)
 
 void ParameterEditor::changeSymbol_(int value)
 {
-	params_->setSymbol(sender()->objectName(), (QScatterSeries::MarkerShape)(value-1));
+	params_->setSymbol(sender()->objectName(), (enum Parameters::Symbol)value);
 }
 
 void ParameterEditor::changeString_(int value)

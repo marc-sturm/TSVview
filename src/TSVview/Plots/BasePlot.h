@@ -5,9 +5,11 @@
 #include <QToolBar>
 #include <QToolButton>
 #include <QLabel>
-
 #include "Parameters.h"
 #include "ParameterEditor.h"
+#include <QChartView>
+
+using namespace QtCharts;
 
 class BasePlot
 		: public QWidget
@@ -27,7 +29,7 @@ public slots:
 protected:
 	Parameters params_;
 	QToolBar* toolbar_;
-	QwtPlot* plot_;
+	QChartView* plot_;
 	ParameterEditor* editor_;
 	QLabel* x_label_;
 	QLabel* y_label_;

@@ -41,8 +41,7 @@ BasePlot::BasePlot(QWidget *parent)
 	layout->addWidget(editor_, 0, 1);
 
 	//create plot and add it to layout
-	plot_ = new QwtPlot();
-	plot_->setCanvasBackground(Qt::white);
+	plot_ = new QChartView();
 	QSizePolicy policy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 	policy.setHorizontalStretch(100);
 	policy.setVerticalStretch(100);
@@ -111,12 +110,12 @@ void BasePlot::addSeparatorToToolbar()
 void BasePlot::copyToClipboard()
 {
 	//create empty image
-	QPixmap image(2*plot_->width(), 2*plot_->height());
+	QPixmap image(plot_->size());
 	image.fill(Qt::white);
 
 	//print plot to image
-	QwtPlotRenderer renderer;
-	renderer.renderTo(plot_, image);
+	QPainter painter(&image);
+	plot_->render(&painter);
 
 	QClipboard* clipboard = QApplication::clipboard();
 	clipboard->setPixmap(image);
@@ -135,8 +134,8 @@ void BasePlot::saveAsPng()
 		image.fill(Qt::white);
 
 		//print plot to image
-		QwtPlotRenderer renderer;
-		renderer.renderTo(plot_, image);
+		QPainter painter(&image);
+		plot_->render(&painter);
 
 		//save image
 		bool save_ok = image.save(filename, "PNG");
@@ -165,8 +164,9 @@ void BasePlot::saveAsSvg()
 		image.setViewBox(QRect(0, 0, 200, 200));
 		image.setTitle("SVG plot");
 		image.setDescription("SVG plot");
-		QwtPlotRenderer renderer;
-		renderer.renderTo(plot_, image);
+
+		QPainter painter(&image);
+		plot_->render(&painter);
 
 		//store the last used path
 		Settings::setPath("path_images", filename);
@@ -195,13 +195,13 @@ void BasePlot::enableMouseTracking(bool enabled)
 		}
 
 		//enable mouse tracking
-		plot_->canvas()->setMouseTracking(true);
-		plot_->canvas()->installEventFilter(this);
+		plot_->setMouseTracking(true);
+		plot_->installEventFilter(this);
 	}
 	else
 	{
-		plot_->canvas()->setMouseTracking(false);
-		plot_->canvas()->removeEventFilter(this);
+		plot_->setMouseTracking(false);
+		plot_->removeEventFilter(this);
 	}
 }
 
@@ -210,10 +210,9 @@ bool BasePlot::eventFilter(QObject* obj, QEvent* event)
 	if (event->type() == QEvent::MouseMove)
 	{
 		QMouseEvent* mouseEvent = dynamic_cast<QMouseEvent*>(event);
-		double x = plot_->invTransform(QwtPlot::QwtPlot::xBottom, mouseEvent->x());
-		x_label_->setText("x: " + QString::number(x));
-		double y = plot_->invTransform(QwtPlot::QwtPlot::yLeft, mouseEvent->y());
-		y_label_->setText("y: " + QString::number(y));
+		QPointF pos = plot_->mapToScene(mouseEvent->pos());
+		x_label_->setText("x: " + QString::number(pos.x()));
+		y_label_->setText("y: " + QString::number(pos.y()));
 
 		return true;
 	}

@@ -26,11 +26,11 @@ SOURCES += \
     FileIO/TextImportPreview.cpp \
     FileIO/TextFile.cpp \
     Plots/BasePlot.cpp \
-    Plots/ScatterPlot.cpp \
-    Plots/HistogramPlot.cpp \
+#    Plots/ScatterPlot.cpp \
+#    Plots/HistogramPlot.cpp \
     Plots/DataPlot.cpp \
     Base/DataGrid.cpp \
-    Plots/BoxPlot.cpp \
+#    Plots/BoxPlot.cpp \
     Signal/Smoothing.cpp \
     FileIO/ZXVFile.cpp \
     Base/BaseColumn.cpp \
@@ -60,11 +60,11 @@ HEADERS += \
     FileIO/TextImportPreview.h \
     FileIO/TextFile.h \
     Plots/BasePlot.h \
-    Plots/ScatterPlot.h \
-    Plots/HistogramPlot.h \
+#    Plots/ScatterPlot.h \
+#    Plots/HistogramPlot.h \
     Plots/DataPlot.h \
     Base/DataGrid.h \
-    Plots/BoxPlot.h \
+#    Plots/BoxPlot.h \
     Signal/Smoothing.h \
     FileIO/ZXVFile.h \
     Base/BaseColumn.h \

@@ -4,7 +4,6 @@
 
 DataPlot::DataPlot(QWidget *parent)
 	: BasePlot(parent)
-	, curves_()
 {
 	//connect parameters, editor and plot
 	connect(&params_, SIGNAL(valueChanged(QString)), this, SLOT(replot_()));
@@ -26,11 +25,11 @@ void DataPlot::setData(DataSet& data, QList<int> cols, QString filename)
 	filename_ = filename;
 
 	//clear data
-	for (int i=0; i<curves_.count(); ++i)
+	for (int i=0; i<series_.count(); ++i)
 	{
-		delete curves_[i];
+		delete series_[i];
 	}
-	curves_.clear();
+	series_.clear();
 
 	//check if curve names are equal (use index then)
 	QVector<QString> names;
@@ -75,7 +74,7 @@ void DataPlot::setData(DataSet& data, QList<int> cols, QString filename)
 		curve->setLegendAttribute(QwtPlotCurve::LegendShowBrush, true);
 		curve->setSamples(positions, data.numericColumn(cols[i]).values(filter));
 		curve->attach(plot_);
-		curves_.append(curve);
+		series_.append(curve);
 	}
 
 	//create parameters
@@ -83,9 +82,9 @@ void DataPlot::setData(DataSet& data, QList<int> cols, QString filename)
 	params_.clear();
 	QStringList line_types;
 	line_types << "none" << "solid" << "dotted" << "dashed";
-	for (int i=0; i<curves_.count(); ++i)
+	for (int i=0; i<series_.count(); ++i)
 	{
-		QString section = curves_.at(i)->title().text();
+		QString section = series_.at(i)->title().text();
 		params_.addColor(section + ":color", "", getColor_(i));
 		params_.addInt(section + ":line width", "", 1, 1, 999);
 		params_.addString(section + ":line type", "", getLineType_(i), line_types);
@@ -125,10 +124,10 @@ void DataPlot::setData(DataSet& data, QList<int> cols, QString filename)
 
 void DataPlot::replot_()
 {
-	for (int i=0; i<curves_.count(); ++i)
+	for (int i=0; i<series_.count(); ++i)
 	{
 		//set line pen
-		QString section = curves_.at(i)->title().text();
+		QString section = series_.at(i)->title().text();
 		QColor color = params_.getColor(section + ":color");
 		QString line_type = params_.getString(section + ":line type");
 		if (line_type!="none")
@@ -136,20 +135,20 @@ void DataPlot::replot_()
 			int line_width = params_.getInt(section + ":line width");
 			if (line_type=="solid")
 			{
-				curves_[i]->setPen(QPen(color, line_width, Qt::SolidLine));
+				series_[i]->setPen(QPen(color, line_width, Qt::SolidLine));
 			}
 			else if (line_type=="dashed")
 			{
-				curves_[i]->setPen(QPen(color, line_width, Qt::DashLine));
+				series_[i]->setPen(QPen(color, line_width, Qt::DashLine));
 			}
 			else if (line_type=="dotted")
 			{
-				curves_[i]->setPen(QPen(color, line_width, Qt::DotLine));
+				series_[i]->setPen(QPen(color, line_width, Qt::DotLine));
 			}
 		}
 		else
 		{
-			curves_[i]->setPen(QPen(Qt::NoPen));
+			series_[i]->setPen(QPen(Qt::NoPen));
 		}
 
 		//set symbol
@@ -158,11 +157,11 @@ void DataPlot::replot_()
 		{
 			int size = params_.getInt(section + ":symbol size");
 			int line_width = params_.getInt(section + ":symbol line width");
-			curves_[i]->setSymbol(new QwtSymbol(symbol_type, Qt::NoBrush, QPen(color, line_width), QSize(size,size)));
+			series_[i]->setSymbol(new QwtSymbol(symbol_type, Qt::NoBrush, QPen(color, line_width), QSize(size,size)));
 		}
 		else
 		{
-			curves_[i]->setSymbol(new QwtSymbol());
+			series_[i]->setSymbol(new QwtSymbol());
 		}
 	}
 

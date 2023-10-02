@@ -15,12 +15,9 @@
 #include "TextImportPreview.h"
 #include "XMLFile.h"
 #include "XMLImportPreview.h"
-#include "HistogramPlot.h"
 #include "StatisticsSummaryWidget.h"
 #include "CustomExceptions.h"
-#include "ScatterPlot.h"
 #include "DataPlot.h"
-#include "BoxPlot.h"
 #include "Settings.h"
 #include "Smoothing.h"
 #include "ZXVFile.h"
@@ -597,12 +594,15 @@ QString MainWindow::fileNameLabel()
 
 void MainWindow::histogram()
 {
+	//TODO add again
+	/*
 	int index = grid_->selectedColumns()[0];
 
 	HistogramPlot* hist = new HistogramPlot();
 	hist->setData(data_, index, QFileInfo(file_.name).baseName());
 	auto dlg = GUIHelper::createDialog(hist, "Histogram of '" + data_.column(index).headerOrIndex(index) + fileNameLabel());
 	dlg->exec();
+	*/
 }
 
 void MainWindow::basicStatistics()
@@ -617,13 +617,15 @@ void MainWindow::basicStatistics()
 
 void MainWindow::scatterPlot()
 {
+	//TODO add again
+	/*
 	int x = grid_->selectedColumns()[0];
 	int y = grid_->selectedColumns()[1];
-
 	ScatterPlot* plot = new ScatterPlot();
 	plot->setData(data_, x, y, QFileInfo(file_.name).baseName());
 	auto dlg = GUIHelper::createDialog(plot, "Scatterplot of '" + data_.column(x).headerOrIndex(x) + "' and '" + data_.column(y).headerOrIndex(y) + "'" + fileNameLabel());
 	dlg->exec();
+	*/
 }
 
 void MainWindow::dataPlot()
@@ -636,10 +638,13 @@ void MainWindow::dataPlot()
 
 void MainWindow::boxPlot()
 {
+	//TODO add again
+	/*
 	BoxPlot* plot = new BoxPlot();
 	plot->setData(data_, grid_->selectedColumns(), QFileInfo(file_.name).baseName());
 	auto dlg = GUIHelper::createDialog(plot, "BoxPlot" + fileNameLabel());
 	dlg->exec();
+	*/
 }
 
 void MainWindow::on_about_triggered(bool /*checked*/)

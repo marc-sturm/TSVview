@@ -14,7 +14,6 @@ public:
 	void setData(DataSet& data, QList<int> cols, QString filename);
 
 private:
-	QList<QwtPlotCurve*> curves_;
 	static QColor getColor_(int i);
 	static QString getLineType_(int i);
 
