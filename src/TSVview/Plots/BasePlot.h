@@ -29,7 +29,8 @@ public slots:
 protected:
 	Parameters params_;
 	QToolBar* toolbar_;
-	QChartView* plot_;
+	QChartView* chart_view_;
+	QChart* chart_;
 	ParameterEditor* editor_;
 	QLabel* x_label_;
 	QLabel* y_label_;

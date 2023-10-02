@@ -16,10 +16,11 @@
 BasePlot::BasePlot(QWidget *parent)
 	: QWidget(parent)
 	, params_()
-	, plot_(0)
-	, editor_(0)
-	, x_label_(0)
-	, y_label_(0)
+	, chart_view_(nullptr)
+	, chart_(nullptr)
+	, editor_(nullptr)
+	, x_label_(nullptr)
+	, y_label_(nullptr)
 {
 	//general settings
 	setMinimumWidth(500);
@@ -40,13 +41,13 @@ BasePlot::BasePlot(QWidget *parent)
 	editor_->setVisible(false);
 	layout->addWidget(editor_, 0, 1);
 
-	//create plot and add it to layout
-	plot_ = new QChartView();
+	//create plot and add it chart_view_yout
 	QSizePolicy policy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 	policy.setHorizontalStretch(100);
 	policy.setVerticalStretch(100);
-	plot_->setSizePolicy(policy);
-	layout->addWidget(plot_, 0, 2);
+	chart_view_ = new QChartView();
+	chart_view_->setSizePolicy(policy);
+	layout->addWidget(chart_view_, 0, 2);
 
 	//add settings button
 	QToolButton* button = new QToolButton();
@@ -110,12 +111,12 @@ void BasePlot::addSeparatorToToolbar()
 void BasePlot::copyToClipboard()
 {
 	//create empty image
-	QPixmap image(plot_->size());
+	QPixmap image(chart_view_->size());
 	image.fill(Qt::white);
 
 	//print plot to image
 	QPainter painter(&image);
-	plot_->render(&painter);
+	chart_view_->render(&painter);
 
 	QClipboard* clipboard = QApplication::clipboard();
 	clipboard->setPixmap(image);
@@ -130,12 +131,12 @@ void BasePlot::saveAsPng()
 	{
 
 		//create empty image
-		QPixmap image(plot_->width(), plot_->height());
+		QPixmap image(chart_view_->width(), chart_view_->height());
 		image.fill(Qt::white);
 
 		//print plot to image
 		QPainter painter(&image);
-		plot_->render(&painter);
+		chart_view_->render(&painter);
 
 		//save image
 		bool save_ok = image.save(filename, "PNG");
@@ -166,7 +167,7 @@ void BasePlot::saveAsSvg()
 		image.setDescription("SVG plot");
 
 		QPainter painter(&image);
-		plot_->render(&painter);
+		chart_view_->render(&painter);
 
 		//store the last used path
 		Settings::setPath("path_images", filename);
@@ -195,13 +196,13 @@ void BasePlot::enableMouseTracking(bool enabled)
 		}
 
 		//enable mouse tracking
-		plot_->setMouseTracking(true);
-		plot_->installEventFilter(this);
+		chart_view_->setMouseTracking(true);
+		chart_view_->installEventFilter(this);
 	}
 	else
 	{
-		plot_->setMouseTracking(false);
-		plot_->removeEventFilter(this);
+		chart_view_->setMouseTracking(false);
+		chart_view_->removeEventFilter(this);
 	}
 }
 
@@ -210,7 +211,7 @@ bool BasePlot::eventFilter(QObject* obj, QEvent* event)
 	if (event->type() == QEvent::MouseMove)
 	{
 		QMouseEvent* mouseEvent = dynamic_cast<QMouseEvent*>(event);
-		QPointF pos = plot_->mapToScene(mouseEvent->pos());
+		QPointF pos = chart_view_->mapToScene(mouseEvent->pos());
 		x_label_->setText("x: " + QString::number(pos.x()));
 		y_label_->setText("y: " + QString::number(pos.y()));
 

@@ -1,4 +1,6 @@
 #include <limits>
+#include <QLineSeries>
+#include <QDebug>
 #include "DataPlot.h"
 #include "BasicStatistics.h"
 
@@ -6,15 +8,15 @@ DataPlot::DataPlot(QWidget *parent)
 	: BasePlot(parent)
 {
 	//connect parameters, editor and plot
-	connect(&params_, SIGNAL(valueChanged(QString)), this, SLOT(replot_()));
+	//TODO connect(&params_, SIGNAL(valueChanged(QString)), this, SLOT(replot_()));
 
 	//format plot
-	QwtLegend* legend = new QwtLegend();
-	legend->setDefaultItemMode(QwtLegendData::Checkable);
-	plot_->insertLegend(legend, QwtPlot::RightLegend);
+	chart_ = new QChart();
+	chart_->legend()->setVisible(true);
+	chart_->legend()->setAlignment(Qt::AlignRight);
 
 	//plots needs to be redrawn if legend items are checked/unckeched
-	connect(legend, SIGNAL(checked(QVariant,bool,int)), this, SLOT(legendChecked_(QVariant,bool,int)));
+	//TODO connect(legend, SIGNAL(checked(QVariant,bool,int)), this, SLOT(legendChecked_(QVariant,bool,int)));
 
 	//enable mouse tracking
 	enableMouseTracking(true);
@@ -24,19 +26,13 @@ void DataPlot::setData(DataSet& data, QList<int> cols, QString filename)
 {
 	filename_ = filename;
 
-	//clear data
-	for (int i=0; i<series_.count(); ++i)
-	{
-		delete series_[i];
-	}
-	series_.clear();
-
 	//check if curve names are equal (use index then)
 	QVector<QString> names;
 	for (int i=0; i<cols.count(); ++i)
 	{
 		names.append(data.column(cols[i]).headerOrIndex(cols[i]));
 	}
+
 	bool name_collision = false;
 	for (int i=0; i<names.count(); ++i)
 	{
@@ -59,24 +55,25 @@ void DataPlot::setData(DataSet& data, QList<int> cols, QString filename)
 
 	//create curves
 	QBitArray filter = data.getRowFilter(false);
-	int size = filter.count(true);
-	QVector<double> positions;
-	positions.reserve(size);
-	for(int i=0; i<size; ++i)
-	{
-		positions.append(i);
-	}
 	for (int i=0; i<cols.count(); ++i)
 	{
-		QwtPlotCurve* curve = new QwtPlotCurve(names[i]);
-		curve->setLegendAttribute(QwtPlotCurve::LegendShowLine, true);
-		curve->setLegendAttribute(QwtPlotCurve::LegendShowSymbol, true);
-		curve->setLegendAttribute(QwtPlotCurve::LegendShowBrush, true);
-		curve->setSamples(positions, data.numericColumn(cols[i]).values(filter));
-		curve->attach(plot_);
-		series_.append(curve);
-	}
+		QLineSeries* series = new QLineSeries();
+		series->setName(names[i]);
 
+		const NumericColumn& col = data.numericColumn(cols[i]);
+		double pos = 1.0;
+		for(int i=0; i<col.count(); ++i)
+		{
+			if (!filter.at(i)) continue;
+			series->append(pos, col.value(i));
+			pos += 1.0;
+		}
+
+		chart_->addSeries(series);
+	}
+	chart_->createDefaultAxes();
+	chart_view_->setChart(chart_);
+/*
 	//create parameters
 	params_.blockSignals(true);
 	params_.clear();
@@ -120,10 +117,12 @@ void DataPlot::setData(DataSet& data, QList<int> cols, QString filename)
 	zoomer_->setRubberBandPen(QPen(Qt::red, 2, Qt::DotLine));
 	zoomer_->setTrackerMode(QwtPicker::AlwaysOff);
 	zoomer_->setZoomBase(QRectF(0, y_min, size, y_max-y_min));
+*/
 }
 
 void DataPlot::replot_()
 {
+	/*
 	for (int i=0; i<series_.count(); ++i)
 	{
 		//set line pen
@@ -167,12 +166,13 @@ void DataPlot::replot_()
 
 	//replot
 	plot_->replot();
+	*/
 }
 
 void DataPlot::legendChecked_(const QVariant& info, bool on, int /*index*/)
 {
-	plot_->infoToItem(info)->setVisible(!on);
-	plot_->replot();
+//TODO	plot_->infoToItem(info)->setVisible(!on);
+//TODO	plot_->replot();
 }
 
 QColor DataPlot::getColor_(int i)
