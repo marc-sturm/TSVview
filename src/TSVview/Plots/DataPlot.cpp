@@ -1,50 +1,46 @@
 #include <limits>
 #include <QLineSeries>
 #include <QDebug>
+#include <QValueAxis>
 #include "DataPlot.h"
 #include "BasicStatistics.h"
+#include "Exceptions.h"
 
 DataPlot::DataPlot(QWidget *parent)
 	: BasePlot(parent)
 {
 	//connect parameters, editor and plot
-	//TODO connect(&params_, SIGNAL(valueChanged(QString)), this, SLOT(replot_()));
+	connect(&params_, SIGNAL(valueChanged(QString)), this, SLOT(parameterChanged(QString)));
 
 	//format plot
 	chart_ = new QChart();
 	chart_->legend()->setVisible(true);
 	chart_->legend()->setAlignment(Qt::AlignRight);
-
+	chart_->setBackgroundRoundness(0);
+	chart_->setMargins(QMargins(0,0,0,0));
 	//plots needs to be redrawn if legend items are checked/unckeched
 	//TODO connect(legend, SIGNAL(checked(QVariant,bool,int)), this, SLOT(legendChecked_(QVariant,bool,int)));
 
 	//enable mouse tracking
-	enableMouseTracking(true);
+	enableMouseTracking();
 }
 
 void DataPlot::setData(DataSet& data, QList<int> cols, QString filename)
 {
+	//init
 	filename_ = filename;
+	QStringList line_types = QStringList() << "none" << "solid" << "dotted" << "dashed";
+	QStringList show_symbols = QStringList() << "no" << "yes";
+	params_.blockSignals(true);
+	params_.clear();
 
-	//check if curve names are equal (use index then)
-	QVector<QString> names;
+	//check if there are duplicates names of series - use indices then
+	QStringList names;
 	for (int i=0; i<cols.count(); ++i)
 	{
-		names.append(data.column(cols[i]).headerOrIndex(cols[i]));
+		names << data.column(cols[i]).headerOrIndex(cols[i]);
 	}
-
-	bool name_collision = false;
-	for (int i=0; i<names.count(); ++i)
-	{
-		for (int j=i+1; j<names.count(); ++j)
-		{
-			if (names[i]==names[j])
-			{
-				name_collision = true;
-			}
-		}
-	}
-	if (name_collision)
+	if (names.removeDuplicates()>0)
 	{
 		names.clear();
 		for (int i=0; i<cols.count(); ++i)
@@ -53,13 +49,15 @@ void DataPlot::setData(DataSet& data, QList<int> cols, QString filename)
 		}
 	}
 
-	//create curves
+	//create series
 	QBitArray filter = data.getRowFilter(false);
 	for (int i=0; i<cols.count(); ++i)
 	{
-		QLineSeries* series = new QLineSeries();
-		series->setName(names[i]);
+		QString name = names[i];
+		param_name_to_index_[name] = i;
 
+		QLineSeries* series = new QLineSeries();
+		series->setName(name);
 		const NumericColumn& col = data.numericColumn(cols[i]);
 		double pos = 1.0;
 		for(int i=0; i<col.count(); ++i)
@@ -69,104 +67,81 @@ void DataPlot::setData(DataSet& data, QList<int> cols, QString filename)
 			pos += 1.0;
 		}
 
+		//set default parameters
+		params_.addColor(name + ":color", "", getColor_(i));
+		params_.addInt(name + ":line width", "", 1, 1, 999);
+		params_.addString(name + ":line type", "", getLineType_(i), line_types);
+		params_.addString(name + ":points visible", "", "no", show_symbols);
+
+		//set series style
+		series->setPen(pen(name));
+		series->setPointsVisible(pointsVisible(name));
+		//series->setUseOpenGL(true);
+
+		//add series
 		chart_->addSeries(series);
 	}
+
+	//format axes
 	chart_->createDefaultAxes();
-	chart_view_->setChart(chart_);
-/*
-	//create parameters
-	params_.blockSignals(true);
-	params_.clear();
-	QStringList line_types;
-	line_types << "none" << "solid" << "dotted" << "dashed";
-	for (int i=0; i<series_.count(); ++i)
-	{
-		QString section = series_.at(i)->title().text();
-		params_.addColor(section + ":color", "", getColor_(i));
-		params_.addInt(section + ":line width", "", 1, 1, 999);
-		params_.addString(section + ":line type", "", getLineType_(i), line_types);
-		params_.addSymbol(section + ":symbol", "", QwtSymbol::NoSymbol);
-		params_.addInt(section + ":symbol size", "", 6, 2, 999);
-		params_.addInt(section + ":symbol line width", "", 1, 1, 999);
-	}
+	QValueAxis* x_axis = qobject_cast<QValueAxis*>(chart_->axes(Qt::Horizontal).at(0));
+	x_axis->setTitleText("data point");
+	x_axis->setLabelFormat("%i");
+	QValueAxis* y_axis = qobject_cast<QValueAxis*>(chart_->axes(Qt::Vertical).at(0));
+	y_axis->setTitleText("value");
+
+	//set parameters
 	editor_->setParameters(params_);
 	params_.blockSignals(false);
 
-	//dynamic formatting of plot
-	double y_min = std::numeric_limits<double>::max();
-	double y_max = -std::numeric_limits<double>::max();
-	for (int i=0; i<cols.count(); ++i)
-	{
-		QPair<double, double> stats = data.numericColumn(cols[i]).getMinMax(filter);
-		y_min = std::min(y_min, stats.first);
-		y_max = std::max(y_max, stats.second);
-	}
-	plot_->setAxisScale(QwtPlot::yLeft, y_min, y_max);
-	plot_->setAxisTitle(QwtPlot::yLeft, QwtText("value"));
-	plot_->setAxisScale(QwtPlot::xBottom, 1, size);
-	plot_->setAxisTitle(QwtPlot::xBottom, QwtText("data point"));
-
-	replot_();
-
-	//add panner
-	QwtPlotPanner* panner = new QwtPlotPanner(plot_->canvas());
-	panner->setMouseButton(Qt::LeftButton, Qt::ControlModifier);
-
-	//add zoomer
-	QwtPlotZoomer* zoomer_ = new QwtPlotZoomer(plot_->canvas(), true);
-	zoomer_->setRubberBandPen(QPen(Qt::red, 2, Qt::DotLine));
-	zoomer_->setTrackerMode(QwtPicker::AlwaysOff);
-	zoomer_->setZoomBase(QRectF(0, y_min, size, y_max-y_min));
-*/
+	//show chart
+	chart_view_->setChart(chart_);
 }
 
-void DataPlot::replot_()
+QPen DataPlot::pen(QString series_name)
 {
-	/*
-	for (int i=0; i<series_.count(); ++i)
+	//no line
+	QString line_type = params_.getString(series_name + ":line type");
+	if (line_type=="none") return QPen(Qt::NoPen);
+
+	//line
+	QColor color = params_.getColor(series_name + ":color");
+	int line_width = params_.getInt(series_name + ":line width");
+	Qt::PenStyle style = Qt::SolidLine;
+	if (line_type=="dashed")
 	{
-		//set line pen
-		QString section = series_.at(i)->title().text();
-		QColor color = params_.getColor(section + ":color");
-		QString line_type = params_.getString(section + ":line type");
-		if (line_type!="none")
-		{
-			int line_width = params_.getInt(section + ":line width");
-			if (line_type=="solid")
-			{
-				series_[i]->setPen(QPen(color, line_width, Qt::SolidLine));
-			}
-			else if (line_type=="dashed")
-			{
-				series_[i]->setPen(QPen(color, line_width, Qt::DashLine));
-			}
-			else if (line_type=="dotted")
-			{
-				series_[i]->setPen(QPen(color, line_width, Qt::DotLine));
-			}
-		}
-		else
-		{
-			series_[i]->setPen(QPen(Qt::NoPen));
-		}
-
-		//set symbol
-		QwtSymbol::Style symbol_type = params_.getSymbol(section + ":symbol");
-		if (symbol_type!=QwtSymbol::NoSymbol)
-		{
-			int size = params_.getInt(section + ":symbol size");
-			int line_width = params_.getInt(section + ":symbol line width");
-			series_[i]->setSymbol(new QwtSymbol(symbol_type, Qt::NoBrush, QPen(color, line_width), QSize(size,size)));
-		}
-		else
-		{
-			series_[i]->setSymbol(new QwtSymbol());
-		}
+		style = Qt::DashLine;
 	}
+	else if (line_type=="dotted")
+	{
+		style = Qt::DotLine;
+	}
+	return QPen(color, line_width, style);
+}
 
-	//replot
-	plot_->replot();
-	*/
+bool DataPlot::pointsVisible(QString series_name)
+{
+	return params_.getString(series_name + ":points visible")=="yes";
+}
+
+void DataPlot::parameterChanged(QString series_and_parameter)
+{
+	int sep_idx = series_and_parameter.indexOf(':');
+	if (sep_idx==-1) THROW(ProgrammingException, "Invalid parameter change format: " + series_and_parameter);
+	QString series_name = series_and_parameter.left(sep_idx);
+	int series_idx = param_name_to_index_[series_name];
+	QString parameter = series_and_parameter.mid(sep_idx+1);
+
+
+	QLineSeries* series = qobject_cast<QLineSeries*>(chart_->series().at(series_idx));
+	if (parameter=="points visible")
+	{
+		series->setPointsVisible(pointsVisible(series_name));
+	}
+	else
+	{
+		series->setPen(pen(series_name));
+	}
 }
 
 void DataPlot::legendChecked_(const QVariant& info, bool on, int /*index*/)
@@ -207,14 +182,18 @@ QColor DataPlot::getColor_(int i)
 
 QString DataPlot::getLineType_(int i)
 {
-	i = i%12;
+	i = (i/6)%3;
 
-	if (i>=6)
+	if (i==0)
+	{
+		return "solid";
+	}
+	else if (i==1)
 	{
 		return "dashed";
 	}
 	else
 	{
-		return "solid";
+		return "dotted";
 	}
 }

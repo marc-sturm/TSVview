@@ -45,8 +45,10 @@ BasePlot::BasePlot(QWidget *parent)
 	QSizePolicy policy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 	policy.setHorizontalStretch(100);
 	policy.setVerticalStretch(100);
-	chart_view_ = new QChartView();
+	chart_view_ = new MyChartView();
 	chart_view_->setSizePolicy(policy);
+	chart_view_->setRenderHint(QPainter::Antialiasing, true);
+	chart_view_->setBackgroundBrush(Qt::white);
 	layout->addWidget(chart_view_, 0, 2);
 
 	//add settings button
@@ -174,57 +176,26 @@ void BasePlot::saveAsSvg()
 	}
 }
 
-
-void BasePlot::enableMouseTracking(bool enabled)
+void BasePlot::enableMouseTracking()
 {
-	QGridLayout* main_layout = (QGridLayout*)layout();
-	if (enabled)
+	chart_view_->enableMouseTracking();
+	if (y_label_==nullptr)
 	{
-		//create status bar
-		if (y_label_==0)
-		{
-			QBoxLayout* status_bar_layout =  new QBoxLayout(QBoxLayout::RightToLeft);
-			main_layout->addLayout(status_bar_layout, 1, 0, 1, 3, Qt::AlignHCenter);
+		QBoxLayout* status_bar_layout =  new QBoxLayout(QBoxLayout::RightToLeft);
+		QGridLayout* main_layout = (QGridLayout*)layout();
+		main_layout->addLayout(status_bar_layout, 1, 0, 1, 3, Qt::AlignHCenter);
 
-			//fill status bar layout with widgets
-			y_label_ = new QLabel();
-			y_label_->setMinimumWidth(70);
-			status_bar_layout->addWidget(y_label_);
-			x_label_ = new QLabel();
-			x_label_->setMinimumWidth(70);
-			status_bar_layout->addWidget(x_label_);
-		}
+		//Y axis
+		y_label_ = new QLabel();
+		y_label_->setMinimumWidth(70);
+		status_bar_layout->addWidget(y_label_);
+		connect(chart_view_, SIGNAL(yPosition(QString)), y_label_, SLOT(setText(QString)));
 
-		//enable mouse tracking
-		chart_view_->setMouseTracking(true);
-		chart_view_->installEventFilter(this);
+		//X axis
+		x_label_ = new QLabel();
+		x_label_->setMinimumWidth(70);
+		status_bar_layout->addWidget(x_label_);
+		connect(chart_view_, SIGNAL(xPosition(QString)), x_label_, SLOT(setText(QString)));
 	}
-	else
-	{
-		chart_view_->setMouseTracking(false);
-		chart_view_->removeEventFilter(this);
-	}
-}
-
-bool BasePlot::eventFilter(QObject* obj, QEvent* event)
-{
-	if (event->type() == QEvent::MouseMove)
-	{
-		QMouseEvent* mouseEvent = dynamic_cast<QMouseEvent*>(event);
-		QPointF pos = chart_view_->mapToScene(mouseEvent->pos());
-		x_label_->setText("x: " + QString::number(pos.x()));
-		y_label_->setText("y: " + QString::number(pos.y()));
-
-		return true;
-	}
-	if (event->type() == QEvent::Leave && y_label_!=0)
-	{
-		x_label_->setText("");
-		y_label_->setText("");
-
-		return true;
-	}
-
-	return QObject::eventFilter(obj, event);
 }
 

@@ -31,6 +31,7 @@ SOURCES += \
     Plots/DataPlot.cpp \
     Base/DataGrid.cpp \
 #    Plots/BoxPlot.cpp \
+    Plots/MyChartView.cpp \
     Signal/Smoothing.cpp \
     FileIO/ZXVFile.cpp \
     Base/BaseColumn.cpp \
@@ -65,6 +66,7 @@ HEADERS += \
     Plots/DataPlot.h \
     Base/DataGrid.h \
 #    Plots/BoxPlot.h \
+    Plots/MyChartView.h \
     Signal/Smoothing.h \
     FileIO/ZXVFile.h \
     Base/BaseColumn.h \

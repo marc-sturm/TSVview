@@ -87,8 +87,8 @@ private:
 	enum FileType
 		{
 		TXT,
-		XML,
-		ZXV,
+		XML, //TODO remove this format as well?
+		ZXV, //TODO remove this format
 		NONE
 		};
 
