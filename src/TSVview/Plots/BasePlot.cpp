@@ -49,6 +49,8 @@ BasePlot::BasePlot(QWidget *parent)
 	chart_view_->setSizePolicy(policy);
 	chart_view_->setRenderHint(QPainter::Antialiasing, true);
 	chart_view_->setBackgroundBrush(Qt::white);
+	chart_view_->setRubberBand(QChartView::RectangleRubberBand);
+	connect(chart_view_, SIGNAL(resetZoom()), this, SLOT(resetZoom()));
 	layout->addWidget(chart_view_, 0, 2);
 
 	//add settings button
@@ -174,6 +176,49 @@ void BasePlot::saveAsSvg()
 		//store the last used path
 		Settings::setPath("path_images", filename);
 	}
+}
+
+void BasePlot::toggleSeriesVisibility()
+{
+	QLegendMarker* marker = qobject_cast<QLegendMarker*>(sender());
+	QAbstractSeries* series = marker->series();
+
+	//toggle visibility
+	if(series->isVisible())
+	{
+		series->setVisible(false);
+		marker->setVisible(true);
+	}
+	else
+	{
+		series->setVisible(true);
+	}
+
+	//shade legend marker according to visibility
+	double alpha = series->isVisible() ? 1.0 : 0.5;
+
+	QBrush brush = marker->labelBrush();
+	QColor color = brush.color();
+	color.setAlphaF(alpha);
+	brush.setColor(color);
+	marker->setLabelBrush(brush);
+
+	brush = marker->brush();
+	color = brush.color();
+	color.setAlphaF(alpha);
+	brush.setColor(color);
+	marker->setBrush(brush);
+
+	QPen pen = marker->pen();
+	color = pen.color();
+	color.setAlphaF(alpha);
+	pen.setColor(color);
+	marker->setPen(pen);
+}
+
+void BasePlot::resetZoom()
+{
+	chart_->zoomReset();
 }
 
 void BasePlot::enableMouseTracking()

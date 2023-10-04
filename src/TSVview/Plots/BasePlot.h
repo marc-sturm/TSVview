@@ -22,7 +22,8 @@ public slots:
 	void copyToClipboard();
 	void saveAsPng();
 	void saveAsSvg();
-
+	void toggleSeriesVisibility();
+	void resetZoom();
 
 protected:
 	Parameters params_;

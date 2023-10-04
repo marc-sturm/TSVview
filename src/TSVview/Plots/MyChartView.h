@@ -2,6 +2,7 @@
 #define MYCHARTVIEW_H
 
 #include <QChartView>
+#include <QLegendMarker>
 
 using namespace QtCharts;
 
@@ -16,10 +17,12 @@ public:
 signals:
 	void xPosition(QString);
 	void yPosition(QString);
+	void resetZoom();
 
 protected:
 	bool eventFilter(QObject* obj, QEvent* event) override;
 	 void mouseMoveEvent(QMouseEvent* event) override;
+	 void mouseDoubleClickEvent(QMouseEvent* event) override;
 
 private:
 	bool mouse_tracking_ = false;

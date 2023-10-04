@@ -18,8 +18,6 @@ DataPlot::DataPlot(QWidget *parent)
 	chart_->legend()->setAlignment(Qt::AlignRight);
 	chart_->setBackgroundRoundness(0);
 	chart_->setMargins(QMargins(0,0,0,0));
-	//plots needs to be redrawn if legend items are checked/unckeched
-	//TODO connect(legend, SIGNAL(checked(QVariant,bool,int)), this, SLOT(legendChecked_(QVariant,bool,int)));
 
 	//enable mouse tracking
 	enableMouseTracking();
@@ -76,7 +74,7 @@ void DataPlot::setData(DataSet& data, QList<int> cols, QString filename)
 		//set series style
 		series->setPen(pen(name));
 		series->setPointsVisible(pointsVisible(name));
-		//series->setUseOpenGL(true);
+		//TODO series->setUseOpenGL(true);
 
 		//add series
 		chart_->addSeries(series);
@@ -96,6 +94,12 @@ void DataPlot::setData(DataSet& data, QList<int> cols, QString filename)
 
 	//show chart
 	chart_view_->setChart(chart_);
+
+	//make legend markers clickable
+	foreach(QLegendMarker* marker, chart_->legend()->markers())
+	{
+		connect(marker, SIGNAL(clicked()), this, SLOT(toggleSeriesVisibility()));
+	}
 }
 
 QPen DataPlot::pen(QString series_name)
@@ -142,12 +146,6 @@ void DataPlot::parameterChanged(QString series_and_parameter)
 	{
 		series->setPen(pen(series_name));
 	}
-}
-
-void DataPlot::legendChecked_(const QVariant& info, bool on, int /*index*/)
-{
-//TODO	plot_->infoToItem(info)->setVisible(!on);
-//TODO	plot_->replot();
 }
 
 QColor DataPlot::getColor_(int i)

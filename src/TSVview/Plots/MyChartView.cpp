@@ -28,6 +28,17 @@ void MyChartView::mouseMoveEvent(QMouseEvent* event)
 	QChartView::mouseMoveEvent(event);
 }
 
+void MyChartView::mouseDoubleClickEvent(QMouseEvent* event)
+{
+	if (event->button()==Qt::LeftButton)
+	{
+		emit resetZoom();
+		event->accept();
+	}
+
+	QChartView::mouseDoubleClickEvent(event);
+}
+
 bool MyChartView::eventFilter(QObject* obj, QEvent* event)
 {
 	if (event->type() == QEvent::Leave)

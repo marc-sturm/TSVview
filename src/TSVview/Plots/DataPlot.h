@@ -21,7 +21,6 @@ private:
 
 private slots:
 	void parameterChanged(QString parameter);
-	void legendChecked_(const QVariant& info, bool on, int index);
 };
 
 #endif
