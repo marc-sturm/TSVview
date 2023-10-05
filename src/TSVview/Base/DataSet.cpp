@@ -156,7 +156,7 @@ void DataSet::removeColumns(QSet<int> columns)
 	setModified(true);
 }
 
-void DataSet::addColumn(QString header, QVector<double> data, bool auto_format, int index)
+void DataSet::addColumn(QString header, const QVector<double>& data, bool auto_format, int index)
 {
 	Q_ASSERT(rowCount()==0 || data.size()==rowCount());
 
@@ -186,7 +186,7 @@ void DataSet::addColumn(QString header, QVector<double> data, bool auto_format, 
 	setModified(true);
 }
 
-void DataSet::addColumn(QString header, QVector<QString> data, bool auto_format, int index)
+void DataSet::addColumn(QString header, const QVector<QString>& data, bool auto_format, int index)
 {
 	Q_ASSERT(rowCount()==0 || data.size()==rowCount());
 

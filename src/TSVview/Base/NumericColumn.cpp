@@ -120,6 +120,17 @@ void NumericColumn::setValue(int row, double value)
 	emit dataChanged();
 }
 
+void NumericColumn::appendString(const QString& value)
+{
+	bool ok = true;
+	double fvalue = value.toDouble(&ok);
+	if (!ok) THROW(Exception,"Cannot convert '" + value + "' to a number!");
+
+	values_.append(fvalue);
+
+	//emit dataChanged();
+}
+
 void NumericColumn::resize(int rows)
 {
 	values_.resize(rows);

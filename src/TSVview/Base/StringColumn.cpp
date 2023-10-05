@@ -26,6 +26,13 @@ void StringColumn::setString(int row, const QString& value)
 	emit dataChanged();
 }
 
+void StringColumn::appendString(const QString& value)
+{
+	values_ << value;
+
+	emit dataChanged();
+}
+
 const QVector<QString>& StringColumn::values() const
 {
 	return values_;

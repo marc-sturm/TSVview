@@ -34,6 +34,7 @@ public:
 	/// Returns a string representation of a value for displaying.
 	virtual QString string(int row) const = 0;
 	virtual void setString(int row, const QString& value) = 0;
+	virtual void appendString(const QString& value) = 0;
 
 	/// Automatically formats the column according to the content. The default implementation is empty.
 	virtual void autoFormat();

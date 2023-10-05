@@ -6,7 +6,6 @@
 
 #include "FilePreview.h"
 #include "DataSet.h"
-#include "XMLFile.h"
 #include "CustomExceptions.h"
 #include "Settings.h"
 

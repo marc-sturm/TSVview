@@ -3,7 +3,7 @@
 #include <QTextStream>
 #include <QStringList>
 #include <QDebug>
-
+#include <QTime>
 #include "TextFile.h"
 #include "CustomExceptions.h"
 
@@ -24,10 +24,14 @@ void TextFile::load(DataSet& data, QString filename, Parameters params, int prev
 	}
 
 	QTextStream stream(&file);
+	QTime timer;
+	timer.start();
 	determineColumns(data, stream, params, preview_lines);
+	qDebug() << "determining columns c=" << data.columnCount() << "ms=" << timer.restart();
 
 	stream.seek(0);
 	fromStream(data, stream, params, filename, preview_lines);
+	qDebug() << "loading data c=" << data.columnCount() << "r=" << data.rowCount() << "ms=" << timer.restart();
 }
 
 void TextFile::fromStream(DataSet& data, QTextStream& stream, QString location, Parameters params, int preview_lines)
@@ -66,10 +70,7 @@ void TextFile::fromStream(DataSet& data, QTextStream& stream, Parameters params,
 		QString line = stream.readLine();
 
 		// Skip empty lines
-		if (line.trimmed()=="")
-		{
-			continue;
-		}
+		if (line.trimmed()=="") continue;
 
 		// Store comment lines
 		if (comment!=QChar::Null && line[0]==comment)
@@ -91,12 +92,12 @@ void TextFile::fromStream(DataSet& data, QTextStream& stream, Parameters params,
 			continue;
 		}
 
-		// Catch wrong column count
+		//split
 		QStringList parts = line.split(separator);
 		if (parts.size()!=cols)
 		{
 			data.clear(true);
-			THROW(FileIOException,"Wrong number of elements in line " + QString::number(row+1) + " of '" + location + "'. " +  QString::number(cols) + " elements expected.");
+			THROW(FileParseException, "Wrong number of elements in line " + QString::number(row+1) + " of '" + location + "'. " +  QString::number(cols) + " elements expected, but " + QString::number(parts.count()) + " found:\n"+line);
 		}
 
 		// Handle quotes
@@ -111,8 +112,7 @@ void TextFile::fromStream(DataSet& data, QTextStream& stream, Parameters params,
 		// Assign data
 		for (int c=0; c<cols; ++c)
 		{
-			data.column(c).resize(row+1);
-			data.column(c).setString(row, parts[c]);
+			data.column(c).appendString(parts[c]);
 		}
 
 		++row;
@@ -170,9 +170,9 @@ void TextFile::fromStream(DataSet& data, QTextStream& stream, Parameters params,
 	data.setModified(false);
 }
 
-void TextFile::determineColumns(DataSet& data, QTextStream& stream, Parameters params, int preview_lines)
+void TextFile::determineColumns(DataSet& data, QTextStream& stream, const Parameters& params, int preview_lines)
 {
-	QChar comment = params.getChar("comment");
+	QChar comment_char = params.getChar("comment");
 	QString separator = params.getChar("separator");
 	QChar quote = params.getChar("quote");
 	bool has_quote = (quote!=QChar::Null);
@@ -181,26 +181,20 @@ void TextFile::determineColumns(DataSet& data, QTextStream& stream, Parameters p
 		separator = quote + separator + quote;
 	}
 	bool first_line_is_comment = params.getBool("first_line_is_comment");
-	QSet<int> non_numeric_columns;
+	QSet<int> numeric_columns;
 
 	bool is_first_content_line = true;
-	int cols = 0;
+	int cols = -1;
 	int row = 0;
 	while (!stream.atEnd() && (preview_lines==-1 || row < preview_lines))
 	{
 		QString line = stream.readLine();
 
 		// Skip empty lines
-		if (line.trimmed()=="")
-		{
-			continue;
-		}
+		if (line.trimmed()=="") continue;
 
 		// Skip comment lines
-		if (comment!=QChar::Null && line[0]==comment)
-		{
-			continue;
-		}
+		if (comment_char!=QChar::Null && line[0]==comment_char) continue;
 
 		// Skip first line if requested
 		if (first_line_is_comment && is_first_content_line)
@@ -211,9 +205,17 @@ void TextFile::determineColumns(DataSet& data, QTextStream& stream, Parameters p
 
 		// Split
 		QStringList parts = line.split(separator);
-		if (parts.size()>cols)
+		if (cols==-1)
 		{
 			cols = parts.size();
+			for (int i=0; i<cols; ++i) numeric_columns << i;
+		}
+		else
+		{
+			if (parts.count()!=cols)
+			{
+				THROW(FileParseException, "Number of columns differs for lines!\nExpected " + QString::number(cols) + ", but found " + QString::number(parts.count()) + " in line " + QString::number(row+1) + ":\n" + line);
+			}
 		}
 
 		// Handle quotes
@@ -225,15 +227,12 @@ void TextFile::determineColumns(DataSet& data, QTextStream& stream, Parameters p
 			parts[parts.count()-1] = part.mid(0, part.count()-1);
 		}
 
-		//Try to convert numbers
-		for (int c=0; c<parts.size(); ++c)
+		//try to convert numbers
+		foreach(int c, numeric_columns)
 		{
 			bool ok = true;
 			parts[c].toDouble(&ok);
-			if (!ok)
-			{
-				non_numeric_columns.insert(c);
-			}
+			if (!ok) numeric_columns.remove(c);
 		}
 
 		++row;
@@ -243,13 +242,17 @@ void TextFile::determineColumns(DataSet& data, QTextStream& stream, Parameters p
 	data.clear(false);
 	for (int i=0; i<cols; ++i)
 	{
-		if (non_numeric_columns.contains(i))
+		if (numeric_columns.contains(i))
 		{
-			data.addColumn("", QVector<QString>(), false);
+			QVector<double> vector;
+			vector.reserve(row+1);
+			data.addColumn("", vector, false);
 		}
 		else
 		{
-			data.addColumn("", QVector<double>(), false);
+			QVector<QString> vector;
+			vector.reserve(row+1);
+			data.addColumn("", vector, false);
 		}
 	}
 }

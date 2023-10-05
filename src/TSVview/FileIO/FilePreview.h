@@ -5,7 +5,6 @@
 #include <QTableWidget>
 
 #include "ui_FilePreview.h"
-#include "XMLFile.h"
 #include "DataGrid.h"
 
 class FilePreview

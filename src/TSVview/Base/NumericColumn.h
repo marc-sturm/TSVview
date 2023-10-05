@@ -26,6 +26,7 @@ public:
 	// See base class
 	virtual QString string(int row) const;
 	virtual void setString(int row, const QString& value);
+	void appendString(const QString& value);
 
 	virtual void setFilter(Filter filter);
 	virtual void matchFilter(QBitArray& array) const;
