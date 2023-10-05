@@ -9,7 +9,6 @@
 #include <QMimeData>
 #include <QWindow>
 #include <QTextBrowser>
-
 #include "MainWindow.h"
 #include "TextFile.h"
 #include "TextImportPreview.h"
@@ -23,6 +22,8 @@
 #include "GUIHelper.h"
 #include "ScrollableTextDialog.h"
 #include "Helper.h"
+
+//TODO allow text filters on several columns (all)
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
@@ -461,10 +462,9 @@ void MainWindow::tableContextMenu(QPoint point)
 		//signal processing
 		menu = main_menu->addMenu("Signal processing");
 		menu->setEnabled(selected_count==1 && text_count==0);
-		action = menu->addAction("Moving average", this, SLOT(smoothAverage()));
-		action = menu->addAction("Moving median", this, SLOT(smoothMedian()));
-		action = menu->addAction("Savitzky-Golay", this, SLOT(smoothSavitzkyGolay()));
-		action = menu->addAction("Bessel", this, SLOT(smoothBessel()));
+		menu->addAction("Moving average", this, SLOT(smoothAverage()));
+		menu->addAction("Moving median", this, SLOT(smoothMedian()));
+		menu->addAction("Savitzky-Golay", this, SLOT(smoothSavitzkyGolay()));
 	}
 
 	//execute
@@ -495,7 +495,7 @@ void MainWindow::smooth_(Smoothing::Type type, QString suffix)
 		return;
 	}
 
-	int index = grid_->selectedColumns()[0];
+	int index = grid_->selectedColumns().at(0);
 	QString header = data_.column(index).header();
 	QVector<double> dataset = data_.numericColumn(index).values();
 
@@ -529,7 +529,7 @@ void MainWindow::histogram()
 
 void MainWindow::basicStatistics()
 {
-	int index = grid_->selectedColumns()[0];
+	int index = grid_->selectedColumns().at(0);
 
 	StatisticsSummaryWidget* stats = new StatisticsSummaryWidget();
 	stats->setData(data_.numericColumn(index).statistics(data_.getRowFilter()));
