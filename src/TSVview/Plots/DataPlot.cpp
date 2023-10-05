@@ -65,19 +65,14 @@ void DataPlot::setData(DataSet& data, QList<int> cols, QString filename)
 			pos += 1.0;
 		}
 
-		//set default parameters
-		params_.addColor(name + ":color", "", getColor_(i));
-		params_.addInt(name + ":line width", "", 1, 1, 999);
-		params_.addString(name + ":line type", "", getLineType_(i), line_types);
-		params_.addString(name + ":points visible", "", "no", show_symbols);
-
-		//set series style
-		series->setPen(pen(name));
-		series->setPointsVisible(pointsVisible(name));
-		//TODO series->setUseOpenGL(true);
-
 		//add series
 		chart_->addSeries(series);
+
+		//set parameters after adding the series
+		params_.addColor(name + ":color", "", series->pen().color());
+		params_.addInt(name + ":line width", "", series->pen().width(), 1, 999);
+		params_.addString(name + ":line type", "", "solid", line_types);
+		params_.addString(name + ":points visible", "", "no", show_symbols);
 	}
 
 	//format axes
@@ -136,7 +131,6 @@ void DataPlot::parameterChanged(QString series_and_parameter)
 	int series_idx = param_name_to_index_[series_name];
 	QString parameter = series_and_parameter.mid(sep_idx+1);
 
-
 	QLineSeries* series = qobject_cast<QLineSeries*>(chart_->series().at(series_idx));
 	if (parameter=="points visible")
 	{
@@ -145,53 +139,5 @@ void DataPlot::parameterChanged(QString series_and_parameter)
 	else
 	{
 		series->setPen(pen(series_name));
-	}
-}
-
-QColor DataPlot::getColor_(int i)
-{
-	i = i%6;
-
-	if (i==0)
-	{
-		return QColor(0, 0, 220);
-	}
-	else if (i==1)
-	{
-		return QColor(220, 0, 0);
-	}
-	else if (i==2)
-	{
-		return QColor(0, 170, 0);
-	}
-	else if (i==3)
-	{
-		return QColor(170, 170, 0);
-	}
-	else if (i==4)
-	{
-		return QColor(170, 0, 170);
-	}
-	else
-	{
-		return QColor(0, 0, 0);
-	}
-}
-
-QString DataPlot::getLineType_(int i)
-{
-	i = (i/6)%3;
-
-	if (i==0)
-	{
-		return "solid";
-	}
-	else if (i==1)
-	{
-		return "dashed";
-	}
-	else
-	{
-		return "dotted";
 	}
 }

@@ -18,10 +18,12 @@ signals:
 	void xPosition(QString);
 	void yPosition(QString);
 	void resetZoom();
+	void zoomIn();
 
 protected:
 	bool eventFilter(QObject* obj, QEvent* event) override;
 	 void mouseMoveEvent(QMouseEvent* event) override;
+	 void keyPressEvent(QKeyEvent* event) override;
 	 void mouseDoubleClickEvent(QMouseEvent* event) override;
 
 private:

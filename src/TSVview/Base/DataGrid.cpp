@@ -228,7 +228,7 @@ void DataGrid::render(int start_col)
 		}
 	}
 
-	qDebug() << "rendering: " << cols << "/" << rows << " (" << timer.elapsed() << "ms)";
+	qDebug() << "rendering table: " << cols << "/" << rows << " (" << timer.elapsed() << "ms)";
 
 	emit rendered();
 }

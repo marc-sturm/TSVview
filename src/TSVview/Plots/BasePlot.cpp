@@ -51,13 +51,14 @@ BasePlot::BasePlot(QWidget *parent)
 	chart_view_->setBackgroundBrush(Qt::white);
 	chart_view_->setRubberBand(QChartView::RectangleRubberBand);
 	connect(chart_view_, SIGNAL(resetZoom()), this, SLOT(resetZoom()));
+	connect(chart_view_, SIGNAL(zoomIn()), this, SLOT(zoomIn()));
 	layout->addWidget(chart_view_, 0, 2);
 
 	//add settings button
 	QToolButton* button = new QToolButton();
 	button->setIcon(QIcon(":/Icons/Settings.png"));
 	button->setToolTip("Show/hide settings");
-	connect(button, SIGNAL(clicked()), this, SLOT(showSettings_()));
+	connect(button, SIGNAL(clicked()), this, SLOT(showSettings()));
 	addToToolbar(button);
 	addSeparatorToToolbar();
 
@@ -85,7 +86,7 @@ BasePlot::BasePlot(QWidget *parent)
 	addToToolbar(button);
 }
 
-void BasePlot::showSettings_()
+void BasePlot::showSettings()
 {
 	if (editor_->isVisible())
 	{
@@ -133,7 +134,6 @@ void BasePlot::saveAsPng()
 	QString filename = QFileDialog::getSaveFileName(this, "Save plot in PNG format",  path+filename_+".png", "All files (*.*);;"+selected_filter, &selected_filter);
 	if (filename!="")
 	{
-
 		//create empty image
 		QPixmap image(chart_view_->width(), chart_view_->height());
 		image.fill(Qt::white);
@@ -219,6 +219,11 @@ void BasePlot::toggleSeriesVisibility()
 void BasePlot::resetZoom()
 {
 	chart_->zoomReset();
+}
+
+void BasePlot::zoomIn()
+{
+	chart_->zoomIn();
 }
 
 void BasePlot::enableMouseTracking()

@@ -27,27 +27,15 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>File</string>
     </property>
-    <widget class="QMenu" name="menuImport">
-     <property name="title">
-      <string>Open</string>
-     </property>
-     <property name="icon">
-      <iconset resource="Resources.qrc">
-       <normaloff>:/Icons/Open.png</normaloff>:/Icons/Open.png</iconset>
-     </property>
-     <addaction name="openTXT"/>
-     <addaction name="openXML"/>
-     <addaction name="openZXV"/>
-    </widget>
     <addaction name="newFile"/>
-    <addaction name="menuImport"/>
+    <addaction name="openTXT"/>
     <addaction name="saveFile"/>
     <addaction name="saveFileAs"/>
     <addaction name="recentlyOpened"/>
@@ -96,7 +84,7 @@
   </action>
   <action name="openTXT">
    <property name="text">
-    <string>Text file</string>
+    <string>Open file</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>

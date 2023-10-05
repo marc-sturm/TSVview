@@ -16,8 +16,6 @@ public:
 private:
 	QPen pen(QString series_name);
 	bool pointsVisible(QString series_name);
-	static QColor getColor_(int i);
-	static QString getLineType_(int i);
 
 private slots:
 	void parameterChanged(QString parameter);

@@ -28,8 +28,6 @@ public slots:
 	void on_transpose_triggered(bool checked = false);
 	void on_exit_triggered(bool checked = false);
 	void on_newFile_triggered(bool);
-	void on_openZXV_triggered(bool);
-	void on_openXML_triggered(bool);
 	void on_openTXT_triggered(bool);
 	void on_saveFile_triggered(bool);
 	void on_saveFileAs_triggered(bool);
@@ -83,20 +81,10 @@ private:
 	GoToDockWidget* goto_widget_;
 	FilterWidget* filter_widget_;
 
-	///File type enum
-	enum FileType
-		{
-		TXT,
-		XML, //TODO remove this format as well?
-		ZXV, //TODO remove this format
-		NONE
-		};
-
 	///Open file struct
 	struct
 	{
 		QString name;
-		FileType type;
 		Parameters param;
 	}
 	file_;
@@ -117,12 +105,11 @@ private:
 	void smooth_(Smoothing::Type type, QString suffix);
 	void updateWindowTitle_();
 	void closeEvent(QCloseEvent* event);
-	void openFile_(QString filename, FileType type, bool remember_path = true);
+	void openFile_(QString filename, bool remember_path = true);
 	void storeModifiedDataset_();
-	void addToRecentFiles_(QString filename, FileType type);
+	void addToRecentFiles_(QString filename);
 	void updateRecentFilesMenu_();
-	static FileType getType(QString filename);
-	void setFile(QString name, FileType type = NONE, Parameters param = Parameters());
+	void setFile(QString name, Parameters param = Parameters());
 };
 
 #endif

@@ -21,8 +21,6 @@ SOURCES += \
     Base/CustomExceptions.cpp \
     Base/DataSet.cpp \
     Base/ParameterEditor.cpp \
-    FileIO/XMLImportPreview.cpp \
-    FileIO/XMLFile.cpp \
     FileIO/TextImportPreview.cpp \
     FileIO/TextFile.cpp \
     Plots/BasePlot.cpp \
@@ -33,7 +31,6 @@ SOURCES += \
 #    Plots/BoxPlot.cpp \
     Plots/MyChartView.cpp \
     Signal/Smoothing.cpp \
-    FileIO/ZXVFile.cpp \
     Base/BaseColumn.cpp \
     Base/NumericColumn.cpp \
     Base/StringColumn.cpp \
@@ -56,8 +53,6 @@ HEADERS += \
     Base/CustomExceptions.h \
     Base/DataSet.h \
     Base/ParameterEditor.h \
-    FileIO/XMLImportPreview.h \
-    FileIO/XMLFile.h \
     FileIO/TextImportPreview.h \
     FileIO/TextFile.h \
     Plots/BasePlot.h \
@@ -68,7 +63,6 @@ HEADERS += \
 #    Plots/BoxPlot.h \
     Plots/MyChartView.h \
     Signal/Smoothing.h \
-    FileIO/ZXVFile.h \
     Base/BaseColumn.h \
     Base/NumericColumn.h \
     Base/StringColumn.h \
@@ -87,7 +81,6 @@ HEADERS += \
 
 FORMS += \
     MainWindow.ui \
-    FileIO/XMLImportPreview.ui \
     FileIO/TextImportPreview.ui \
     FileIO/FilePreview.ui \
     GoToDockWidget.ui \

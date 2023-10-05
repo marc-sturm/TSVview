@@ -24,6 +24,7 @@ public slots:
 	void saveAsSvg();
 	void toggleSeriesVisibility();
 	void resetZoom();
+	void zoomIn();
 
 protected:
 	Parameters params_;
@@ -40,7 +41,7 @@ protected:
 	void addSeparatorToToolbar();
 
 protected slots:
-	void showSettings_();
+	void showSettings();
 };
 
 #endif

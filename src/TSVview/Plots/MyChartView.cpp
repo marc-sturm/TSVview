@@ -28,12 +28,25 @@ void MyChartView::mouseMoveEvent(QMouseEvent* event)
 	QChartView::mouseMoveEvent(event);
 }
 
+void MyChartView::keyPressEvent(QKeyEvent* event)
+{
+	if (event->key()==Qt::Key_Space)
+	{
+		emit resetZoom();
+		event->accept();
+		return;
+	}
+
+	QChartView::keyPressEvent(event);
+}
+
 void MyChartView::mouseDoubleClickEvent(QMouseEvent* event)
 {
 	if (event->button()==Qt::LeftButton)
 	{
-		emit resetZoom();
+		emit zoomIn();
 		event->accept();
+		return;
 	}
 
 	QChartView::mouseDoubleClickEvent(event);
