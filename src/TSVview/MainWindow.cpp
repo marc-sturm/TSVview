@@ -30,13 +30,11 @@ MainWindow::MainWindow(QWidget *parent)
 	, data_()
 	, recent_files_()
 {
-	qDebug() << __FILE__ << __LINE__;
 	ui_.setupUi(this);
 
 	//create info widget in status bar
 	info_widget_ = new QLabel("cols: 0 rows: 0");
 	statusBar()->addPermanentWidget(info_widget_);
-	qDebug() << __FILE__ << __LINE__;
 
 	//create grid and dataset
 	grid_ = new DataGrid();
@@ -47,18 +45,15 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(&data_, SIGNAL(filtersChanged()), this, SLOT(updateFilters()));
 	connect(&data_, SIGNAL(headersChanged()), this, SLOT(updateFilters()));
 	grid_->setData(data_);
-	qDebug() << __FILE__ << __LINE__;
 
 	recent_files_ = Settings::stringList("recent_files", true);
 	updateRecentFilesMenu_();
-	qDebug() << __FILE__ << __LINE__;
 
 	//create goto dock widget
 	goto_widget_ = new GoToDockWidget();
 	goto_widget_->setVisible(false);
 	addDockWidget(Qt::BottomDockWidgetArea, goto_widget_);
 	connect(goto_widget_, SIGNAL(goToLine(int)), this, SLOT(goToRow(int)));
-	qDebug() << __FILE__ << __LINE__;
 
 	//create find dock widget
 	find_widget_ = new FindDockWidget();
@@ -66,7 +61,6 @@ MainWindow::MainWindow(QWidget *parent)
 	addDockWidget(Qt::BottomDockWidgetArea, find_widget_);
 	connect(find_widget_, SIGNAL(searchForText(QString, Qt::CaseSensitivity, DataGrid::FindType)), this, SLOT(findText(QString, Qt::CaseSensitivity, DataGrid::FindType)));
 	connect(find_widget_, SIGNAL(searchNext()), this, SLOT(findNext()));
-	qDebug() << __FILE__ << __LINE__;
 
 	//create filter widget
 	filter_widget_ = new FilterWidget();
@@ -80,21 +74,17 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(filter_widget_, SIGNAL(loadFilter()), grid_, SLOT(loadFilter()));
 	connect(filter_widget_, SIGNAL(storeFilter()), grid_, SLOT(storeFilter()));
 	connect(filter_widget_, SIGNAL(deleteFilter()), grid_, SLOT(deleteFilter()));
-	qDebug() << __FILE__ << __LINE__;
 
 	//enable drop event
 	setAcceptDrops(true);
-	qDebug() << __FILE__ << __LINE__;
 
 	//init file
 	setFile("untitled");
 	connect(&file_watcher_, SIGNAL(fileChanged()), this, SLOT(fileChanged()));
-	qDebug() << __FILE__ << __LINE__;
 
 	//load argument file
 	if (QApplication::arguments().count()==2)
 	{
-		qDebug() << __FILE__ << __LINE__;
 		QString filename = QApplication::arguments().at(1);
 		openFile_(filename, true);
 	}
@@ -163,7 +153,6 @@ void MainWindow::on_openTXT_triggered(bool)
 
 void MainWindow::openFile_(QString filename, bool remember_path)
 {
-	qDebug() << __FILE__ << __LINE__;
 	//close plots
 	QWindowList windows = QApplication::allWindows();
 	foreach (QWindow* window, windows)
@@ -427,7 +416,9 @@ void MainWindow::on_transpose_triggered(bool /*checked*/)
 	data_.addColumn(header_col_header, header_col);
 	for (int c=0; c<cols.count(); ++c)
 	{
+		data_.blockSignals(true);
 		data_.addColumn(headers[c], cols[c]);
+		data_.blockSignals(false);
 	}
 	grid_->render();
 }
@@ -494,11 +485,6 @@ void MainWindow::smoothMedian()
 void MainWindow::smoothSavitzkyGolay()
 {
 	smooth_(Smoothing::SavitzkyGolay, "_sg");
-}
-
-void MainWindow::smoothBessel()
-{
-	smooth_(Smoothing::Bessel, "_be");
 }
 
 void MainWindow::smooth_(Smoothing::Type type, QString suffix)

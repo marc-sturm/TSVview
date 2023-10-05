@@ -65,8 +65,13 @@ void DataPlot::setData(DataSet& data, QList<int> cols, QString filename)
 			pos += 1.0;
 		}
 
-		//add series
+		//add series (this sets the pen color)
 		chart_->addSeries(series);
+
+		//modify pen width
+		QPen pen = series->pen();
+		pen.setWidth(1);
+		series->setPen(pen);
 
 		//set parameters after adding the series
 		params_.addColor(name + ":color", "", series->pen().color());

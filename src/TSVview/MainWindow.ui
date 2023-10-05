@@ -83,6 +83,10 @@
    </property>
   </action>
   <action name="openTXT">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/Icons/Open.png</normaloff>:/Icons/Open.png</iconset>
+   </property>
    <property name="text">
     <string>Open file</string>
    </property>

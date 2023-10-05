@@ -52,7 +52,6 @@ public slots:
 	void smoothAverage();
 	void smoothMedian();
 	void smoothSavitzkyGolay();
-	void smoothBessel();
 
 	void goToRow(int row);
 	void findText(QString text, Qt::CaseSensitivity case_sensitive, DataGrid::FindType type);
