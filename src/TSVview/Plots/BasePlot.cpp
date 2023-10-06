@@ -10,6 +10,7 @@
 #include <QDebug>
 #include <QMouseEvent>
 #include <QClipboard>
+#include <QSpacerItem>
 #include "BasePlot.h"
 #include "Settings.h"
 
@@ -88,14 +89,7 @@ BasePlot::BasePlot(QWidget *parent)
 
 void BasePlot::showSettings()
 {
-	if (editor_->isVisible())
-	{
-		editor_->setVisible(false);
-	}
-	else
-	{
-		editor_->setVisible(true);
-	}
+	editor_->setVisible(!editor_->isVisible());
 }
 
 void BasePlot::addToToolbar(QToolButton* button)
@@ -231,9 +225,15 @@ void BasePlot::enableMouseTracking()
 	chart_view_->enableMouseTracking();
 	if (y_label_==nullptr)
 	{
-		QBoxLayout* status_bar_layout =  new QBoxLayout(QBoxLayout::RightToLeft);
+		QBoxLayout* status_bar_layout =  new QBoxLayout(QBoxLayout::LeftToRight);
 		QGridLayout* main_layout = (QGridLayout*)layout();
-		main_layout->addLayout(status_bar_layout, 1, 0, 1, 3, Qt::AlignHCenter);
+		main_layout->addLayout(status_bar_layout, 1, 2, Qt::AlignHCenter);
+
+		//X axis
+		x_label_ = new QLabel();
+		x_label_->setMinimumWidth(70);
+		status_bar_layout->addWidget(x_label_);
+		connect(chart_view_, SIGNAL(xPosition(QString)), x_label_, SLOT(setText(QString)));
 
 		//Y axis
 		y_label_ = new QLabel();
@@ -241,11 +241,21 @@ void BasePlot::enableMouseTracking()
 		status_bar_layout->addWidget(y_label_);
 		connect(chart_view_, SIGNAL(yPosition(QString)), y_label_, SLOT(setText(QString)));
 
-		//X axis
-		x_label_ = new QLabel();
-		x_label_->setMinimumWidth(70);
-		status_bar_layout->addWidget(x_label_);
-		connect(chart_view_, SIGNAL(xPosition(QString)), x_label_, SLOT(setText(QString)));
+		status_bar_layout->addStretch(100);
+
+		//additional info
+		info_label_ = new QLabel();
+		info_label_->setMinimumWidth(70);
+		status_bar_layout->addWidget(info_label_);
 	}
 }
 
+QAbstractSeries* BasePlot::search(QString name) const
+{
+	foreach(QAbstractSeries* series, chart_->series())
+	{
+		if (series->name()==name) return series;
+	}
+
+	return nullptr;
+}

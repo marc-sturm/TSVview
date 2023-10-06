@@ -22,8 +22,10 @@
 #include "GUIHelper.h"
 #include "ScrollableTextDialog.h"
 #include "Helper.h"
+#include "ScatterPlot.h"
 
 //TODO allow text filters on several columns (all)
+//TODO row height
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
@@ -539,15 +541,12 @@ void MainWindow::basicStatistics()
 
 void MainWindow::scatterPlot()
 {
-	//TODO add again
-	/*
-	int x = grid_->selectedColumns()[0];
-	int y = grid_->selectedColumns()[1];
+	int x = grid_->selectedColumns().at(0);
+	int y = grid_->selectedColumns().at(1);
 	ScatterPlot* plot = new ScatterPlot();
 	plot->setData(data_, x, y, QFileInfo(file_.name).baseName());
 	auto dlg = GUIHelper::createDialog(plot, "Scatterplot of '" + data_.column(x).headerOrIndex(x) + "' and '" + data_.column(y).headerOrIndex(y) + "'" + fileNameLabel());
 	dlg->exec();
-	*/
 }
 
 void MainWindow::dataPlot()

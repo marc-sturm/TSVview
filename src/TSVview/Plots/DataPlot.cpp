@@ -15,7 +15,7 @@ DataPlot::DataPlot(QWidget *parent)
 	//format plot
 	chart_ = new QChart();
 	chart_->legend()->setVisible(true);
-	chart_->legend()->setAlignment(Qt::AlignRight);
+	chart_->legend()->setAlignment(Qt::AlignRight|Qt::AlignTop);
 	chart_->setBackgroundRoundness(0);
 	chart_->setMargins(QMargins(0,0,0,0));
 
@@ -23,7 +23,7 @@ DataPlot::DataPlot(QWidget *parent)
 	enableMouseTracking();
 }
 
-void DataPlot::setData(DataSet& data, QList<int> cols, QString filename)
+void DataPlot::setData(const DataSet& data, QList<int> cols, QString filename)
 {
 	//init
 	filename_ = filename;

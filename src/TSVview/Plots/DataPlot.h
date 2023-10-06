@@ -11,7 +11,7 @@ class DataPlot
 
 public:
 	DataPlot(QWidget *parent = 0);
-	void setData(DataSet& data, QList<int> cols, QString filename);
+	void setData(const DataSet& data, QList<int> cols, QString filename);
 
 private:
 	QPen pen(QString series_name);

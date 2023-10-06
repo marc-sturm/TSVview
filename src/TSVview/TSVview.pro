@@ -24,7 +24,7 @@ SOURCES += \
     FileIO/TextImportPreview.cpp \
     FileIO/TextFile.cpp \
     Plots/BasePlot.cpp \
-#    Plots/ScatterPlot.cpp \
+    Plots/ScatterPlot.cpp \
 #    Plots/HistogramPlot.cpp \
     Plots/DataPlot.cpp \
     Base/DataGrid.cpp \
@@ -56,7 +56,7 @@ HEADERS += \
     FileIO/TextImportPreview.h \
     FileIO/TextFile.h \
     Plots/BasePlot.h \
-#    Plots/ScatterPlot.h \
+    Plots/ScatterPlot.h \
 #    Plots/HistogramPlot.h \
     Plots/DataPlot.h \
     Base/DataGrid.h \

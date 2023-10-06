@@ -1,38 +1,43 @@
 #include <QDebug>
-
+#include <QScatterSeries>
+#include <QLineSeries>
 #include "Helper.h"
 #include "ScatterPlot.h"
 #include "StatisticsSummary.h"
 #include "BasicStatistics.h"
+#include "math.h"
 
 ScatterPlot::ScatterPlot(QWidget *parent)
 	: BasePlot(parent)
-	, curve_(0)
-	, curve_noisy_(0)
-	, curve2_(0)
-	, curve2_noisy_(0)
-	, regression_(0)
-	, regression_marker_(0)
 {
 	//set default parameters
 	params_.addColor("color", "", Qt::darkBlue);
-	params_.addInt("line width", "", 2, 1, 999);
-	params_.addSymbol("symbol", "", QwtSymbol::XCross);
-	params_.addInt("symbol size", "", 5, 2, 999);
-	params_.addSeparator();
-	params_.addInt("position noise", "", 0 , 0, 20);
+	QStringList valid_symbols = QStringList() << "square" << "circle";
+	params_.addString("symbol", "", "square", valid_symbols);
+	params_.addInt("symbol size", "", 3, 1, 999);
 	params_.addSeparator();
 	params_.addBool("linear regression", "Show linear regression of unfiltered data.", false);
 	params_.addSeparator();
 	params_.addBool("filtered", "Show filtered-out data points.", false);
 	params_.addColor("filtered color", "", QColor(200, 0, 0));
+	params_.addString("filtered symbol", "", "circle", valid_symbols);
+	params_.addInt("filtered symbol size", "", 3, 1, 999);
+	params_.addSeparator();
+	params_.addInt("position noise", "", 0 , 0, 20);
 
 	//connect parameters, editor and plot
 	editor_->setParameters(params_);
-	connect(&params_, SIGNAL(valueChanged(QString)), this, SLOT(replot_()));
+	connect(&params_, SIGNAL(valueChanged(QString)), this, SLOT(parameterChanged(QString)));
+
+	//format plot
+	chart_ = new QChart();
+	chart_->legend()->setVisible(false);
+	chart_->setBackgroundRoundness(0);
+	chart_->setMargins(QMargins(0,0,0,0));
+	chart_->setDropShadowEnabled(false);
 
 	//enable mouse tracking
-	enableMouseTracking(true);
+	enableMouseTracking();
 }
 
 QVector<double> ScatterPlot::addNoise(QVector<double> data, double noise)
@@ -44,152 +49,150 @@ QVector<double> ScatterPlot::addNoise(QVector<double> data, double noise)
 	return data;
 }
 
-void ScatterPlot::setData(DataSet& data, int col1, int col2, QString filename)
+void ScatterPlot::setData(const DataSet& data, int col1, int col2, QString filename)
 {
 	filter_ = data.getRowFilter(false);
-	col1_ = &(data.numericColumn(col1));
-	col2_ = &(data.numericColumn(col2));
+	col1_ = data.numericColumn(col1).values();
+	col2_ = data.numericColumn(col2).values();
 	filename_ = filename;
 
-	plot_->setAxisTitle(QwtPlot::xBottom, QwtText(col1_->headerOrIndex(col1)));
-	plot_->setAxisTitle(QwtPlot::yLeft, QwtText(col2_->headerOrIndex(col2)));
-
-	//create curve (except for filtered-out data)
-	x_ = col1_->values(filter_);
-	y_ = col2_->values(filter_);
-	curve_ = addCurve();
-	curve_->setSamples(x_, y_);
-	curve_noisy_ = addCurve();
-	curve_noisy_->setSamples(x_, y_);
-
-	//create curve (filtered-out data)
-	x2_ = col1_->values(~filter_);
-	y2_ = col2_->values(~filter_);
-	curve2_ = addCurve();
-	curve2_->setSamples(x2_, y2_);
-	curve2_noisy_ = addCurve();
-	curve2_noisy_->setSamples(x_, y_);
-
-	//calculate linear regression
-	QPair<double, double> reg = BasicStatistics::linearRegression(x_, y_);
-	double offset = reg.first;
-	double slope = reg.second;
-
-	// calcualte R-squared
-	StatisticsSummary x_stats = col1_->statistics(filter_);
-	StatisticsSummary y_stats = col2_->statistics(filter_);
-	double mean = y_stats.mean;
-	double data_diff = 0.0;
-	double model_diff = 0.0;
-	for (int i=0; i<y_.size(); ++i)
+	//create series of visible data
+	QScatterSeries* series = new QScatterSeries();
+	series->setName("visible");
+	series->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
+	series->setMarkerSize(3.0);
+	series->setColor(Qt::darkBlue);
+	series->setPen(QColor(Qt::transparent));
+	for(int i=0; i<filter_.count(); ++i)
 	{
-		if (BasicStatistics::isValidFloat(x_[i]) && BasicStatistics::isValidFloat(y_[i]))
+		if (filter_[i])
 		{
-			model_diff += pow(offset + slope * x_[i] - mean, 2.0);
-			data_diff += pow(y_[i] - mean, 2.0);
+			series->append(col1_.value(i), col2_.value(i));
 		}
 	}
-	double r_squared = model_diff / data_diff;
+	chart_->addSeries(series);
 
-	//create linear regression plot curve
-	regression_ = new QwtPlotCurve();
-	QVector<double> x;
-	x.append(x_stats.min);
-	x.append(x_stats.max);
-	QVector<double> y;
-	y.append(offset + slope * x_stats.min);
-	y.append(offset + slope * x_stats.max);
-	regression_->setSamples(x, y);
-	regression_->attach(plot_);
+	//add axes
+	chart_->createDefaultAxes();
+	chart_->axes(Qt::Horizontal).at(0)->setTitleText(data.numericColumn(col1).headerOrIndex(col1));
+	chart_->axes(Qt::Vertical).at(0)->setTitleText(data.numericColumn(col2).headerOrIndex(col2));
 
-	// create regression marker
-	regression_marker_ = new QwtPlotMarker();
-	regression_marker_->setXValue(x_stats.max);
-	regression_marker_->setYValue(y_stats.min);
-	regression_marker_->setLabelAlignment(Qt::AlignLeft | Qt::AlignTop);
-	regression_marker_->setLabel(QwtText("R² = " + QString::number(r_squared)));
-	regression_marker_->attach(plot_);
-
-	replot_();
+	//show chart
+	chart_view_->setChart(chart_);
 }
 
-QwtPlotCurve* ScatterPlot::addCurve()
+void ScatterPlot::parameterChanged(QString parameter)
 {
-	QwtPlotCurve* curve = new QwtPlotCurve();
-	curve->setStyle(QwtPlotCurve::NoCurve);
-	curve->setTitle("title");
-	curve->attach(plot_);
-
-	return curve;
-}
-
-void ScatterPlot::removeCurve(QwtPlotCurve* curve)
-{
-	if (curve!=0)
+	if (parameter=="color")
 	{
-		curve->detach();
-		delete curve;
+		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("visible"));
+		series->setColor(params_.getColor("color"));
 	}
-}
-
-void ScatterPlot::formatCurve(QwtPlotCurve* curve, QString color_name, bool visible)
-{
-	if (curve==0) return;
-
-	double line_width = params_.getInt("line width");
-	QPen pen(params_.getColor(color_name), line_width);
-	int symbol_size = params_.getInt("symbol size");
-	curve->setSymbol(new QwtSymbol(params_.getSymbol("symbol"), Qt::NoBrush, pen, QSize(symbol_size, symbol_size)));
-	curve->setVisible(visible);
-}
-
-void ScatterPlot::replot_()
-{
-	//get noise percentage
-	double noise_perc = params_.getInt("position noise") / 100.0;
-
-	//set axis ranges
-	QBitArray filter;
-	if (!params_.getBool("filtered")) filter = filter_;
-	QPair<double, double> x_stats = col1_->getMinMax(filter);
-	QPair<double, double> y_stats = col2_->getMinMax(filter);
-	double x_range = x_stats.second - x_stats.first;
-	double y_range = y_stats.second - y_stats.first;
-	plot_->setAxisScale(QwtPlot::xBottom, x_stats.first - noise_perc * x_range, x_stats.second + noise_perc * x_range);
-	plot_->setAxisScale(QwtPlot::yLeft, y_stats.first - noise_perc * y_range, y_stats.second + noise_perc * y_range);
-
-	//update noisy curves if needed
-	if (noise_perc>0)
+	else if (parameter=="symbol")
 	{
-		removeCurve(curve_noisy_);
-		curve_noisy_ = addCurve();
-		curve_noisy_->setSamples(addNoise(x_, noise_perc * x_range), addNoise(y_, noise_perc * y_range));
-
-		removeCurve(curve2_noisy_);
-		curve2_noisy_ = addCurve();
-		curve2_noisy_->setSamples(addNoise(x2_, noise_perc * x_range), addNoise(y2_, noise_perc * y_range));
+		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("visible"));
+		series->setMarkerShape(params_.getString("symbol")=="square" ? QScatterSeries::MarkerShapeRectangle : QScatterSeries::MarkerShapeCircle);
 	}
-
-	//format curves (not filtered-out)
-	formatCurve(curve_, "color", noise_perc==0);
-	formatCurve(curve_noisy_, "color", noise_perc>0);
-
-	//format curves (filterd-out)
-	bool show_filtered = params_.getBool("filtered");
-	formatCurve(curve2_, "filtered color", show_filtered && noise_perc==0);
-	formatCurve(curve2_noisy_, "filtered color", show_filtered && noise_perc>0);
-
-	//format linear regression
-	if (params_.getBool("linear regression"))
+	else if (parameter=="symbol size")
 	{
-		regression_->setVisible(true);
-		regression_marker_->setVisible(true);
+		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("visible"));
+		series->setMarkerSize(params_.getInt("symbol size"));
 	}
-	else
+	else if (parameter=="linear regression")
 	{
-		regression_->setVisible(false);
-		regression_marker_->setVisible(false);
+		QLineSeries* series = qobject_cast<QLineSeries*>(search("regression"));
+		if (series!=nullptr)
+		{
+			chart_->removeSeries(series);
+			info_label_->clear();
+		}
+		else
+		{
+			//calculate linear regression
+			QVector<double> x;
+			QVector<double> y;
+			for (int i=0; i<filter_.count(); ++i)
+			{
+				if (filter_[i])
+				{
+					x << col1_[i];
+					y << col2_[i];
+				}
+			}
+
+			QPair<double, double> reg = BasicStatistics::linearRegression(x, y);
+			double offset = reg.first;
+			double slope = reg.second;
+
+			//create linear regression plot series
+			series = new QLineSeries();
+			series->setName("regression");
+			auto x_min_max = BasicStatistics::getMinMax(x);
+			series->append(x_min_max.first, offset + slope * x_min_max.first);
+			series->append(x_min_max.second, offset + slope * x_min_max.second);
+			series->setColor(Qt::darkGray);
+			chart_->addSeries(series);
+			series->attachAxis(chart_->axes(Qt::Horizontal).at(0));
+			series->attachAxis(chart_->axes(Qt::Vertical).at(0));
+
+			//calcualte R-squared
+			double y_mean = BasicStatistics::mean(y);
+			double data_diff = 0.0;
+			double model_diff = 0.0;
+			for (int i=0; i<y.size(); ++i)
+			{
+				if (BasicStatistics::isValidFloat(x[i]) && BasicStatistics::isValidFloat(y[i]))
+				{
+					model_diff += pow(offset + slope * x[i] - y_mean, 2.0);
+					data_diff += pow(y[i] - y_mean, 2.0);
+				}
+			}
+			double r_squared = model_diff / data_diff;
+			info_label_->setText("R²=" + QString::number(r_squared, 'f', 5));
+		}
+	}
+	else if (parameter=="filtered")
+	{
+		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("filtered"));
+		if (series!=nullptr)
+		{
+			chart_->removeSeries(series);
+		}
+		else
+		{
+			series = new QScatterSeries();
+			series->setName("filtered");
+			series->setMarkerShape(QScatterSeries::MarkerShapeCircle);
+			series->setMarkerSize(3.0);
+			series->setColor(QColor(200, 0, 0));
+			series->setPen(QColor(Qt::transparent));
+			for(int i=0; i<filter_.count(); ++i)
+			{
+				if (!filter_[i])
+				{
+					series->append(col1_.value(i), col2_.value(i));
+				}
+			}
+			chart_->addSeries(series);
+			series->attachAxis(chart_->axes(Qt::Horizontal).at(0));
+			series->attachAxis(chart_->axes(Qt::Vertical).at(0));
+		}
+	}
+	else if (parameter=="filtered color")
+	{
+		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("filtered"));
+		series->setColor(params_.getColor("filtered color"));
+	}
+	else if (parameter=="filtered symbol")
+	{
+		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("filtered"));
+		series->setMarkerShape(params_.getString("filtered symbol")=="square" ? QScatterSeries::MarkerShapeRectangle : QScatterSeries::MarkerShapeCircle);
+	}
+	else if (parameter=="filtered symbol size")
+	{
+		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("filtered"));
+		series->setMarkerSize(params_.getInt("filtered symbol size"));
 	}
 
-	plot_->replot();
+	//TODO double noise_perc = params_.getInt("position noise") / 100.0;
 }
