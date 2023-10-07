@@ -13,31 +13,6 @@ NumericColumn::NumericColumn()
 {
 }
 
-int NumericColumn::decimalPlaces() const
-{
-	return decimal_places_;
-}
-
-char NumericColumn::format() const
-{
-	return format_;
-}
-
-void NumericColumn::setFormat(char format, int decimal_places)
-{
-	format_ = format;
-	decimal_places_ = decimal_places;
-
-	emit dataChanged();
-}
-
-QString NumericColumn::string(int row) const
-{
-	Q_ASSERT(row<values_.count());
-
-	return QString::number(values_[row], format_, decimal_places_);
-}
-
 void NumericColumn::setString(int row, const QString& value)
 {
 	Q_ASSERT(row<values_.count());
@@ -97,29 +72,6 @@ QVector<double> NumericColumn::values(QBitArray filter) const
 	return output;
 }
 
-void NumericColumn::setValues(const QVector<double>& data)
-{
-	values_ = data;
-
-	emit dataChanged();
-}
-
-double NumericColumn::value(int row) const
-{
-	Q_ASSERT(row<values_.count());
-
-	return values_[row];
-}
-
-void NumericColumn::setValue(int row, double value)
-{
-	Q_ASSERT(row<values_.count());
-
-	values_[row] = value;
-
-	emit dataChanged();
-}
-
 void NumericColumn::appendString(const QString& value)
 {
 	bool ok = true;
@@ -128,20 +80,9 @@ void NumericColumn::appendString(const QString& value)
 
 	values_.append(fvalue);
 
-	//emit dataChanged();
-}
-
-void NumericColumn::resize(int rows)
-{
-	values_.resize(rows);
-
 	emit dataChanged();
 }
 
-void NumericColumn::reserve(int rows)
-{
-	values_.reserve(rows);
-}
 
 void NumericColumn::sort(bool reverse)
 {
@@ -155,16 +96,6 @@ void NumericColumn::sort(bool reverse)
 	}
 
 	emit dataChanged();
-}
-
-int NumericColumn::count() const
-{
-	return values_.count();
-}
-
-BaseColumn* NumericColumn::clone() const
-{
-	return new NumericColumn(*this);
 }
 
 void NumericColumn::autoFormat()
@@ -286,7 +217,6 @@ void NumericColumn::matchFilter(QBitArray &array) const
 NumericColumn::NanAwareDoubleComp::NanAwareDoubleComp(bool greater)
 	: greater_(greater)
 {
-
 }
 
 bool NumericColumn::NanAwareDoubleComp::operator()(double a, double b) const

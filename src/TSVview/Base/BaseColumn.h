@@ -22,10 +22,17 @@ public:
 	BaseColumn(Type type);
 	BaseColumn(const BaseColumn& rhs);
 
-	Type type() const;
+	Type type() const
+	{
+		return type_;
+	}
 
 	/// Returns the header.
-	const QString& header() const;
+	const QString& header() const
+	{
+		return header_;
+	}
+
 	/// Returns the header or the index if the header is empty. If @p force_index is true, the index is always shown.
 	QString headerOrIndex(int index, bool force_index = false) const;
 	///Returns @p false if the header contains invalid characters and was thus not accepted.
@@ -37,7 +44,9 @@ public:
 	virtual void appendString(const QString& value) = 0;
 
 	/// Automatically formats the column according to the content. The default implementation is empty.
-	virtual void autoFormat();
+	virtual void autoFormat()
+	{
+	}
 
 	virtual void resize(int rows) = 0;
 	virtual void reserve(int rows) = 0;
@@ -45,7 +54,10 @@ public:
 	virtual int count() const = 0;
 	virtual BaseColumn* clone() const = 0;
 
-	Filter filter() const;
+	const Filter& filter() const
+	{
+	  return filter_;
+	}
 	virtual void setFilter(Filter filter) = 0;
 	virtual void matchFilter(QBitArray& array) const = 0;
 

@@ -25,7 +25,6 @@
 #include "ScatterPlot.h"
 
 //TODO allow text filters on several columns (all)
-//TODO row height
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
@@ -266,8 +265,15 @@ void MainWindow::on_saveFileAs_triggered(bool)
 	on_saveFile_triggered(true);
 }
 
-void  MainWindow::on_resizeColumns_triggered(bool)
+void  MainWindow::on_resizeToContent_triggered(bool)
 {
+	QTime timer;
+	timer.start();
+
+	GUIHelper::resizeTableCells(grid_, 0.5*width());
+
+	qDebug() << "resizing to content: ms=" << timer.elapsed();
+
 	grid_->resizeColumnsToContents();
 
 	//limit column width to 50% of window width
@@ -279,11 +285,6 @@ void  MainWindow::on_resizeColumns_triggered(bool)
 			grid_->setColumnWidth(i, max_width);
 		}
 	}
-}
-
-void  MainWindow::on_resizeRows_triggered(bool)
-{
-	grid_->resizeRowsToContents();
 }
 
 void  MainWindow::on_goToRow_triggered(bool)

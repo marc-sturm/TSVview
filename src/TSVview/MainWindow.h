@@ -31,8 +31,7 @@ public slots:
 	void on_openTXT_triggered(bool);
 	void on_saveFile_triggered(bool);
 	void on_saveFileAs_triggered(bool);
-	void on_resizeColumns_triggered(bool);
-	void on_resizeRows_triggered(bool);
+	void on_resizeToContent_triggered(bool);
 	void on_goToRow_triggered(bool);
 	void on_findText_triggered(bool);
 	void on_filter_triggered(bool);

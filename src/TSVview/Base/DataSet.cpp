@@ -20,21 +20,6 @@ DataSet::~DataSet()
 	clear(false);
 }
 
-int DataSet::columnCount() const
-{
-	return columns_.size();
-}
-
-int DataSet::rowCount() const
-{
-	if (columns_.size()==0)
-	{
-		return 0;
-	}
-
-	return columns_[0]->count();
-}
-
 void DataSet::clear(bool emit_signals)
 {
 	for (int i=0; i<columns_.count(); ++i)
@@ -53,53 +38,6 @@ void DataSet::clear(bool emit_signals)
 	}
 }
 
-const BaseColumn& DataSet::column(int column) const
-{
-	Q_ASSERT(column<columns_.size());
-
-	return *(columns_[column]);
-}
-
-
-BaseColumn& DataSet::column(int column)
-{
-	Q_ASSERT(column<columns_.size());
-
-	return *(columns_[column]);
-}
-
-const StringColumn& DataSet::stringColumn(int column) const
-{
-	Q_ASSERT(column<columns_.size());
-	Q_ASSERT(columns_[column]->type()==BaseColumn::STRING);
-
-	return *dynamic_cast<const StringColumn*>(columns_[column]);
-}
-
-StringColumn& DataSet::stringColumn(int column)
-{
-	Q_ASSERT(column<columns_.size());
-	Q_ASSERT(columns_[column]->type()==BaseColumn::STRING);
-
-	return *dynamic_cast<StringColumn*>(columns_[column]);
-}
-
-const NumericColumn& DataSet::numericColumn(int column) const
-{
-	Q_ASSERT(column<columns_.size());
-	Q_ASSERT(columns_[column]->type()==BaseColumn::NUMERIC);
-
-	return *dynamic_cast<const NumericColumn*>(columns_[column]);
-}
-
-NumericColumn& DataSet::numericColumn(int column)
-{
-	Q_ASSERT(column<columns_.size());
-	Q_ASSERT(columns_[column]->type()==BaseColumn::NUMERIC);
-
-	return *dynamic_cast<NumericColumn*>(columns_[column]);
-}
-
 QStringList DataSet::headers()
 {
 	QStringList output;
@@ -110,7 +48,7 @@ QStringList DataSet::headers()
 	return output;
 }
 
-int DataSet::indexOf(QString name)
+int DataSet::indexOf(const QString& name)
 {
 	for (int i=0; i<columns_.count(); ++i)
 	{
@@ -121,11 +59,6 @@ int DataSet::indexOf(QString name)
 	}
 
 	return -1;
-}
-
-void DataSet::removeColumn(int column)
-{
-	removeColumns(QSet<int>() << column);
 }
 
 void DataSet::removeColumns(QSet<int> columns)
@@ -216,7 +149,7 @@ void DataSet::addColumn(QString header, const QVector<QString>& data, bool auto_
 	emit dataChanged();
 }
 
-void DataSet::replaceColumn(int index, QString header, QVector<double> data, bool auto_format)
+void DataSet::replaceColumn(int index, QString header, const QVector<double>& data, bool auto_format)
 {
 	Q_ASSERT(rowCount()==0 || data.size()==rowCount());
 	Q_ASSERT(index < data.size());
@@ -241,11 +174,6 @@ void DataSet::replaceColumn(int index, QString header, QVector<double> data, boo
 
 	emit dataChanged();
 	setModified(true);
-}
-
-bool DataSet::modified() const
-{
-	return modified_;
 }
 
 void DataSet::setModified(bool modified)
@@ -412,9 +340,22 @@ void DataSet::reduceToRows(QSet<int> rows)
 	emit dataChanged();
 }
 
-bool DataSet::filtersEnabled() const
+void DataSet::convertStringToNumeric(int c)
 {
-	return filters_enabled_;
+	Q_ASSERT(c>=0);
+	Q_ASSERT(c<columns_.size());
+
+	//create numeric data
+	const QVector<QString> strings = stringColumn(c).values();
+	QVector<double> numbers;
+	numbers.reserve(strings.count());
+	foreach(const QString& element, strings)
+	{
+		numbers << element.toDouble();
+	}
+
+	//replace string by numeric column
+	replaceColumn(c, column(c).header(), numbers, false);
 }
 
 void DataSet::setFiltersEnabled(bool enabled)
@@ -464,14 +405,4 @@ QBitArray DataSet::getRowFilter(bool update) const
 	}
 
 	return filtered_rows_;
-}
-
-void DataSet::setComments(QStringList& comments)
-{
-	comments_ = comments;
-}
-
-QStringList DataSet::comments() const
-{
-	return comments_;
 }

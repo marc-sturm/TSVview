@@ -61,7 +61,7 @@ public slots:
 	///Re-renders the headers of the current dataset.
 	void renderHeaders();
 	///Re-renders all columns of the current dataset starting from a given column.
-	void render(int start_col = 0);
+	void render();
 	void loadFilter();
 	void storeFilter();
 	void deleteFilter();

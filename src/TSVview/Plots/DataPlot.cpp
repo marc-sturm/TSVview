@@ -15,7 +15,7 @@ DataPlot::DataPlot(QWidget *parent)
 	//format plot
 	chart_ = new QChart();
 	chart_->legend()->setVisible(true);
-	chart_->legend()->setAlignment(Qt::AlignRight|Qt::AlignTop);
+	chart_->legend()->setAlignment(Qt::AlignRight);
 	chart_->setBackgroundRoundness(0);
 	chart_->setMargins(QMargins(0,0,0,0));
 
