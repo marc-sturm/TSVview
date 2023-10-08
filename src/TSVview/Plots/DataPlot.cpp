@@ -28,7 +28,6 @@ void DataPlot::setData(const DataSet& data, QList<int> cols, QString filename)
 	//init
 	filename_ = filename;
 	QStringList line_types = QStringList() << "none" << "solid" << "dotted" << "dashed";
-	QStringList show_symbols = QStringList() << "no" << "yes";
 	params_.blockSignals(true);
 	params_.clear();
 
@@ -77,7 +76,7 @@ void DataPlot::setData(const DataSet& data, QList<int> cols, QString filename)
 		params_.addColor(name + ":color", "", series->pen().color());
 		params_.addInt(name + ":line width", "", series->pen().width(), 1, 999);
 		params_.addString(name + ":line type", "", "solid", line_types);
-		params_.addString(name + ":points visible", "", "no", show_symbols);
+		params_.addBool(name + ":points visible", "", false);
 	}
 
 	//format axes
@@ -125,7 +124,7 @@ QPen DataPlot::pen(QString series_name)
 
 bool DataPlot::pointsVisible(QString series_name)
 {
-	return params_.getString(series_name + ":points visible")=="yes";
+	return params_.getBool(series_name + ":points visible");
 }
 
 void DataPlot::parameterChanged(QString series_and_parameter)

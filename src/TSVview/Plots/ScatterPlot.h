@@ -13,11 +13,10 @@ public:
 	ScatterPlot(QWidget* parent = 0);
 	void setData(const DataSet& data, int col1, int col2, QString filename);
 
-private:
-	static QVector<double> addNoise(QVector<double> data, double noise);
-
 private slots:
 	void parameterChanged(QString parameter);
+	void addSeries();
+	void addSeriesFiltered();
 
 protected:
 	QBitArray filter_;

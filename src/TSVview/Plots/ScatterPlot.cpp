@@ -40,15 +40,6 @@ ScatterPlot::ScatterPlot(QWidget *parent)
 	enableMouseTracking();
 }
 
-QVector<double> ScatterPlot::addNoise(QVector<double> data, double noise)
-{
-	for (int i=0; i<data.count(); ++i)
-	{
-		data[i] += Helper::randomNumber(-1,1) * noise;
-	}
-	return data;
-}
-
 void ScatterPlot::setData(const DataSet& data, int col1, int col2, QString filename)
 {
 	filter_ = data.getRowFilter(false);
@@ -57,23 +48,9 @@ void ScatterPlot::setData(const DataSet& data, int col1, int col2, QString filen
 	filename_ = filename;
 
 	//create series of visible data
-	QScatterSeries* series = new QScatterSeries();
-	series->setName("visible");
-	series->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
-	series->setMarkerSize(3.0);
-	series->setColor(Qt::darkBlue);
-	series->setPen(QColor(Qt::transparent));
-	for(int i=0; i<filter_.count(); ++i)
-	{
-		if (filter_[i])
-		{
-			series->append(col1_.value(i), col2_.value(i));
-		}
-	}
-	chart_->addSeries(series);
+	addSeries();
 
-	//add axes
-	chart_->createDefaultAxes();
+	//set axes labels
 	chart_->axes(Qt::Horizontal).at(0)->setTitleText(data.numericColumn(col1).headerOrIndex(col1));
 	chart_->axes(Qt::Vertical).at(0)->setTitleText(data.numericColumn(col2).headerOrIndex(col2));
 
@@ -160,39 +137,120 @@ void ScatterPlot::parameterChanged(QString parameter)
 		}
 		else
 		{
-			series = new QScatterSeries();
-			series->setName("filtered");
-			series->setMarkerShape(QScatterSeries::MarkerShapeCircle);
-			series->setMarkerSize(3.0);
-			series->setColor(QColor(200, 0, 0));
-			series->setPen(QColor(Qt::transparent));
-			for(int i=0; i<filter_.count(); ++i)
-			{
-				if (!filter_[i])
-				{
-					series->append(col1_.value(i), col2_.value(i));
-				}
-			}
-			chart_->addSeries(series);
-			series->attachAxis(chart_->axes(Qt::Horizontal).at(0));
-			series->attachAxis(chart_->axes(Qt::Vertical).at(0));
+			addSeriesFiltered();
 		}
 	}
 	else if (parameter=="filtered color")
 	{
 		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("filtered"));
-		series->setColor(params_.getColor("filtered color"));
+		if (series!=nullptr) series->setColor(params_.getColor("filtered color"));
 	}
 	else if (parameter=="filtered symbol")
 	{
 		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("filtered"));
-		series->setMarkerShape(params_.getString("filtered symbol")=="square" ? QScatterSeries::MarkerShapeRectangle : QScatterSeries::MarkerShapeCircle);
+		if (series!=nullptr) series->setMarkerShape(params_.getString("filtered symbol")=="square" ? QScatterSeries::MarkerShapeRectangle : QScatterSeries::MarkerShapeCircle);
 	}
 	else if (parameter=="filtered symbol size")
 	{
 		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("filtered"));
-		series->setMarkerSize(params_.getInt("filtered symbol size"));
+		if (series!=nullptr) series->setMarkerSize(params_.getInt("filtered symbol size"));
+	}
+	else if (parameter=="position noise")
+	{
+		//visible
+		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("visible"));
+		chart_->removeSeries(series);
+		addSeries();
+
+		//filtered
+		series = qobject_cast<QScatterSeries*>(search("filtered"));
+		if (series!=nullptr)
+		{
+			chart_->removeSeries(series);
+			addSeriesFiltered();
+		}
+	}
+}
+
+void ScatterPlot::addSeries()
+{
+	double noise_perc_x = params_.getInt("position noise") / 100.0;
+	double noise_perc_y = params_.getInt("position noise") / 100.0;
+	bool add_noise = noise_perc_x>0;
+	if (add_noise)
+	{
+		QRectF bb = getBoundingBox();
+		noise_perc_x *= bb.width();
+		noise_perc_y *= bb.height();
 	}
 
-	//TODO double noise_perc = params_.getInt("position noise") / 100.0;
+	QScatterSeries* series = new QScatterSeries();
+	series->setName("visible");
+	series->setMarkerShape(params_.getString("symbol")=="square" ? QScatterSeries::MarkerShapeRectangle : QScatterSeries::MarkerShapeCircle);
+	series->setMarkerSize(params_.getInt("symbol size"));
+	series->setColor(params_.getColor("color"));
+	series->setPen(QColor(Qt::transparent));
+	for(int i=0; i<filter_.count(); ++i)
+	{
+		if (filter_[i])
+		{
+			double x = col1_.value(i);
+			double y =  col2_.value(i);
+			if (add_noise)
+			{
+				x += Helper::randomNumber(-1,1) * noise_perc_x;
+				y += Helper::randomNumber(-1,1) * noise_perc_y;
+			}
+			series->append(x, y);
+		}
+	}
+	chart_->addSeries(series);
+
+	//add/attach axes
+	if (chart_->axes().count()==0)
+	{
+		chart_->createDefaultAxes();
+	}
+	else
+	{
+		series->attachAxis(chart_->axes(Qt::Horizontal).at(0));
+		series->attachAxis(chart_->axes(Qt::Vertical).at(0));
+	}
+}
+
+void ScatterPlot::addSeriesFiltered()
+{
+	double noise_perc_x = params_.getInt("position noise") / 100.0;
+	double noise_perc_y = params_.getInt("position noise") / 100.0;
+	bool add_noise = noise_perc_x>0;
+	if (add_noise)
+	{
+		QRectF bb = getBoundingBox();
+		noise_perc_x *= bb.width();
+		noise_perc_y *= bb.height();
+	}
+
+	QScatterSeries* series = new QScatterSeries();
+	series->setName("filtered");
+	series->setMarkerShape(params_.getString("filtered symbol")=="square" ? QScatterSeries::MarkerShapeRectangle : QScatterSeries::MarkerShapeCircle);
+	series->setMarkerSize(params_.getInt("filtered symbol size"));
+	series->setColor(params_.getColor("filtered color"));
+	series->setPen(QColor(Qt::transparent));
+	for(int i=0; i<filter_.count(); ++i)
+	{
+		if (!filter_[i])
+		{
+			double x = col1_.value(i);
+			double y =  col2_.value(i);
+			if (add_noise)
+			{
+				x += Helper::randomNumber(-1,1) * noise_perc_x;
+				y += Helper::randomNumber(-1,1) * noise_perc_y;
+			}
+			series->append(x, y);
+		}
+	}
+	chart_->addSeries(series);
+	series->attachAxis(chart_->axes(Qt::Horizontal).at(0));
+	series->attachAxis(chart_->axes(Qt::Vertical).at(0));
 }

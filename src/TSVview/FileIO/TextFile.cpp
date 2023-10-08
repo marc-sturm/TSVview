@@ -8,6 +8,7 @@
 #include "CustomExceptions.h"
 
 //TODO add support for .txt.gz format
+//TODO add support for storing filters in header
 void TextFile::load(DataSet& data, QString filename, Parameters params, int preview_lines)
 {
 	QFile file(filename);
