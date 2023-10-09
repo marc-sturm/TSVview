@@ -26,7 +26,6 @@ public slots:
 	void toggleSeriesVisibility();
 	void resetZoom();
 	void zoomIn();
-	QRectF getBoundingBox();
 
 protected:
 	Parameters params_;

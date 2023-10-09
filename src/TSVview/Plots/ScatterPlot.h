@@ -22,6 +22,8 @@ protected:
 	QBitArray filter_;
 	QVector<double> col1_;
 	QVector<double> col2_;
+
+	QRectF getBoundingBox() const;
 };
 
 #endif

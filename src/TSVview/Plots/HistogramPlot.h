@@ -8,7 +8,6 @@
 
 class HistogramPlot
 		: public BasePlot
-		, private QwtPlotItem
 {
 	Q_OBJECT
 
@@ -16,19 +15,17 @@ public:
 	HistogramPlot(QWidget *parent = 0);
 	void setData(DataSet& data, int column, QString filename);
 
+protected slots:
+	void parameterChanged(QString parameter);
+
 protected:
-	virtual int rtti() const;
-	virtual void draw(QPainter* painter, const QwtScaleMap& xMap, const QwtScaleMap& yMap, const QRectF& rect) const;
+	QBitArray filter_;
+	QVector<double> col_;
+	QString name_;
 
-private:
-	DataSet* data_;
-	int column_;
-	bool percentage_;
-	QSharedPointer<Histogram> hist_;
-	QSharedPointer<Histogram> hist2_;
-
-private slots:
-	void replot_();
+	void plot();
+	void addSeries();
+	QPair<double, double> getMinMax();
 };
 
 #endif

@@ -241,7 +241,7 @@ void ScatterPlot::addSeriesFiltered()
 		if (!filter_[i])
 		{
 			double x = col1_.value(i);
-			double y =  col2_.value(i);
+			double y = col2_.value(i);
 			if (add_noise)
 			{
 				x += Helper::randomNumber(-1,1) * noise_perc_x;
@@ -253,4 +253,28 @@ void ScatterPlot::addSeriesFiltered()
 	chart_->addSeries(series);
 	series->attachAxis(chart_->axes(Qt::Horizontal).at(0));
 	series->attachAxis(chart_->axes(Qt::Vertical).at(0));
+}
+
+QRectF ScatterPlot::getBoundingBox() const
+{
+	bool use_filtered = params_.getBool("filtered");
+	double x_min = std::numeric_limits<qreal>::max();
+	double x_max = -std::numeric_limits<qreal>::max();
+	double y_min = x_min;
+	double y_max = x_max;
+
+	for (int i=0; i<filter_.count(); ++i)
+	{
+		if (use_filtered || filter_[i])
+		{
+			double x = col1_[i];
+			double y = col2_[i];
+			if (x<x_min) x_min = x;
+			if (x>x_max) x_max = x;
+			if (y<y_min) y_min = y;
+			if (y>y_max) y_max = y;
+		}
+	}
+
+	return QRectF(QPointF(x_min, y_max), QPointF(x_max, y_min));
 }

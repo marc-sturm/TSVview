@@ -23,6 +23,7 @@
 #include "ScrollableTextDialog.h"
 #include "Helper.h"
 #include "ScatterPlot.h"
+#include "HistogramPlot.h"
 
 //TODO allow text filters on several columns (all)
 
@@ -519,15 +520,12 @@ QString MainWindow::fileNameLabel()
 
 void MainWindow::histogram()
 {
-	//TODO add again
-	/*
 	int index = grid_->selectedColumns()[0];
 
 	HistogramPlot* hist = new HistogramPlot();
 	hist->setData(data_, index, QFileInfo(file_.name).baseName());
 	auto dlg = GUIHelper::createDialog(hist, "Histogram of '" + data_.column(index).headerOrIndex(index) + fileNameLabel());
 	dlg->exec();
-	*/
 }
 
 void MainWindow::basicStatistics()

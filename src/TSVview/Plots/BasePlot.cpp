@@ -25,8 +25,8 @@ BasePlot::BasePlot(QWidget *parent)
 	, y_label_(nullptr)
 {
 	//general settings
-	setMinimumWidth(500);
-	setMinimumHeight(400);
+	setMinimumWidth(800);
+	setMinimumHeight(600);
 
 	//create layout
 	QGridLayout* layout = new QGridLayout();
@@ -219,29 +219,6 @@ void BasePlot::resetZoom()
 void BasePlot::zoomIn()
 {
 	chart_->zoomIn();
-}
-
-QRectF BasePlot::getBoundingBox()
-{
-	double x_min = std::numeric_limits<qreal>::max();
-	double x_max = -std::numeric_limits<qreal>::max();
-	double y_min = x_min;
-	double y_max = x_max;
-	foreach (QAbstractSeries* series, chart_->series())
-	{
-		QXYSeries* xy = qobject_cast<QXYSeries*>(series);
-		if (xy!=nullptr)
-		{
-			foreach(const QPointF& p, xy->pointsVector())
-			{
-				if (p.x()<x_min) x_min = p.x();
-				if (p.x()>x_max) x_max = p.x();
-				if (p.y()<y_min) y_min = p.y();
-				if (p.y()>y_max) y_max = p.y();
-			}
-		}
-	}
-	return QRectF(QPointF(x_min, y_max), QPointF(x_max, y_min));
 }
 
 void BasePlot::enableMouseTracking()

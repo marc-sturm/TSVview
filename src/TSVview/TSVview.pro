@@ -25,7 +25,7 @@ SOURCES += \
     FileIO/TextFile.cpp \
     Plots/BasePlot.cpp \
     Plots/ScatterPlot.cpp \
-#    Plots/HistogramPlot.cpp \
+    Plots/HistogramPlot.cpp \
     Plots/DataPlot.cpp \
     Base/DataGrid.cpp \
 #    Plots/BoxPlot.cpp \
@@ -57,7 +57,7 @@ HEADERS += \
     FileIO/TextFile.h \
     Plots/BasePlot.h \
     Plots/ScatterPlot.h \
-#    Plots/HistogramPlot.h \
+    Plots/HistogramPlot.h \
     Plots/DataPlot.h \
     Base/DataGrid.h \
 #    Plots/BoxPlot.h \
