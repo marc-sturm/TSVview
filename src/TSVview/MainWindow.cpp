@@ -27,6 +27,7 @@
 #include "BoxPlot.h"
 
 //TODO allow text filters on several columns (all)
+//TODO add support for loading/storing .txt.gz format
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
@@ -247,7 +248,7 @@ void MainWindow::on_saveFile_triggered(bool)
 void MainWindow::on_saveFileAs_triggered(bool)
 {
 	QString selected_filter = "";
-	QString filename = QFileDialog::getSaveFileName(this, "Save file", Settings::path("path_open", true) + file_.name, "Text files (*.txt *.csv *.tsv);;XML files (*.xml);;Zipped XML value files (*.zxv)", &selected_filter);
+	QString filename = QFileDialog::getSaveFileName(this, "Save file", Settings::path("path_open", true) + file_.name, "Text files (*.txt *.csv *.tsv)", &selected_filter);
 	if (filename==QString::null)
 	{
 		return;

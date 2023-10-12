@@ -7,8 +7,6 @@
 #include "TextFile.h"
 #include "CustomExceptions.h"
 
-//TODO add support for .txt.gz format
-//TODO add support for storing filters in header
 void TextFile::load(DataSet& data, QString filename, Parameters params, int preview_lines)
 {
 	QFile file(filename);
@@ -62,6 +60,7 @@ void TextFile::fromStream(DataSet& data, QTextStream& stream, Parameters params,
 	QSet<int> numeric_columns;
 
 	QStringList comments;
+	QStringList filters;
 	bool is_first_content_line = true;
 	int cols = -1;
 	int row = 0;
@@ -75,7 +74,14 @@ void TextFile::fromStream(DataSet& data, QTextStream& stream, Parameters params,
 		//skip comment lines
 		if (comment_char!=QChar::Null && line[0]==comment_char)
 		{
-			comments << line;
+			if (line.startsWith("##FILTER##"))
+			{
+				filters << line;
+			}
+			else
+			{
+				comments << line;
+			}
 			continue;
 		}
 
@@ -181,6 +187,15 @@ void TextFile::fromStream(DataSet& data, QTextStream& stream, Parameters params,
 		data.column(c).autoFormat();
 	}
 
+	//apply filters
+	if (filters.count()==data.columnCount())
+	{
+		for(int i=0; i<filters.count(); ++i)
+		{
+			data.column(i).setFilter(Filter::fromString(filters[i]));
+		}
+	}
+
 	data.setModified(false);
 }
 
@@ -229,6 +244,15 @@ void TextFile::store(DataSet& data, QString filename, Parameters params)
 		}
 	}
 	stream << "\n";
+
+	//write filters
+	if (comment=='#')
+	{
+		for (int col=0; col<cols; ++col)
+		{
+			stream << data.column(col).filter().toString() << "\n";
+		}
+	}
 
 	// write data
 	for (int row=0; row<rows; ++row)

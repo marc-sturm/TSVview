@@ -115,3 +115,19 @@ Filter::Type Filter::stringToType(QString string, bool human_readable)
 
 	THROW(FilterTypeException,"Internal error: Unknown filter type '" + string + "'!");
 }
+
+QString Filter::toString() const
+{
+	return "##FILTER##" + Filter::typeToString(type_, false) + "##" + value_ + "##";
+}
+
+Filter Filter::fromString(QString line)
+{
+	QStringList parts = line.split("##");
+
+	Filter filter;
+	filter.setType(Filter::stringToType(parts[2], false));
+	filter.setValue(parts[3]);
+
+	return filter;
+}

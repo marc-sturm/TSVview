@@ -98,8 +98,8 @@ void DataSet::addColumn(QString header, const QVector<double>& data, bool auto_f
 	new_col->setHeader(header);
 
 	connect(new_col, SIGNAL(dataChanged()), this, SLOT(columnDataChanged()));
-	connect(new_col, SIGNAL(filterChanged()), this, SIGNAL(filtersChanged()));
-	connect(new_col, SIGNAL(headerChanged()), this, SIGNAL(headersChanged()));
+	connect(new_col, SIGNAL(filterChanged()), this, SLOT(filterDataChanged()));
+	connect(new_col, SIGNAL(headerChanged()), this, SLOT(headerDataChanged()));
 
 	if (auto_format)
 	{
@@ -128,8 +128,8 @@ void DataSet::addColumn(QString header, const QVector<QString>& data, bool auto_
 	new_col->setHeader(header);
 
 	connect(new_col, SIGNAL(dataChanged()), this, SLOT(columnDataChanged()));
-	connect(new_col, SIGNAL(filterChanged()), this, SIGNAL(filtersChanged()));
-	connect(new_col, SIGNAL(headerChanged()), this, SIGNAL(headersChanged()));
+	connect(new_col, SIGNAL(filterChanged()), this, SLOT(filterDataChanged()));
+	connect(new_col, SIGNAL(headerChanged()), this, SLOT(headerDataChanged()));
 
 	if (auto_format)
 	{
@@ -159,8 +159,8 @@ void DataSet::replaceColumn(int index, QString header, const QVector<double>& da
 	new_col->setHeader(header);
 
 	connect(new_col, SIGNAL(dataChanged()), this, SLOT(columnDataChanged()));
-	connect(new_col, SIGNAL(filterChanged()), this, SIGNAL(filtersChanged()));
-	connect(new_col, SIGNAL(headerChanged()), this, SIGNAL(headersChanged()));
+	connect(new_col, SIGNAL(filterChanged()), this, SLOT(filterDataChanged()));
+	connect(new_col, SIGNAL(headerChanged()), this, SLOT(headerDataChanged()));
 
 	if (auto_format)
 	{
@@ -384,6 +384,20 @@ void DataSet::columnDataChanged()
 
 	BaseColumn* column = qobject_cast<BaseColumn*>(sender());
 	emit columnChanged(columns_.indexOf(column), false);
+}
+
+void DataSet::headerDataChanged()
+{
+	setModified(true);
+
+	emit headersChanged();
+}
+
+void DataSet::filterDataChanged()
+{
+	setModified(true);
+
+	emit filtersChanged();
 }
 
 QBitArray DataSet::getRowFilter(bool update) const

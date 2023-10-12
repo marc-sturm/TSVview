@@ -114,6 +114,8 @@ signals:
 
 protected slots:
 	void columnDataChanged();
+	void headerDataChanged();
+	void filterDataChanged();
 
 protected:
 	QVector<BaseColumn*> columns_;
