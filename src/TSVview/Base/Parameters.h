@@ -57,7 +57,7 @@ public:
 	QString getString(QString key) const;
 	QChar getChar(QString key) const;
 	bool getBool(QString key) const;
-	QColor getColor(QString key) const;
+	QColor getColor(QString key, int alpha=255) const;
 	enum  Symbol getSymbol(QString key) const;
 
 	Type type(QString key) const;

@@ -24,6 +24,7 @@
 #include "Helper.h"
 #include "ScatterPlot.h"
 #include "HistogramPlot.h"
+#include "BoxPlot.h"
 
 //TODO allow text filters on several columns (all)
 
@@ -558,13 +559,10 @@ void MainWindow::dataPlot()
 
 void MainWindow::boxPlot()
 {
-	//TODO add again
-	/*
 	BoxPlot* plot = new BoxPlot();
 	plot->setData(data_, grid_->selectedColumns(), QFileInfo(file_.name).baseName());
 	auto dlg = GUIHelper::createDialog(plot, "BoxPlot" + fileNameLabel());
 	dlg->exec();
-	*/
 }
 
 void MainWindow::on_about_triggered(bool /*checked*/)

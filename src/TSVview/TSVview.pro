@@ -28,7 +28,7 @@ SOURCES += \
     Plots/HistogramPlot.cpp \
     Plots/DataPlot.cpp \
     Base/DataGrid.cpp \
-#    Plots/BoxPlot.cpp \
+    Plots/BoxPlot.cpp \
     Plots/MyChartView.cpp \
     Signal/Smoothing.cpp \
     Base/BaseColumn.cpp \
@@ -60,7 +60,7 @@ HEADERS += \
     Plots/HistogramPlot.h \
     Plots/DataPlot.h \
     Base/DataGrid.h \
-#    Plots/BoxPlot.h \
+    Plots/BoxPlot.h \
     Plots/MyChartView.h \
     Signal/Smoothing.h \
     Base/BaseColumn.h \

@@ -258,11 +258,13 @@ bool Parameters::getBool(QString key) const
 	return get_(key).v_variant.toBool();
 }
 
-QColor Parameters::getColor(QString key) const
+QColor Parameters::getColor(QString key, int alpha) const
 {
 	checkIsType_(key, Color);
 
-	return get_(key).v_variant.value<QColor>();
+	QColor color = get_(key).v_variant.value<QColor>();
+	color.setAlpha(alpha);
+	return color;
 }
 
 enum Parameters::Symbol Parameters::getSymbol(QString key) const
