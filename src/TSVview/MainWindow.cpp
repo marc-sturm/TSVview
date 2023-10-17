@@ -26,8 +26,11 @@
 #include "HistogramPlot.h"
 #include "BoxPlot.h"
 
-//TODO allow text filters on several columns (all)
+//TODO allow text filters on all columns
 //TODO add support for loading/storing .txt.gz format
+//TODO allow copying basic statistics values
+//TODO allow setting label angle in bar blot
+//TODO show outliers in bar plot
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)

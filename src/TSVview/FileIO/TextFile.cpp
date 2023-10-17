@@ -74,7 +74,7 @@ void TextFile::fromStream(DataSet& data, QTextStream& stream, Parameters params,
 		//skip comment lines
 		if (comment_char!=QChar::Null && line[0]==comment_char)
 		{
-			if (line.startsWith("##FILTER##"))
+			if (line.startsWith("##TSVVIEW-FILTER##"))
 			{
 				filters << line;
 			}
