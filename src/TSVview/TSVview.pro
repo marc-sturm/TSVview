@@ -15,6 +15,7 @@ INCLUDEPATH += Statistics
 INCLUDEPATH += Signal
 
 SOURCES += \
+    GrepDialog.cpp \
     Main.cpp \
     MainWindow.cpp \
     Base/Parameters.cpp \
@@ -48,6 +49,7 @@ SOURCES += \
     TextItemEditDialog.cpp
     
 HEADERS += \
+    GrepDialog.h \
     MainWindow.h \
     Base/Parameters.h \
     Base/CustomExceptions.h \
@@ -80,6 +82,7 @@ HEADERS += \
     TextItemEditDialog.h
 
 FORMS += \
+    GrepDialog.ui \
     MainWindow.ui \
     FileIO/TextImportPreview.ui \
     FileIO/FilePreview.ui \

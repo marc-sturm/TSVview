@@ -85,6 +85,7 @@ protected slots:
 	void removeFilter_();
 	void removeDuplicates_();
 	void keepDuplicates_();
+	void filterLines_();
 	void columnChanged(int column, bool until_end);
 	void horizontalHeaderContextMenu(const QPoint&);
 	void verticalHeaderContextMenu(const QPoint&);

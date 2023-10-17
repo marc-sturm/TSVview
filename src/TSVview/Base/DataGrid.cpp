@@ -12,7 +12,7 @@
 #include <QRegExp>
 #include <algorithm>
 #include <math.h>
-
+#include "GrepDialog.h"
 #include "DataGrid.h"
 #include "CustomExceptions.h"
 #include "TextFile.h"
@@ -268,6 +268,7 @@ QMenu* DataGrid::createStandardContextMenu()
 		action = edit_menu->addAction("Remove duplicates", this, SLOT(removeDuplicates_()));
 		action = edit_menu->addAction("Keep duplicates", this, SLOT(keepDuplicates_()));
 		action->setEnabled(selected_count==1);
+		action = edit_menu->addAction("Filter lines", this, SLOT(filterLines_()));
 
 		QMenu* convert_menu = menu->addMenu("Convert to numeric column");
 		convert_menu->setEnabled(selected_count==1 && text_count==1);
@@ -886,6 +887,46 @@ void DataGrid::keepDuplicates_()
 
 	//reduce to rows with duplicates
 	data_->reduceToRows(rows_to_keep);
+}
+
+void DataGrid::filterLines_()
+{
+	GrepDialog dlg(this);
+	if (dlg.exec()!=QDialog::Accepted) return;
+
+	QString operation = dlg.operation();
+	QString value = dlg.value();
+	bool invert = dlg.invert();
+
+	if (operation=="contains")
+	{
+		//determine matches
+		QBitArray matches(data_->rowCount(), false);
+		for (int r=0; r<data_->rowCount(); ++r)
+		{
+			for (int c=0; c<data_->columnCount(); ++c)
+			{
+				if(data_->column(c).string(r).contains(value))
+				{
+					qDebug() << r << c << data_->column(c).string(r);
+					matches[r] = true;
+					break;
+				}
+			}
+		}
+
+		//invert if requested
+		if (invert) matches = ~matches;
+
+		//apply
+		QSet<int> rows_to_keep;
+		for (int r=0; r<matches.count(); ++r)
+		{
+			if (matches[r]) rows_to_keep << r;
+		}
+
+		data_->reduceToRows(rows_to_keep);
+	}
 }
 
 void DataGrid::editFilter(int column)
