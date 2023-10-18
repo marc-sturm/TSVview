@@ -73,7 +73,7 @@ FilterDialog::FilterDialog(BaseColumn* column, QWidget* parent)
 	connect(ui_.operation, SIGNAL(activated(int)), ui_.value, SLOT(setFocus()));
 
 	//set focus
-	ui_.value->selectAll();;
+	ui_.value->selectAll();
 	ui_.value->setFocus();
 }
 

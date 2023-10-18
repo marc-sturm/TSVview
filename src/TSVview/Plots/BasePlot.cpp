@@ -10,25 +10,23 @@
 #include <QDebug>
 #include <QMouseEvent>
 #include <QClipboard>
-
-#include <qwt_painter.h>
-#include <qwt_plot_canvas.h>
-#include <qwt_plot_renderer.h>
-
+#include <QSpacerItem>
+#include <QXYSeries>
 #include "BasePlot.h"
 #include "Settings.h"
 
 BasePlot::BasePlot(QWidget *parent)
 	: QWidget(parent)
 	, params_()
-	, plot_(0)
-	, editor_(0)
-	, x_label_(0)
-	, y_label_(0)
+	, chart_view_(nullptr)
+	, chart_(nullptr)
+	, editor_(nullptr)
+	, x_label_(nullptr)
+	, y_label_(nullptr)
 {
 	//general settings
-	setMinimumWidth(500);
-	setMinimumHeight(400);
+	setMinimumWidth(800);
+	setMinimumHeight(600);
 
 	//create layout
 	QGridLayout* layout = new QGridLayout();
@@ -45,20 +43,24 @@ BasePlot::BasePlot(QWidget *parent)
 	editor_->setVisible(false);
 	layout->addWidget(editor_, 0, 1);
 
-	//create plot and add it to layout
-	plot_ = new QwtPlot();
-	plot_->setCanvasBackground(Qt::white);
+	//create plot and add it chart_view_yout
 	QSizePolicy policy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 	policy.setHorizontalStretch(100);
 	policy.setVerticalStretch(100);
-	plot_->setSizePolicy(policy);
-	layout->addWidget(plot_, 0, 2);
+	chart_view_ = new MyChartView();
+	chart_view_->setSizePolicy(policy);
+	chart_view_->setRenderHint(QPainter::Antialiasing, true);
+	chart_view_->setBackgroundBrush(Qt::white);
+	chart_view_->setRubberBand(QChartView::RectangleRubberBand);
+	connect(chart_view_, SIGNAL(resetZoom()), this, SLOT(resetZoom()));
+	connect(chart_view_, SIGNAL(zoomIn()), this, SLOT(zoomIn()));
+	layout->addWidget(chart_view_, 0, 2);
 
 	//add settings button
 	QToolButton* button = new QToolButton();
 	button->setIcon(QIcon(":/Icons/Settings.png"));
 	button->setToolTip("Show/hide settings");
-	connect(button, SIGNAL(clicked()), this, SLOT(showSettings_()));
+	connect(button, SIGNAL(clicked()), this, SLOT(showSettings()));
 	addToToolbar(button);
 	addSeparatorToToolbar();
 
@@ -86,16 +88,9 @@ BasePlot::BasePlot(QWidget *parent)
 	addToToolbar(button);
 }
 
-void BasePlot::showSettings_()
+void BasePlot::showSettings()
 {
-	if (editor_->isVisible())
-	{
-		editor_->setVisible(false);
-	}
-	else
-	{
-		editor_->setVisible(true);
-	}
+	editor_->setVisible(!editor_->isVisible());
 }
 
 void BasePlot::addToToolbar(QToolButton* button)
@@ -116,12 +111,12 @@ void BasePlot::addSeparatorToToolbar()
 void BasePlot::copyToClipboard()
 {
 	//create empty image
-	QPixmap image(2*plot_->width(), 2*plot_->height());
+	QPixmap image(chart_view_->size());
 	image.fill(Qt::white);
 
 	//print plot to image
-	QwtPlotRenderer renderer;
-	renderer.renderTo(plot_, image);
+	QPainter painter(&image);
+	chart_view_->render(&painter);
 
 	QClipboard* clipboard = QApplication::clipboard();
 	clipboard->setPixmap(image);
@@ -134,14 +129,13 @@ void BasePlot::saveAsPng()
 	QString filename = QFileDialog::getSaveFileName(this, "Save plot in PNG format",  path+filename_+".png", "All files (*.*);;"+selected_filter, &selected_filter);
 	if (filename!="")
 	{
-
 		//create empty image
-		QPixmap image(plot_->width(), plot_->height());
+		QPixmap image(chart_view_->width(), chart_view_->height());
 		image.fill(Qt::white);
 
 		//print plot to image
-		QwtPlotRenderer renderer;
-		renderer.renderTo(plot_, image);
+		QPainter painter(&image);
+		chart_view_->render(&painter);
 
 		//save image
 		bool save_ok = image.save(filename, "PNG");
@@ -170,66 +164,99 @@ void BasePlot::saveAsSvg()
 		image.setViewBox(QRect(0, 0, 200, 200));
 		image.setTitle("SVG plot");
 		image.setDescription("SVG plot");
-		QwtPlotRenderer renderer;
-		renderer.renderTo(plot_, image);
+
+		QPainter painter(&image);
+		chart_view_->render(&painter);
 
 		//store the last used path
 		Settings::setPath("path_images", filename);
 	}
 }
 
-
-void BasePlot::enableMouseTracking(bool enabled)
+void BasePlot::toggleSeriesVisibility()
 {
-	QGridLayout* main_layout = (QGridLayout*)layout();
-	if (enabled)
+	QLegendMarker* marker = qobject_cast<QLegendMarker*>(sender());
+	QAbstractSeries* series = marker->series();
+
+	//toggle visibility
+	if(series->isVisible())
 	{
-		//create status bar
-		if (y_label_==0)
-		{
-			QBoxLayout* status_bar_layout =  new QBoxLayout(QBoxLayout::RightToLeft);
-			main_layout->addLayout(status_bar_layout, 1, 0, 1, 3, Qt::AlignHCenter);
-
-			//fill status bar layout with widgets
-			y_label_ = new QLabel();
-			y_label_->setMinimumWidth(70);
-			status_bar_layout->addWidget(y_label_);
-			x_label_ = new QLabel();
-			x_label_->setMinimumWidth(70);
-			status_bar_layout->addWidget(x_label_);
-		}
-
-		//enable mouse tracking
-		plot_->canvas()->setMouseTracking(true);
-		plot_->canvas()->installEventFilter(this);
+		series->setVisible(false);
+		marker->setVisible(true);
 	}
 	else
 	{
-		plot_->canvas()->setMouseTracking(false);
-		plot_->canvas()->removeEventFilter(this);
+		series->setVisible(true);
 	}
+
+	//shade legend marker according to visibility
+	double alpha = series->isVisible() ? 1.0 : 0.5;
+
+	QBrush brush = marker->labelBrush();
+	QColor color = brush.color();
+	color.setAlphaF(alpha);
+	brush.setColor(color);
+	marker->setLabelBrush(brush);
+
+	brush = marker->brush();
+	color = brush.color();
+	color.setAlphaF(alpha);
+	brush.setColor(color);
+	marker->setBrush(brush);
+
+	QPen pen = marker->pen();
+	color = pen.color();
+	color.setAlphaF(alpha);
+	pen.setColor(color);
+	marker->setPen(pen);
 }
 
-bool BasePlot::eventFilter(QObject* obj, QEvent* event)
+void BasePlot::resetZoom()
 {
-	if (event->type() == QEvent::MouseMove)
-	{
-		QMouseEvent* mouseEvent = dynamic_cast<QMouseEvent*>(event);
-		double x = plot_->invTransform(QwtPlot::QwtPlot::xBottom, mouseEvent->x());
-		x_label_->setText("x: " + QString::number(x));
-		double y = plot_->invTransform(QwtPlot::QwtPlot::yLeft, mouseEvent->y());
-		y_label_->setText("y: " + QString::number(y));
-
-		return true;
-	}
-	if (event->type() == QEvent::Leave && y_label_!=0)
-	{
-		x_label_->setText("");
-		y_label_->setText("");
-
-		return true;
-	}
-
-	return QObject::eventFilter(obj, event);
+	chart_->zoomReset();
 }
 
+void BasePlot::zoomIn()
+{
+	chart_->zoomIn();
+}
+
+void BasePlot::enableMouseTracking()
+{
+	chart_view_->enableMouseTracking();
+	if (y_label_==nullptr)
+	{
+		QBoxLayout* status_bar_layout =  new QBoxLayout(QBoxLayout::LeftToRight);
+		QGridLayout* main_layout = (QGridLayout*)layout();
+		main_layout->addLayout(status_bar_layout, 1, 2, Qt::AlignHCenter);
+
+		//X axis
+		x_label_ = new QLabel();
+		x_label_->setMinimumWidth(70);
+		status_bar_layout->addWidget(x_label_);
+		connect(chart_view_, SIGNAL(xPosition(QString)), x_label_, SLOT(setText(QString)));
+
+		//Y axis
+		y_label_ = new QLabel();
+		y_label_->setMinimumWidth(70);
+		status_bar_layout->addWidget(y_label_);
+		connect(chart_view_, SIGNAL(yPosition(QString)), y_label_, SLOT(setText(QString)));
+
+		status_bar_layout->addStretch(100);
+
+		//additional info
+		info_label_ = new QLabel();
+		info_label_->setMinimumWidth(70);
+		status_bar_layout->addWidget(info_label_);
+	}
+}
+
+QAbstractSeries* BasePlot::search(QString name) const
+{
+	foreach(QAbstractSeries* series, chart_->series())
+	{
+		if (series->name()==name) return series;
+	}
+
+	return nullptr;
+}

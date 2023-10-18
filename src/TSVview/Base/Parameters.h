@@ -5,8 +5,6 @@
 #include <QMap>
 #include <QVariant>
 #include <QColor>
-
-#include <qwt_symbol.h>
 #include <limits>
 
 class Parameters
@@ -26,6 +24,13 @@ public:
 		Symbol
 		};
 
+	enum Symbol
+		{
+			NONE,
+			CIRCLE,
+			SQUARE
+		};
+
 	Parameters(QObject* object=0);
 	Parameters(const Parameters& rhs);
 	Parameters& operator=(const Parameters& rhs);
@@ -36,7 +41,7 @@ public:
 	void addChar(QString key, QString description, QChar value, QStringList valid = QStringList());
 	void addBool(QString key, QString description, bool value);
 	void addColor(QString key, QString description, QColor value);
-	void addSymbol(QString key, QString description, QwtSymbol::Style value);
+	void addSymbol(QString key, QString description, enum Symbol value);
 	void addSeparator();
 
 	void setInt(QString key, int value);
@@ -45,15 +50,15 @@ public:
 	void setChar(QString key, QChar value);
 	void setBool(QString key, bool value);
 	void setColor(QString key, QColor value);
-	void setSymbol(QString key, QwtSymbol::Style);
+	void setSymbol(QString key, enum Symbol symbol);
 
 	int getInt(QString key) const;
 	double getDouble(QString key) const;
 	QString getString(QString key) const;
 	QChar getChar(QString key) const;
 	bool getBool(QString key) const;
-	QColor getColor(QString key) const;
-	QwtSymbol::Style getSymbol(QString key) const;
+	QColor getColor(QString key, int alpha=255) const;
+	enum  Symbol getSymbol(QString key) const;
 
 	Type type(QString key) const;
 	bool isRestricted(QString key) const;
@@ -81,7 +86,7 @@ private:
 			, description("")
 			, type(Int)
 			, v_variant()
-			, v_symbol()
+			, v_symbol(CIRCLE)
 			, restriction(QVariant::Invalid)
 			, separator(false)
 		{
@@ -91,7 +96,7 @@ private:
 		QString description;
 		Type type;
 		QVariant v_variant;
-		QwtSymbol::Style v_symbol;
+		enum Symbol v_symbol;
 		QVariant restriction;
 		bool separator;
 	};

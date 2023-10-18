@@ -1,7 +1,7 @@
 # -------------------------------------------------
 # Project created by QtCreator 2010-03-29T13:28:53
 # -------------------------------------------------
-QT += core widgets gui xml svg qml
+QT += core widgets gui xml svg qml charts
 TARGET = TSVview
 TEMPLATE = app
 RC_FILE	 = icon.rc
@@ -15,14 +15,13 @@ INCLUDEPATH += Statistics
 INCLUDEPATH += Signal
 
 SOURCES += \
+    GrepDialog.cpp \
     Main.cpp \
     MainWindow.cpp \
     Base/Parameters.cpp \
     Base/CustomExceptions.cpp \
     Base/DataSet.cpp \
     Base/ParameterEditor.cpp \
-    FileIO/XMLImportPreview.cpp \
-    FileIO/XMLFile.cpp \
     FileIO/TextImportPreview.cpp \
     FileIO/TextFile.cpp \
     Plots/BasePlot.cpp \
@@ -31,8 +30,8 @@ SOURCES += \
     Plots/DataPlot.cpp \
     Base/DataGrid.cpp \
     Plots/BoxPlot.cpp \
+    Plots/MyChartView.cpp \
     Signal/Smoothing.cpp \
-    FileIO/ZXVFile.cpp \
     Base/BaseColumn.cpp \
     Base/NumericColumn.cpp \
     Base/StringColumn.cpp \
@@ -50,13 +49,12 @@ SOURCES += \
     TextItemEditDialog.cpp
     
 HEADERS += \
+    GrepDialog.h \
     MainWindow.h \
     Base/Parameters.h \
     Base/CustomExceptions.h \
     Base/DataSet.h \
     Base/ParameterEditor.h \
-    FileIO/XMLImportPreview.h \
-    FileIO/XMLFile.h \
     FileIO/TextImportPreview.h \
     FileIO/TextFile.h \
     Plots/BasePlot.h \
@@ -65,8 +63,8 @@ HEADERS += \
     Plots/DataPlot.h \
     Base/DataGrid.h \
     Plots/BoxPlot.h \
+    Plots/MyChartView.h \
     Signal/Smoothing.h \
-    FileIO/ZXVFile.h \
     Base/BaseColumn.h \
     Base/NumericColumn.h \
     Base/StringColumn.h \
@@ -84,8 +82,8 @@ HEADERS += \
     TextItemEditDialog.h
 
 FORMS += \
+    GrepDialog.ui \
     MainWindow.ui \
-    FileIO/XMLImportPreview.ui \
     FileIO/TextImportPreview.ui \
     FileIO/FilePreview.ui \
     GoToDockWidget.ui \
@@ -111,23 +109,3 @@ LIBS += -L$$PWD/../../bin -lcppGUI
 
 #copy EXE to bin folder
 DESTDIR = $$PWD/../../bin
-
-# -------------------------------------------------
-# include QWT
-# -------------------------------------------------
-INCLUDEPATH +=$$PWD\\..\\qwt\\include
-LIBS += -L$$PWD\\..\\qwt\\lib -lqwt
-
-
-
-
-
-
-
-
-
-
-
-
-
-

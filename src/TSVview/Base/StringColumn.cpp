@@ -10,62 +10,6 @@ StringColumn::StringColumn()
 {
 }
 
-QString StringColumn::string(int row) const
-{
-	Q_ASSERT(row<values_.count());
-
-	return values_[row];
-}
-
-void StringColumn::setString(int row, const QString& value)
-{
-	Q_ASSERT(row<values_.count());
-
-	values_[row] = value;
-
-	emit dataChanged();
-}
-
-const QVector<QString>& StringColumn::values() const
-{
-	return values_;
-}
-
-void StringColumn::setValues(const QVector<QString>& data)
-{
-	values_ = data;
-
-	emit dataChanged();
-}
-
-const QString& StringColumn::value(int row) const
-{
-	Q_ASSERT(row<values_.count());
-
-	return values_[row];
-}
-
-void StringColumn::setValue(int row, const QString& value)
-{
-	Q_ASSERT(row<values_.count());
-
-	values_[row] = value;
-
-	emit dataChanged();
-}
-
-void StringColumn::resize(int rows)
-{
-	values_.resize(rows);
-
-	emit dataChanged();
-}
-
-void StringColumn::reserve(int rows)
-{
-	values_.reserve(rows);
-}
-
 void StringColumn::sort(bool reverse)
 {
 	if (!reverse)
@@ -78,16 +22,6 @@ void StringColumn::sort(bool reverse)
 	}
 
 	emit dataChanged();
-}
-
-int StringColumn::count() const
-{
-	return values_.count();
-}
-
-BaseColumn* StringColumn::clone() const
-{
-	return new StringColumn(*this);
 }
 
 void StringColumn::setFilter(Filter filter)

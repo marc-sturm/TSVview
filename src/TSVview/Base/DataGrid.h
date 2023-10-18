@@ -61,7 +61,7 @@ public slots:
 	///Re-renders the headers of the current dataset.
 	void renderHeaders();
 	///Re-renders all columns of the current dataset starting from a given column.
-	void render(int start_col = 0);
+	void render();
 	void loadFilter();
 	void storeFilter();
 	void deleteFilter();
@@ -85,6 +85,7 @@ protected slots:
 	void removeFilter_();
 	void removeDuplicates_();
 	void keepDuplicates_();
+	void filterLines_();
 	void columnChanged(int column, bool until_end);
 	void horizontalHeaderContextMenu(const QPoint&);
 	void verticalHeaderContextMenu(const QPoint&);

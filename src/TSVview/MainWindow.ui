@@ -34,20 +34,8 @@
     <property name="title">
      <string>File</string>
     </property>
-    <widget class="QMenu" name="menuImport">
-     <property name="title">
-      <string>Open</string>
-     </property>
-     <property name="icon">
-      <iconset resource="Resources.qrc">
-       <normaloff>:/Icons/Open.png</normaloff>:/Icons/Open.png</iconset>
-     </property>
-     <addaction name="openTXT"/>
-     <addaction name="openXML"/>
-     <addaction name="openZXV"/>
-    </widget>
     <addaction name="newFile"/>
-    <addaction name="menuImport"/>
+    <addaction name="openTXT"/>
     <addaction name="saveFile"/>
     <addaction name="saveFileAs"/>
     <addaction name="recentlyOpened"/>
@@ -78,8 +66,7 @@
     <property name="title">
      <string>View</string>
     </property>
-    <addaction name="resizeColumns"/>
-    <addaction name="resizeRows"/>
+    <addaction name="resizeToContent"/>
     <addaction name="separator"/>
     <addaction name="toggleColumnIndex"/>
     <addaction name="toggleRowColors"/>
@@ -95,8 +82,12 @@
    </property>
   </action>
   <action name="openTXT">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/Icons/Open.png</normaloff>:/Icons/Open.png</iconset>
+   </property>
    <property name="text">
-    <string>Text file</string>
+    <string>Open file</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
@@ -202,9 +193,9 @@
     <string>Recently opened</string>
    </property>
   </action>
-  <action name="resizeColumns">
+  <action name="resizeToContent">
    <property name="text">
-    <string>Resize columns to content</string>
+    <string>Resize columns/rows to content</string>
    </property>
   </action>
   <action name="goToRow">

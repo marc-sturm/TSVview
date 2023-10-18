@@ -9,26 +9,25 @@
 #include <QMimeData>
 #include <QWindow>
 #include <QTextBrowser>
-
 #include "MainWindow.h"
 #include "TextFile.h"
 #include "TextImportPreview.h"
-#include "XMLFile.h"
-#include "XMLImportPreview.h"
-#include "HistogramPlot.h"
 #include "StatisticsSummaryWidget.h"
 #include "CustomExceptions.h"
-#include "ScatterPlot.h"
 #include "DataPlot.h"
-#include "BoxPlot.h"
 #include "Settings.h"
 #include "Smoothing.h"
-#include "ZXVFile.h"
 #include "Filter.h"
 #include "CustomExceptions.h"
 #include "GUIHelper.h"
 #include "ScrollableTextDialog.h"
 #include "Helper.h"
+#include "ScatterPlot.h"
+#include "HistogramPlot.h"
+#include "BoxPlot.h"
+
+//TODO add support for loading/storing .txt.gz format
+//TODO show outliers in bar plot?
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
@@ -91,8 +90,8 @@ MainWindow::MainWindow(QWidget *parent)
 	//load argument file
 	if (QApplication::arguments().count()==2)
 	{
-		QString filename = QApplication::arguments()[1];
-		openFile_(filename, getType(filename), true);
+		QString filename = QApplication::arguments().at(1);
+		openFile_(filename, true);
 	}
 }
 
@@ -107,7 +106,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
 void MainWindow::storeModifiedDataset_()
 {
-	if (data_.modified() && (file_.type!=NONE || data_.columnCount()!=0))
+	if (data_.modified() && data_.columnCount()!=0)
 	{
 		QMessageBox box(this);
 		box.setWindowTitle(QApplication::applicationName());
@@ -144,19 +143,6 @@ void MainWindow::on_newFile_triggered(bool)
 	data_.clear(true);
 }
 
-void MainWindow::on_openZXV_triggered(bool)
-{
-	storeModifiedDataset_();
-
-	QString filename = QFileDialog::getOpenFileName(this, "Open ZXV file", Settings::path("path_open", true), "Zipped XML value files (*.zxv);;All files (*.*)");
-	if (filename==QString::null)
-	{
-		return;
-	}
-
-	openFile_(filename, ZXV);
-}
-
 void MainWindow::on_openTXT_triggered(bool)
 {
 	storeModifiedDataset_();
@@ -167,23 +153,10 @@ void MainWindow::on_openTXT_triggered(bool)
 		return;
 	}
 
-	openFile_(filename, TXT);
+	openFile_(filename);
 }
 
-void MainWindow::on_openXML_triggered(bool)
-{
-	storeModifiedDataset_();
-
-	QString filename = QFileDialog::getOpenFileName(this, "Open XML file", Settings::path("path_open", true), "All files (*.*);;XML files (*.xml)");
-	if (filename==QString::null)
-	{
-		return;
-	}
-
-	openFile_(filename, XML);
-}
-
-void MainWindow::openFile_(QString filename, FileType type, bool remember_path)
+void MainWindow::openFile_(QString filename, bool remember_path)
 {
 	//close plots
 	QWindowList windows = QApplication::allWindows();
@@ -208,42 +181,26 @@ void MainWindow::openFile_(QString filename, FileType type, bool remember_path)
 	data_.blockSignals(true);
 	try
 	{
-		Parameters param;
-		if (type==ZXV)
+		Parameters param = TextFile::defaultParameters();
+		if (!filename.endsWith(".tsv"))
 		{
-			ZXVFile::load(data_, filename);
-		}
-		else if (type==TXT)
-		{
-			param = TextFile::defaultParameters();
-			if (!filename.endsWith(".tsv"))
+			QFile file(filename);
+			if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
 			{
-				QFile file(filename);
-				if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-				{
-					QMessageBox::warning(this, "Error", "Could not open file '" + filename + "' for reading.");
-					throw CleanUpException();
-				}
-
-				QTextStream stream(&file);
-				TextImportPreview preview(stream, filename, filename.endsWith(".csv") ,this);
-				if(!preview.exec()) throw CleanUpException();
-
-				param = preview.parameters();
+				QMessageBox::warning(this, "Error", "Could not open file '" + filename + "' for reading.");
+				throw CleanUpException();
 			}
 
-			TextFile::load(data_, filename, param);
-		}
-		else if (type==XML)
-		{
-			XMLImportPreview preview(filename, this);
+			QTextStream stream(&file);
+			TextImportPreview preview(stream, filename, filename.endsWith(".csv") ,this);
 			if(!preview.exec()) throw CleanUpException();
 
-			param =  preview.parameters();
-			XMLFile::load(data_, filename, param);
+			param = preview.parameters();
 		}
 
-		setFile(filename, type, param);
+		TextFile::load(data_, filename, param);
+
+		setFile(filename, param);
 	}
 	catch (CleanUpException&)
 	{
@@ -264,7 +221,7 @@ void MainWindow::openFile_(QString filename, FileType type, bool remember_path)
 
 void MainWindow::on_saveFile_triggered(bool)
 {
-	if (file_.type==NONE)
+	if (file_.name.isEmpty())
 	{
 		on_saveFileAs_triggered(true);
 		return;
@@ -275,18 +232,7 @@ void MainWindow::on_saveFile_triggered(bool)
 
 	try
 	{
-		if (file_.type == ZXV)
-		{
-			ZXVFile::store(data_, file_.name);
-		}
-		if (file_.type == TXT)
-		{
-			TextFile::store(data_, file_.name, file_.param);
-		}
-		if (file_.type == XML)
-		{
-			XMLFile::store(data_, file_.name, file_.param);
-		}
+		TextFile::store(data_, file_.name, file_.param);
 	}
 	catch (FileIOException& e)
 	{
@@ -302,7 +248,7 @@ void MainWindow::on_saveFile_triggered(bool)
 void MainWindow::on_saveFileAs_triggered(bool)
 {
 	QString selected_filter = "";
-	QString filename = QFileDialog::getSaveFileName(this, "Save file", Settings::path("path_open", true) + file_.name, "Text files (*.txt *.csv *.tsv);;XML files (*.xml);;Zipped XML value files (*.zxv)", &selected_filter);
+	QString filename = QFileDialog::getSaveFileName(this, "Save file", Settings::path("path_open", true) + file_.name, "Text files (*.txt *.csv *.tsv)", &selected_filter);
 	if (filename==QString::null)
 	{
 		return;
@@ -310,38 +256,27 @@ void MainWindow::on_saveFileAs_triggered(bool)
 
 	Settings::setPath("path_open", filename);
 
-	if (selected_filter=="Text files (*.txt *.csv *.tsv)")
+	// get parameters
+	Parameters params = TextFile::defaultParameters();
+	if (!ParameterEditor::asDialog(this->windowIcon(), "Text file parameters", params))
 	{
-		// get parameters
-		Parameters params = TextFile::defaultParameters();
-		if (!ParameterEditor::asDialog(this->windowIcon(), "Text file parameters", params))
-		{
-			return;
-		}
+		return;
+	}
 
-		setFile(filename, TXT, params);
-	}
-	else if (selected_filter=="XML files (*.xml)")
-	{
-		// get parameters
-		Parameters params = XMLFile::defaultParameters();
-		if (!ParameterEditor::asDialog(this->windowIcon(), "XML file parameters", params))
-		{
-			return;
-		}
-
-		setFile(filename, XML, params);
-	}
-	else if (selected_filter=="Zipped XML value files (*.zxv)")
-	{
-		setFile(filename, ZXV);
-	}
+	setFile(filename, params);
 
 	on_saveFile_triggered(true);
 }
 
-void  MainWindow::on_resizeColumns_triggered(bool)
+void  MainWindow::on_resizeToContent_triggered(bool)
 {
+	QTime timer;
+	timer.start();
+
+	GUIHelper::resizeTableCells(grid_, 0.5*width());
+
+	qDebug() << "resizing to content: ms=" << timer.elapsed();
+
 	grid_->resizeColumnsToContents();
 
 	//limit column width to 50% of window width
@@ -353,11 +288,6 @@ void  MainWindow::on_resizeColumns_triggered(bool)
 			grid_->setColumnWidth(i, max_width);
 		}
 	}
-}
-
-void  MainWindow::on_resizeRows_triggered(bool)
-{
-	grid_->resizeRowsToContents();
 }
 
 void  MainWindow::on_goToRow_triggered(bool)
@@ -474,7 +404,6 @@ void MainWindow::on_transpose_triggered(bool /*checked*/)
 		headers.append(data_.column(0).string(r));
 	}
 
-
 	//create new data columns
 	QVector< QVector<double> > cols;
 	cols.reserve(data_.rowCount());
@@ -494,7 +423,9 @@ void MainWindow::on_transpose_triggered(bool /*checked*/)
 	data_.addColumn(header_col_header, header_col);
 	for (int c=0; c<cols.count(); ++c)
 	{
+		data_.blockSignals(true);
 		data_.addColumn(headers[c], cols[c]);
+		data_.blockSignals(false);
 	}
 	grid_->render();
 }
@@ -537,10 +468,9 @@ void MainWindow::tableContextMenu(QPoint point)
 		//signal processing
 		menu = main_menu->addMenu("Signal processing");
 		menu->setEnabled(selected_count==1 && text_count==0);
-		action = menu->addAction("Moving average", this, SLOT(smoothAverage()));
-		action = menu->addAction("Moving median", this, SLOT(smoothMedian()));
-		action = menu->addAction("Savitzky-Golay", this, SLOT(smoothSavitzkyGolay()));
-		action = menu->addAction("Bessel", this, SLOT(smoothBessel()));
+		menu->addAction("Moving average", this, SLOT(smoothAverage()));
+		menu->addAction("Moving median", this, SLOT(smoothMedian()));
+		menu->addAction("Savitzky-Golay", this, SLOT(smoothSavitzkyGolay()));
 	}
 
 	//execute
@@ -563,11 +493,6 @@ void MainWindow::smoothSavitzkyGolay()
 	smooth_(Smoothing::SavitzkyGolay, "_sg");
 }
 
-void MainWindow::smoothBessel()
-{
-	smooth_(Smoothing::Bessel, "_be");
-}
-
 void MainWindow::smooth_(Smoothing::Type type, QString suffix)
 {
 	Parameters params = Smoothing::defaultParameters(type);
@@ -576,7 +501,7 @@ void MainWindow::smooth_(Smoothing::Type type, QString suffix)
 		return;
 	}
 
-	int index = grid_->selectedColumns()[0];
+	int index = grid_->selectedColumns().at(0);
 	QString header = data_.column(index).header();
 	QVector<double> dataset = data_.numericColumn(index).values();
 
@@ -587,7 +512,7 @@ void MainWindow::smooth_(Smoothing::Type type, QString suffix)
 
 QString MainWindow::fileNameLabel()
 {
-	if (file_.type==NONE)
+	if (file_.name.isEmpty())
 	{
 		return "";
 	}
@@ -607,7 +532,7 @@ void MainWindow::histogram()
 
 void MainWindow::basicStatistics()
 {
-	int index = grid_->selectedColumns()[0];
+	int index = grid_->selectedColumns().at(0);
 
 	StatisticsSummaryWidget* stats = new StatisticsSummaryWidget();
 	stats->setData(data_.numericColumn(index).statistics(data_.getRowFilter()));
@@ -617,9 +542,8 @@ void MainWindow::basicStatistics()
 
 void MainWindow::scatterPlot()
 {
-	int x = grid_->selectedColumns()[0];
-	int y = grid_->selectedColumns()[1];
-
+	int x = grid_->selectedColumns().at(0);
+	int y = grid_->selectedColumns().at(1);
 	ScatterPlot* plot = new ScatterPlot();
 	plot->setData(data_, x, y, QFileInfo(file_.name).baseName());
 	auto dlg = GUIHelper::createDialog(plot, "Scatterplot of '" + data_.column(x).headerOrIndex(x) + "' and '" + data_.column(y).headerOrIndex(y) + "'" + fileNameLabel());
@@ -647,15 +571,13 @@ void MainWindow::on_about_triggered(bool /*checked*/)
 	QMessageBox::about(this, "About " + QApplication::applicationName(), QApplication::applicationName() + " " + QApplication::applicationVersion() +"\n\nThis program is free software.\n\nThis program is provided as is with no warranty of any kind, including the warranty of design, merchantability and fitness for a particular purpose.\n\nThis program is based in part on the work of the Qwt project (http://qwt.sf.net).");
 }
 
-void MainWindow::addToRecentFiles_(QString filename, FileType type)
+void MainWindow::addToRecentFiles_(QString filename)
 {
-	QString filename_and_type = filename + "|" + QString::number(type);
-
-	recent_files_.removeAll(filename_and_type);
+	recent_files_.removeAll(filename);
 
 	if (QFile::exists(filename))
 	{
-		recent_files_.prepend(filename_and_type);
+		recent_files_.prepend(filename);
 	}
 
 	while (recent_files_.size() > 10)
@@ -670,15 +592,10 @@ void MainWindow::addToRecentFiles_(QString filename, FileType type)
 void MainWindow::updateRecentFilesMenu_()
 {
 	QMenu* menu = new QMenu();
-
 	for (int i=0; i<recent_files_.size(); ++i)
 	{
-		QStringList parts = recent_files_[i].split("|");
-
-		QAction* action = menu->addAction(parts[0], this, SLOT(openRecentFile()));
-		action->setData(parts[1].toInt());
+		menu->addAction(recent_files_[i], this, SLOT(openRecentFile()));
 	}
-
 	ui_.recentlyOpened->setMenu(menu);
 }
 
@@ -688,7 +605,7 @@ void MainWindow::openRecentFile()
 
 	QAction* action = qobject_cast<QAction*>(sender());
 
-	openFile_(action->text(), (FileType)action->data().toInt());
+	openFile_(action->text());
 }
 
 void MainWindow::on_toggleColumnIndex_triggered(bool)
@@ -860,7 +777,7 @@ void MainWindow::dropEvent(QDropEvent* e)
 		return;
 	}
 
-	openFile_(filename, getType(filename), true);
+	openFile_(filename, true);
 }
 
 void MainWindow::fileChanged()
@@ -880,39 +797,24 @@ void MainWindow::fileChanged()
 	//reload file if dialog is accepted
 	if (button == QMessageBox::Yes)
 	{
-		openFile_(file_.name, file_.type, false);
+		openFile_(file_.name, false);
 	}
 }
 
-MainWindow::FileType MainWindow::getType(QString filename)
-{
-	if (filename.endsWith(".zxv"))
-	{
-		return ZXV;
-	}
-	else if (filename.endsWith(".xml"))
-	{
-		return XML;
-	}
-
-	return TXT;
-}
-
-void MainWindow::setFile(QString name, MainWindow::FileType type, Parameters param)
+void MainWindow::setFile(QString name, Parameters param)
 {
 	file_.name = name;
-	file_.type = type;
 	file_.param = param;
 
 	//update recent files
-	if (type!=NONE)
+	if (!name.isEmpty())
 	{
-		addToRecentFiles_(name, type);
+		addToRecentFiles_(name);
 	}
 
 	//update file watcher
 	file_watcher_.clearFile();
-	if (type!=NONE)
+	if (!name.isEmpty())
 	{
 		file_watcher_.setFile(file_.name);
 	}

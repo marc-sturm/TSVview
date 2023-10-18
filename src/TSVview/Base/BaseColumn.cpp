@@ -18,11 +18,6 @@ BaseColumn::BaseColumn(const BaseColumn& rhs)
 {
 }
 
-const QString& BaseColumn::header() const
-{
-	return header_;
-}
-
 QString BaseColumn::headerOrIndex(int index, bool force_index) const
 {
   if (header_=="")
@@ -57,19 +52,3 @@ bool BaseColumn::setHeader(const QString& header)
 
   return true;
 }
-
-BaseColumn::Type BaseColumn::type() const
-{
-	return type_;
-}
-
-void BaseColumn::autoFormat()
-{
-}
-
-Filter BaseColumn::filter() const
-{
-  return filter_;
-}
-
-

@@ -16,9 +16,6 @@ void Smoothing::smooth(QVector<double>& data, Type type, Parameters params)
 		case SavitzkyGolay:
 			savitzkyGolay_(data, params);
 			break;
-		case Bessel:
-			bessel_(data, params);
-			break;
 	}
 }
 
@@ -36,9 +33,6 @@ Parameters Smoothing::defaultParameters(Type type)
 			break;
 		case SavitzkyGolay:
 			params.addInt("window size", "", 5, 5, 101);
-			break;
-		case Bessel:
-			params.addDouble("rise data points", "", 5.0, 0.01);
 			break;
 	}
 
@@ -124,38 +118,6 @@ void Smoothing::savitzkyGolay_(QVector<double>& data, Parameters params)
 	}
 
 	data = output;
-}
-
-void Smoothing::bessel_(QVector<double>& data, Parameters params)
-{
-	//constants
-	double w = 1.0 / params.getDouble("rise data points");
-	double ww = w * w;
-
-	//changing variables
-	double c1 = 0.0;
-	double c2 = 0.0;
-	double z1 = 0.0;
-	double z2 = 0.0;
-	double y1 = 0.0;
-	double y2 = 0.0;
-
-	for (int i=0; i<data.size(); ++i)
-	{
-		double xn = data[i];
-		double cn = (ww*xn+c1*(2.0+7.4714*w)-c2)/(1.0+7.4714*w+20.8528*ww);
-		double zn = (ww*cn+z1*(2.0+5.0319*w)-z2)/(1.0+5.0319*w+26.514*ww);
-		double yn = (10395.0*ww*zn+y1*(2.0+8.4967*w)-y2)/(1.0+8.4967*w+18.8011*ww);
-
-		// store results of the last step
-		data[i] = yn;
-		c2 = c1;
-		c1 = cn;
-		z2 = z1;
-		z1 = zn;
-		y2 = y1;
-		y1 = yn;
-	}
 }
 
 QVarLengthArray<double> Smoothing::getSGCoeffs_(int window_size)

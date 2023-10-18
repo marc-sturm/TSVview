@@ -12,7 +12,7 @@
 #include <QRegExp>
 #include <algorithm>
 #include <math.h>
-
+#include "GrepDialog.h"
 #include "DataGrid.h"
 #include "CustomExceptions.h"
 #include "TextFile.h"
@@ -184,7 +184,7 @@ void DataGrid::renderItem_(int row, int column, QBitArray rows_to_render)
 	}
 }
 
-void DataGrid::render(int start_col)
+void DataGrid::render()
 {
 	//abort if dataset is not set
 	if (data_==0)
@@ -198,11 +198,10 @@ void DataGrid::render(int start_col)
 
 	// get row/column count
 	int cols = data_->columnCount();
-	int rows = data_->rowCount();
 
 	//determine number of rows to render (if we need to filter)
 	QBitArray rows_to_render = data_->getRowFilter();
-	rows = rows_to_render.count(true);
+	int rows = rows_to_render.count(true);
 
 	//set table to new dimensions
 	if (preview_>0)
@@ -214,7 +213,7 @@ void DataGrid::render(int start_col)
 	setColumnCount(cols);
 	setRowCount(rows);
 	renderHeaders();
-	for (int c=start_col; c<cols; ++c)
+	for (int c=0; c<cols; ++c)
 	{
 		renderColumn_(c, rows_to_render);
 	}
@@ -228,7 +227,7 @@ void DataGrid::render(int start_col)
 		}
 	}
 
-	qDebug() << "rendering: " << cols << "/" << rows << " (" << timer.elapsed() << "ms)";
+	qDebug() << "rendering table: c=" << cols << "r=" << rows << "ms=" << timer.restart();
 
 	emit rendered();
 }
@@ -269,6 +268,7 @@ QMenu* DataGrid::createStandardContextMenu()
 		action = edit_menu->addAction("Remove duplicates", this, SLOT(removeDuplicates_()));
 		action = edit_menu->addAction("Keep duplicates", this, SLOT(keepDuplicates_()));
 		action->setEnabled(selected_count==1);
+		action = edit_menu->addAction("Filter lines", this, SLOT(filterLines_()));
 
 		QMenu* convert_menu = menu->addMenu("Convert to numeric column");
 		convert_menu->setEnabled(selected_count==1 && text_count==1);
@@ -400,7 +400,7 @@ void DataGrid::setColumnFormat_()
 void DataGrid::convertNumericNan_()
 {
 	//convert
-	int col_index = selectedColumns()[0];
+	int col_index = selectedColumns().at(0);
 	QVector<QString> data = data_->stringColumn(col_index).values();
 	QVector<double> new_data;
 	new_data.resize(data.count());
@@ -439,7 +439,7 @@ void DataGrid::convertNumericSingle_()
 	}
 
 	//convert
-	int col_index = selectedColumns()[0];
+	int col_index = selectedColumns().at(0);
 	QVector<QString> data = data_->stringColumn(col_index).values();
 	QVector<double> new_data;
 	new_data.resize(data.count());
@@ -465,7 +465,7 @@ void DataGrid::convertNumericSingle_()
 
 void DataGrid::convertNumericDict_()
 {
-	int col_index = selectedColumns()[0];
+	int col_index = selectedColumns().at(0);
 
 	//create list of not-convertable values
 	int max_count = 20;
@@ -745,7 +745,7 @@ void DataGrid::pasteColumn_()
 	int index = -1;
 	if (selectedColumns().size()==1)
 	{
-		index = selectedColumns()[0];
+		index = selectedColumns().at(0);
 	}
 
 	// Insert columns
@@ -887,6 +887,46 @@ void DataGrid::keepDuplicates_()
 
 	//reduce to rows with duplicates
 	data_->reduceToRows(rows_to_keep);
+}
+
+void DataGrid::filterLines_()
+{
+	GrepDialog dlg(this);
+	if (dlg.exec()!=QDialog::Accepted) return;
+
+	QString operation = dlg.operation();
+	QString value = dlg.value();
+	bool invert = dlg.invert();
+
+	if (operation=="contains")
+	{
+		//determine matches
+		QBitArray matches(data_->rowCount(), false);
+		for (int r=0; r<data_->rowCount(); ++r)
+		{
+			for (int c=0; c<data_->columnCount(); ++c)
+			{
+				if(data_->column(c).string(r).contains(value))
+				{
+					qDebug() << r << c << data_->column(c).string(r);
+					matches[r] = true;
+					break;
+				}
+			}
+		}
+
+		//invert if requested
+		if (invert) matches = ~matches;
+
+		//apply
+		QSet<int> rows_to_keep;
+		for (int r=0; r<matches.count(); ++r)
+		{
+			if (matches[r]) rows_to_keep << r;
+		}
+
+		data_->reduceToRows(rows_to_keep);
+	}
 }
 
 void DataGrid::editFilter(int column)

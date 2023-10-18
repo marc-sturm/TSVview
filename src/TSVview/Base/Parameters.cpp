@@ -1,5 +1,6 @@
 #include "Parameters.h"
 #include "CustomExceptions.h"
+#include <QPoint>
 
 Parameters::Parameters(QObject* object)
 	: QObject(object)
@@ -107,7 +108,7 @@ void Parameters::addColor(QString key, QString description, QColor value)
 	insert_(data);
 }
 
-void Parameters::addSymbol(QString key, QString description, QwtSymbol::Style value)
+void Parameters::addSymbol(QString key, QString description, enum Parameters::Symbol value)
 {
 	checkExists_(key, false);
 
@@ -214,7 +215,7 @@ void Parameters::setColor(QString key, QColor value)
 	emit valueChanged(key);
 }
 
-void Parameters::setSymbol(QString key, QwtSymbol::Style value)
+void Parameters::setSymbol(QString key, enum Parameters::Symbol value)
 {
 	checkIsType_(key, Symbol);
 
@@ -257,14 +258,16 @@ bool Parameters::getBool(QString key) const
 	return get_(key).v_variant.toBool();
 }
 
-QColor Parameters::getColor(QString key) const
+QColor Parameters::getColor(QString key, int alpha) const
 {
 	checkIsType_(key, Color);
 
-	return get_(key).v_variant.value<QColor>();
+	QColor color = get_(key).v_variant.value<QColor>();
+	color.setAlpha(alpha);
+	return color;
 }
 
-QwtSymbol::Style Parameters::getSymbol(QString key) const
+enum Parameters::Symbol Parameters::getSymbol(QString key) const
 {
 	checkIsType_(key, Symbol);
 

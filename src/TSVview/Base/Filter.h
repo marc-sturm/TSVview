@@ -24,6 +24,7 @@ public:
 		};
 
 	Filter();
+	Filter(Type type, QString value);
 
 	QString value() const;
 	void setValue(QString value);
@@ -36,6 +37,10 @@ public:
 
 	static QString typeToString(Type type, bool human_readable = true);
 	static Type stringToType(QString string, bool human_readable = true);
+
+	//Parses a serialized filter
+	QString toString() const;
+	static Filter fromString(QString line);
 
 protected:
 	QString value_;

@@ -13,8 +13,7 @@ public:
 		{
 		MovingAverage,
 		MovingMedian,
-		SavitzkyGolay,
-		Bessel
+		SavitzkyGolay
 		};
 
 	static void smooth(QVector<double>& data, Type type, Parameters params);
@@ -25,7 +24,6 @@ protected:
 	static void movingAverage_(QVector<double>& data, Parameters params);
 	static void movingMedian_(QVector<double>& data, Parameters params);
 	static void savitzkyGolay_(QVector<double>& data, Parameters params);
-	static void bessel_(QVector<double>& data, Parameters params);
 	static QVarLengthArray<double> getSGCoeffs_(int window_size);
 
 private:
