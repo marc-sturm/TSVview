@@ -775,9 +775,9 @@ void DataGrid::pasteDataset_()
 	}
 
 	data_->blockSignals(true);
+	stream.seek(0);
 	TextFile::fromStream(*data_, stream, "[clipboard]", preview.parameters());
 	data_->blockSignals(false);
-
 	render();
 }
 
