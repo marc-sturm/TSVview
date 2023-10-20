@@ -1,5 +1,5 @@
 # TSVview
-TSV viewer with some editing and statistics functionality
+TSV viewer with editing, statistics and plotting functionality.
 
 TSVview is a viewer for tab-separated text files. The program is implemented in C++ using the [Qt](http://qt-project.org/) library.
 
