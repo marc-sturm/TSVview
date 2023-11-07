@@ -108,17 +108,6 @@ void Parameters::addColor(QString key, QString description, QColor value)
 	insert_(data);
 }
 
-void Parameters::addSymbol(QString key, QString description, enum Parameters::Symbol value)
-{
-	checkExists_(key, false);
-
-	Data_ data(key);
-	data.type = Symbol;
-	data.v_symbol = value;
-	data.description = description;
-	insert_(data);
-}
-
 void Parameters::addSeparator()
 {
 	if (params_.size()==0) return;
@@ -215,14 +204,6 @@ void Parameters::setColor(QString key, QColor value)
 	emit valueChanged(key);
 }
 
-void Parameters::setSymbol(QString key, enum Parameters::Symbol value)
-{
-	checkIsType_(key, Symbol);
-
-	get_(key).v_symbol = value;
-	emit valueChanged(key);
-}
-
 int Parameters::getInt(QString key) const
 {
 	checkIsType_(key, Int);
@@ -265,13 +246,6 @@ QColor Parameters::getColor(QString key, int alpha) const
 	QColor color = get_(key).v_variant.value<QColor>();
 	color.setAlpha(alpha);
 	return color;
-}
-
-enum Parameters::Symbol Parameters::getSymbol(QString key) const
-{
-	checkIsType_(key, Symbol);
-
-	return get_(key).v_symbol;
 }
 
 Parameters::Type Parameters::type(QString key) const
@@ -467,9 +441,6 @@ QString Parameters::typeToString_(Parameters::Type type)
 			break;
 		case Color:
 			return "color";
-			break;
-		case Symbol:
-			return "symbol";
 			break;
 	}
 

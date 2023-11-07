@@ -1,5 +1,4 @@
 #include <QDebug>
-#include <QScatterSeries>
 #include <QLineSeries>
 #include "Helper.h"
 #include "ScatterPlot.h"
@@ -12,16 +11,13 @@ ScatterPlot::ScatterPlot(QWidget *parent)
 {
 	//set default parameters
 	params_.addColor("color", "", Qt::darkBlue);
-	QStringList valid_symbols = QStringList() << "square" << "circle";
-	params_.addString("symbol", "", "square", valid_symbols);
-	params_.addInt("symbol size", "", 3, 1, 999);
+	params_.addInt("symbol size", "", 5, 1, 999);
 	params_.addSeparator();
 	params_.addBool("linear regression", "Show linear regression of unfiltered data.", false);
 	params_.addSeparator();
 	params_.addBool("filtered", "Show filtered-out data points.", false);
 	params_.addColor("filtered color", "", QColor(200, 0, 0));
-	params_.addString("filtered symbol", "", "circle", valid_symbols);
-	params_.addInt("filtered symbol size", "", 3, 1, 999);
+	params_.addInt("filtered symbol size", "", 5, 1, 999);
 	params_.addSeparator();
 	params_.addInt("position noise", "", 0 , 0, 20);
 
@@ -63,17 +59,12 @@ void ScatterPlot::parameterChanged(QString parameter)
 	if (parameter=="color")
 	{
 		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("visible"));
-		series->setColor(params_.getColor("color"));
-	}
-	else if (parameter=="symbol")
-	{
-		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("visible"));
-		series->setMarkerShape(params_.getString("symbol")=="square" ? QScatterSeries::MarkerShapeRectangle : QScatterSeries::MarkerShapeCircle);
+		setSymbol(series, params_.getInt("symbol size"), params_.getColor("color"));
 	}
 	else if (parameter=="symbol size")
 	{
 		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("visible"));
-		series->setMarkerSize(params_.getInt("symbol size"));
+		setSymbol(series, params_.getInt("symbol size"), params_.getColor("color"));
 	}
 	else if (parameter=="linear regression")
 	{
@@ -139,21 +130,21 @@ void ScatterPlot::parameterChanged(QString parameter)
 		{
 			addSeriesFiltered();
 		}
+
+		//reset zoom range
+		QRectF bb = getBoundingBox();
+		chart_->axes(Qt::Horizontal).at(0)->setRange(bb.x(), bb.x() + bb.width());
+		chart_->axes(Qt::Vertical).at(0)->setRange(bb.y() + bb.height(), bb.y());
 	}
 	else if (parameter=="filtered color")
 	{
 		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("filtered"));
-		if (series!=nullptr) series->setColor(params_.getColor("filtered color"));
-	}
-	else if (parameter=="filtered symbol")
-	{
-		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("filtered"));
-		if (series!=nullptr) series->setMarkerShape(params_.getString("filtered symbol")=="square" ? QScatterSeries::MarkerShapeRectangle : QScatterSeries::MarkerShapeCircle);
+		setSymbol(series, params_.getInt("filtered symbol size"), params_.getColor("filtered color"));
 	}
 	else if (parameter=="filtered symbol size")
 	{
 		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("filtered"));
-		if (series!=nullptr) series->setMarkerSize(params_.getInt("filtered symbol size"));
+		setSymbol(series, params_.getInt("filtered symbol size"), params_.getColor("filtered color"));
 	}
 	else if (parameter=="position noise")
 	{
@@ -186,10 +177,7 @@ void ScatterPlot::addSeries()
 
 	QScatterSeries* series = new QScatterSeries();
 	series->setName("visible");
-	series->setMarkerShape(params_.getString("symbol")=="square" ? QScatterSeries::MarkerShapeRectangle : QScatterSeries::MarkerShapeCircle);
-	series->setMarkerSize(params_.getInt("symbol size"));
-	series->setColor(params_.getColor("color"));
-	series->setPen(QColor(Qt::transparent));
+	setSymbol(series, params_.getInt("symbol size"), params_.getColor("color"));
 	for(int i=0; i<filter_.count(); ++i)
 	{
 		if (filter_[i])
@@ -232,10 +220,7 @@ void ScatterPlot::addSeriesFiltered()
 
 	QScatterSeries* series = new QScatterSeries();
 	series->setName("filtered");
-	series->setMarkerShape(params_.getString("filtered symbol")=="square" ? QScatterSeries::MarkerShapeRectangle : QScatterSeries::MarkerShapeCircle);
-	series->setMarkerSize(params_.getInt("filtered symbol size"));
-	series->setColor(params_.getColor("filtered color"));
-	series->setPen(QColor(Qt::transparent));
+	setSymbol(series, params_.getInt("filtered symbol size"), params_.getColor("filtered color"));
 	for(int i=0; i<filter_.count(); ++i)
 	{
 		if (!filter_[i])
@@ -277,4 +262,24 @@ QRectF ScatterPlot::getBoundingBox() const
 	}
 
 	return QRectF(QPointF(x_min, y_max), QPointF(x_max, y_min));
+}
+
+void ScatterPlot::setSymbol(QScatterSeries* series, int size, QColor color)
+{
+	size+=2; //we need a transparent 1px border - otherwise the strage artefacts can occur at the borders
+
+	series->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
+	series->setMarkerSize(size);
+
+	QImage cross(size, size, QImage::Format_ARGB32);
+	cross.fill(Qt::transparent);
+
+	QPainter painter(&cross);
+	painter.setPen(color);
+	painter.setBrush(Qt::transparent);
+	painter.drawLine(1,1,size-2,size-2);
+	painter.drawLine(1,size-2,size-2,1);
+
+	series->setBrush(cross);
+	series->setPen(QPen(Qt::transparent));
 }

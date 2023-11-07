@@ -1,0 +1,4 @@
+
+optional:
+- add support for loading/storing .txt.gz format?
+- show outliers in bar plot?

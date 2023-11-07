@@ -26,9 +26,6 @@
 #include "HistogramPlot.h"
 #include "BoxPlot.h"
 
-//TODO add support for loading/storing .txt.gz format
-//TODO show outliers in bar plot?
-
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
 	, ui_()
@@ -466,7 +463,7 @@ void MainWindow::tableContextMenu(QPoint point)
 		action->setEnabled(selected_count>0);
 
 		//signal processing
-		menu = main_menu->addMenu("Signal processing");
+		menu = main_menu->addMenu("smoothing");
 		menu->setEnabled(selected_count==1 && text_count==0);
 		menu->addAction("Moving average", this, SLOT(smoothAverage()));
 		menu->addAction("Moving median", this, SLOT(smoothMedian()));

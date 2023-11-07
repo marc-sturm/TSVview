@@ -250,16 +250,6 @@ QWidget* ParameterEditor::createWidget_(QString key, QWidget* parent)
 			return widget;
 		}
 			break;
-		case Parameters::Symbol:
-		{
-			QComboBox* widget = new QComboBox(parent);
-			widget->setObjectName(key);
-			widget->addItems(QStringList()<< "None" << "Circle" << "Square");
-			widget->setCurrentIndex((int)params_->getSymbol(key));
-			connect(widget, SIGNAL(currentIndexChanged(int)), this, SLOT(changeSymbol_(int)));
-			return widget;
-		}
-			break;
 	}
 
 	return 0;
@@ -288,11 +278,6 @@ void ParameterEditor::change_(bool value)
 void ParameterEditor::change_(QColor value)
 {
 	params_->setColor(sender()->objectName(), value);
-}
-
-void ParameterEditor::changeSymbol_(int value)
-{
-	params_->setSymbol(sender()->objectName(), (enum Parameters::Symbol)value);
 }
 
 void ParameterEditor::changeString_(int value)

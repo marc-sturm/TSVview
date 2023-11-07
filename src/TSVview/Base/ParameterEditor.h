@@ -25,7 +25,6 @@ protected slots:
 	void change_(const QString& value);
 	void change_(bool value);
 	void change_(QColor value);
-	void changeSymbol_(int value);
 	void changeString_(int value);
 	void changeChar_(int value);
 	void changeChar_(const QString& value);

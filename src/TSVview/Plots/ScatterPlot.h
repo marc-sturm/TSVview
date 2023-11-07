@@ -3,6 +3,7 @@
 
 #include "BasePlot.h"
 #include "DataSet.h"
+#include <QScatterSeries>
 
 class ScatterPlot
 		: public BasePlot
@@ -24,6 +25,7 @@ protected:
 	QVector<double> col2_;
 
 	QRectF getBoundingBox() const;
+	static void setSymbol(QScatterSeries* series, int size, QColor color);
 };
 
 #endif

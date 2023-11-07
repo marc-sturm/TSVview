@@ -20,15 +20,7 @@ public:
 		String,
 		Char,
 		Bool,
-		Color,
-		Symbol
-		};
-
-	enum Symbol
-		{
-			NONE,
-			CIRCLE,
-			SQUARE
+		Color
 		};
 
 	Parameters(QObject* object=0);
@@ -41,7 +33,6 @@ public:
 	void addChar(QString key, QString description, QChar value, QStringList valid = QStringList());
 	void addBool(QString key, QString description, bool value);
 	void addColor(QString key, QString description, QColor value);
-	void addSymbol(QString key, QString description, enum Symbol value);
 	void addSeparator();
 
 	void setInt(QString key, int value);
@@ -50,7 +41,6 @@ public:
 	void setChar(QString key, QChar value);
 	void setBool(QString key, bool value);
 	void setColor(QString key, QColor value);
-	void setSymbol(QString key, enum Symbol symbol);
 
 	int getInt(QString key) const;
 	double getDouble(QString key) const;
@@ -58,7 +48,6 @@ public:
 	QChar getChar(QString key) const;
 	bool getBool(QString key) const;
 	QColor getColor(QString key, int alpha=255) const;
-	enum  Symbol getSymbol(QString key) const;
 
 	Type type(QString key) const;
 	bool isRestricted(QString key) const;
@@ -86,7 +75,6 @@ private:
 			, description("")
 			, type(Int)
 			, v_variant()
-			, v_symbol(CIRCLE)
 			, restriction(QVariant::Invalid)
 			, separator(false)
 		{
@@ -96,7 +84,6 @@ private:
 		QString description;
 		Type type;
 		QVariant v_variant;
-		enum Symbol v_symbol;
 		QVariant restriction;
 		bool separator;
 	};

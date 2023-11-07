@@ -109,3 +109,6 @@ LIBS += -L$$PWD/../../bin -lcppGUI
 
 #copy EXE to bin folder
 DESTDIR = $$PWD/../../bin
+
+DISTFILES += \
+    ../../todo.txt
