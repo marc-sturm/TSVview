@@ -26,9 +26,16 @@ void StatisticsSummaryWidget::setData(StatisticsSummary data)
 
 QString StatisticsSummaryWidget::formatNumber(double number)
 {
+	//integers => no decimal places
 	if (fmod(number, 1.0)==0.0)
 	{
 		return QString::number(number, 'f', 0);
+	}
+
+	//large numbers => 2 decical places
+	if (number>10000)
+	{
+		return QString::number(number, 'f', 2);
 	}
 
 	return QString::number(number);
