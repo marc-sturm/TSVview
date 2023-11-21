@@ -1,4 +1,4 @@
-
+- add date support (german, US and ISO)
 
 optional:
 - add support for loading/storing .txt.gz format?
