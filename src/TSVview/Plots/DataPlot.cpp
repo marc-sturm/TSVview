@@ -103,14 +103,15 @@ void DataPlot::setData(const DataSet& data, QList<int> cols, QString filename)
 
 QPen DataPlot::pen(QString series_name)
 {
-	//no line
-	QString line_type = params_.getString(series_name + ":line type");
-	if (line_type=="none") return QPen(Qt::NoPen);
-
 	//line
 	QColor color = params_.getColor(series_name + ":color");
 	int line_width = params_.getInt(series_name + ":line width");
 	Qt::PenStyle style = Qt::SolidLine;
+	QString line_type = params_.getString(series_name + ":line type");
+	if (line_type=="none")
+	{
+		style = Qt::NoPen;
+	}
 	if (line_type=="dashed")
 	{
 		style = Qt::DashLine;
