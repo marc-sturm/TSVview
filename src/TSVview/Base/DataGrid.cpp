@@ -237,6 +237,11 @@ QMenu* DataGrid::createStandardContextMenu()
 	QAction* action = 0;
 	QMenu* menu = new QMenu();
 
+	action = menu->addAction(QIcon(":/Icons/Copy.png"), "Copy", this, SLOT(copySelectionToClipboard_()));
+	action->setEnabled(!selectedRanges().isEmpty());
+	action = menu->addAction(QIcon(":/Icons/Copy.png"), "Copy - German numbers", this, SLOT(copySelectionToClipboardGerman_()));
+	action->setEnabled(!selectedRanges().isEmpty());
+
 	SelectionInfo info = selectionInfo();
 	if (info.isColumnSelection)
 	{
@@ -248,8 +253,6 @@ QMenu* DataGrid::createStandardContextMenu()
 			text_count += (data_->column(selected[i]).type()==BaseColumn::STRING);
 		}
 
-		action = menu->addAction(QIcon(":/Icons/Copy.png"), "Copy column(s)", this, SLOT(copySelectionToClipboard_()));
-		action->setEnabled(selected_count>0);
 		action = menu->addAction(QIcon(":/Icons/Paste.png"), "Paste column(s)", this, SLOT(pasteColumn_()));
 		action->setEnabled(data_!=0);
 		action = menu->addAction(QIcon(":/Icons/Remove.png"), "Remove column(s)", this, SLOT(removeSelectedColumns()));
@@ -286,14 +289,6 @@ QMenu* DataGrid::createStandardContextMenu()
 
 		action = menu->addAction(QIcon(":/Icons/Filter.png"), "Filter", this, SLOT(editFilter_()));
 		action->setEnabled(selected_count==1);
-	}
-	else if (info.isRowSelection)
-	{
-		action = menu->addAction(QIcon(":/Icons/Copy.png"), "Copy rows(s)", this, SLOT(copySelectionToClipboard_()));
-	}
-	else if (info.isSingleSelection)
-	{
-		action = menu->addAction(QIcon(":/Icons/Copy.png"), "Copy cell(s)", this, SLOT(copySelectionToClipboard_()));
 	}
 
 	return menu;
@@ -632,6 +627,16 @@ void DataGrid::addColumn_()
 
 void DataGrid::copySelectionToClipboard_()
 {
+	copySelectionToClipboard_('.');
+}
+
+void DataGrid::copySelectionToClipboardGerman_()
+{
+	copySelectionToClipboard_(',');
+}
+
+void DataGrid::copySelectionToClipboard_(QChar decimal_point)
+{
 	QString selected_text = "";
 
 	//column selection
@@ -651,10 +656,10 @@ void DataGrid::copySelectionToClipboard_()
 		for (int row=0; row<rowCount(); ++row)
 		{
 			selected_text.append("\n");
-			selected_text.append(item(row, cols[0])->text());
-			for (int col=1; col<cols.count(); ++col)
+			for (int col=0; col<cols.count(); ++col)
 			{
-				selected_text.append("\t" + item(row, cols[col])->text());
+				if (col!=0) selected_text.append("\t");
+				selected_text.append(itemText(row, cols[col], data_->column(cols[col]).type()==BaseColumn::NUMERIC, decimal_point));
 			}
 		}
 	}
@@ -680,10 +685,10 @@ void DataGrid::copySelectionToClipboard_()
 			{
 				selected_text.append("\n");
 			}
-			selected_text.append(item(rows[row], 0)->text());
-			for (int col=1; col<data_->columnCount(); ++col)
+			for (int col=0; col<data_->columnCount(); ++col)
 			{
-				selected_text.append("\t" + item(rows[row], col)->text());
+				if (col!=0) selected_text.append("\t");
+				selected_text.append(itemText(rows[row], col, data_->column(col).type()==BaseColumn::NUMERIC, decimal_point));
 			}
 		}
 	}
@@ -709,10 +714,10 @@ void DataGrid::copySelectionToClipboard_()
 			{
 				selected_text.append("\n");
 			}
-			selected_text.append(item(row, range.leftColumn())->text());
-			for (int col=range.leftColumn()+1; col<=range.rightColumn(); ++col)
+			for (int col=range.leftColumn(); col<=range.rightColumn(); ++col)
 			{
-				selected_text.append("\t" + item(row, col)->text());
+				if (col!=range.leftColumn()) selected_text.append("\t");
+				selected_text.append(itemText(row, col, data_->column(col).type()==BaseColumn::NUMERIC, decimal_point));
 			}
 		}
 	}
@@ -783,7 +788,11 @@ void DataGrid::pasteDataset_()
 
 void DataGrid::keyPressEvent(QKeyEvent* event)
 {
-	if(event->matches(QKeySequence::Copy) )
+	if (event->key()==Qt::Key_C && (QGuiApplication::keyboardModifiers()&Qt::ControlModifier) && (QGuiApplication::keyboardModifiers()&Qt::ShiftModifier))
+	{
+		copySelectionToClipboardGerman_();
+	}
+	else if(event->matches(QKeySequence::Copy) )
 	{
 		copySelectionToClipboard_();
 	}
@@ -1188,6 +1197,18 @@ bool DataGrid::isNumeric_(QString string)
 	bool ok = true;
 	string.toDouble(&ok);
 	return ok;
+}
+
+QString DataGrid::itemText(int row, int col, bool is_numeric, QChar decimal_point)
+{
+	QString text = item(row, col)->text();
+
+	if(is_numeric && decimal_point!='.')
+	{
+		text.replace('.', ',');
+	}
+
+	return text;
 }
 
 void DataGrid::loadFilter()

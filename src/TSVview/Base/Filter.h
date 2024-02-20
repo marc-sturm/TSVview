@@ -7,7 +7,7 @@ class Filter
 {
 public:
 	enum Type
-		{
+	{
 		NONE,
 		FLOAT_EXACT,
 		FLOAT_EXACT_NOT,
@@ -21,10 +21,9 @@ public:
 		STRING_CONTAINS_NOT,
 		STRING_REGEXP,
 		STRING_REGEXP_NOT
-		};
+	};
 
 	Filter();
-	Filter(Type type, QString value);
 
 	QString value() const;
 	void setValue(QString value);
@@ -38,9 +37,11 @@ public:
 	static QString typeToString(Type type, bool human_readable = true);
 	static Type stringToType(QString string, bool human_readable = true);
 
-	//Parses a serialized filter
-	QString toString() const;
-	static Filter fromString(QString line);
+	//Serializes a filter. Returns an empty string if the filter is invalid.
+	QString toString(int col_index) const;
+
+	//Parses a serialized filter. Returns a invalid filter object if not parsable or in outdated format.
+	static Filter fromString(QString line, int& col);
 
 protected:
 	QString value_;

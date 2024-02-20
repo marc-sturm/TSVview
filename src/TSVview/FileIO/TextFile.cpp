@@ -4,6 +4,7 @@
 #include <QStringList>
 #include <QDebug>
 #include <QTime>
+#include <QMessageBox>
 #include "TextFile.h"
 #include "CustomExceptions.h"
 
@@ -188,12 +189,37 @@ void TextFile::fromStream(DataSet& data, QTextStream& stream, Parameters params,
 	}
 
 	//apply filters
-	if (filters.count()==data.columnCount())
+	QStringList filter_errors;
+	foreach (QString line, filters)
 	{
-		for(int i=0; i<filters.count(); ++i)
+		line = line.trimmed();
+
+		int col = -1;
+		Filter filter = Filter::fromString(line, col);
+		if (filter.type()==Filter::NONE)
 		{
-			data.column(i).setFilter(Filter::fromString(filters[i]));
+			filter_errors << "Unparsable filter line: " + line;
 		}
+		else if (col<0 || col>=data.columnCount())
+		{
+			filter_errors << "Filter line with invalid column index: " + line;
+		}
+		else
+		{
+			try
+			{
+				data.column(col).setFilter(filter);
+			}
+			catch (FilterTypeException& e)
+			{
+				filter_errors << "Filter line not matching column type: " + line;
+			}
+		}
+	}
+	//show filter errors
+	if (!filter_errors.isEmpty())
+	{
+		QMessageBox::warning(QApplication::activeWindow(), "Filter errors", filter_errors.join("\n"));
 	}
 
 	data.setModified(false);
@@ -250,7 +276,10 @@ void TextFile::store(DataSet& data, QString filename, Parameters params)
 	{
 		for (int col=0; col<cols; ++col)
 		{
-			stream << data.column(col).filter().toString() << "\n";
+			if (data.column(col).filter().type()!=Filter::NONE)
+			{
+				stream << data.column(col).filter().toString(col) << "\n";
+			}
 		}
 	}
 

@@ -68,6 +68,8 @@ public slots:
 
 protected slots:
 	void copySelectionToClipboard_();
+	void copySelectionToClipboardGerman_();
+	void copySelectionToClipboard_(QChar decimal_point);
 	void pasteColumn_();
 	void pasteDataset_();
 	void addColumn_();
@@ -99,6 +101,7 @@ protected:
 	void renderItem_(int row, int column, QBitArray rows_to_render = QBitArray());
 	void renderColumn_(int column, QBitArray rows_to_render = QBitArray());
 	static bool isNumeric_(QString string);
+	QString itemText(int row, int col, bool is_numeric, QChar decimal_point);
 };
 
 #endif

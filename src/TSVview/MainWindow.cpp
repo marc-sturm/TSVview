@@ -29,6 +29,7 @@
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
 	, ui_()
+	, delayed_init_timer_(this, true)
 	, data_()
 	, recent_files_()
 {
@@ -83,7 +84,10 @@ MainWindow::MainWindow(QWidget *parent)
 	//init file
 	setFile("untitled");
 	connect(&file_watcher_, SIGNAL(fileChanged()), this, SLOT(fileChanged()));
+}
 
+void MainWindow::delayedInitialization()
+{
 	//load argument file
 	if (QApplication::arguments().count()==2)
 	{

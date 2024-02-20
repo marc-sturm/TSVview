@@ -1,5 +1,6 @@
 #include "Filter.h"
 #include "CustomExceptions.h"
+#include "Helper.h"
 
 Filter::Filter()
 	: value_("")
@@ -116,20 +117,28 @@ Filter::Type Filter::stringToType(QString string, bool human_readable)
 	THROW(FilterTypeException,"Internal error: Unknown filter type '" + string + "'!");
 }
 
-QString Filter::toString() const
+QString Filter::toString(int col_index) const
 {
-	return "##TSVVIEW-FILTER##" + Filter::typeToString(type_, false) + "##" + value_;
+	return "##TSVVIEW-FILTER##" + QString::number(col_index) + "##" + Filter::typeToString(type_, false) + "##" + value_;
 }
 
-Filter Filter::fromString(QString line)
+Filter Filter::fromString(QString line, int& col)
 {
-	QStringList parts = line.split("##");
+	try
+	{
+		QStringList parts = line.split("##");
+		if (parts.count()<5) THROW(FileParseException, "Filter line with less than 5 parts:" + line.trimmed());
+		if (parts.count()>5) parts[4] = parts.mid(4).join("##");
 
-	if (parts.count()>3) parts[3] = parts.mid(3).join("##");
+		Filter filter;
+		col = Helper::toInt(parts[2], "Filter column", line);
+		filter.setType(Filter::stringToType(parts[3], false));
+		filter.setValue(parts[4]);
 
-	Filter filter;
-	filter.setType(Filter::stringToType(parts[2], false));
-	filter.setValue(parts[3]);
-
-	return filter;
+		return filter;
+	}
+	catch(Exception& e)
+	{
+		return Filter();
+	}
 }

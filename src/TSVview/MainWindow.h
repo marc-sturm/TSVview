@@ -5,7 +5,7 @@
 #include <QTableWidget>
 #include "GoToDockWidget.h"
 #include "FindDockWidget.h"
-
+#include "DelayedInitializationTimer.h"
 #include "ui_MainWindow.h"
 #include "DataGrid.h"
 #include "Smoothing.h"
@@ -22,6 +22,7 @@ public:
 	MainWindow(QWidget* parent = 0);
 
 public slots:
+	void delayedInitialization();
 	void on_about_triggered(bool checked = false);
 	void on_clearSettings_triggered(bool checked = false);
 	void on_addToContext_triggered(bool checked = false);
@@ -72,6 +73,7 @@ protected:
 
 private:
 	Ui::MainWindow ui_;
+	DelayedInitializationTimer delayed_init_timer_;
 	DataSet data_;
 
 	DataGrid* grid_;
