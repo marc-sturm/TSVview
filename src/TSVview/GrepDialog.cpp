@@ -18,7 +18,7 @@ QString GrepDialog::value() const
 	return ui_.value->text();
 }
 
-bool GrepDialog::invert() const
+Qt::CaseSensitivity GrepDialog::caseSensitivity() const
 {
-	return ui_.invert->isChecked();
+	return ui_.case_sensitive->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive;
 }

@@ -431,6 +431,11 @@ void MainWindow::on_transpose_triggered(bool /*checked*/)
 	grid_->render();
 }
 
+void MainWindow::on_grep_triggered(bool /*checked*/)
+{
+	grid_->grepLines();
+}
+
 
 void MainWindow::tableContextMenu(QPoint point)
 {

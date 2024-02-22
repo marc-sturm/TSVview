@@ -13,7 +13,7 @@ public:
 	GrepDialog(QWidget* parent = nullptr);
 	QString operation() const;
 	QString value() const;
-	bool invert() const;
+	Qt::CaseSensitivity caseSensitivity() const;
 
 private:
 	Ui::GrepDialog ui_;

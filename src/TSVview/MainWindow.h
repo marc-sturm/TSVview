@@ -27,6 +27,7 @@ public slots:
 	void on_clearSettings_triggered(bool checked = false);
 	void on_addToContext_triggered(bool checked = false);
 	void on_transpose_triggered(bool checked = false);
+	void on_grep_triggered(bool checked = false);
 	void on_exit_triggered(bool checked = false);
 	void on_newFile_triggered(bool);
 	void on_openTXT_triggered(bool);

@@ -60,6 +60,8 @@
     <addaction name="filter"/>
     <addaction name="separator"/>
     <addaction name="transpose"/>
+    <addaction name="grep"/>
+    <addaction name="separator"/>
     <addaction name="showComments"/>
    </widget>
    <widget class="QMenu" name="menuView">
@@ -260,6 +262,11 @@
   <action name="showComments">
    <property name="text">
     <string>Show Comments</string>
+   </property>
+  </action>
+  <action name="grep">
+   <property name="text">
+    <string>Grep</string>
    </property>
   </action>
  </widget>
