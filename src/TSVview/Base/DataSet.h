@@ -68,6 +68,10 @@ public:
 	{
 		return columns_.size()==0 ? 0 : columns_[0]->count();
 	}
+	bool isSingleValue()
+	{
+		return columns_.size()==1 && columns_[0]->count()==1;
+	}
 	void clear(bool emit_signals);
 	void removeColumn(int column)
 	{

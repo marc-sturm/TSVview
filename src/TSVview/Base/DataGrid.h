@@ -18,7 +18,7 @@ public:
 	{
 		bool isColumnSelection;
 		bool isRowSelection;
-		bool isSingleSelection;
+		bool isSingleRangeSelection;
 	};
 
 	enum FindType

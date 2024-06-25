@@ -77,7 +77,7 @@ DataGrid::SelectionInfo DataGrid::selectionInfo() const
 
 	//single selection
 	SelectionInfo output;
-	output.isSingleSelection = ranges.count() == 1;
+	output.isSingleRangeSelection = ranges.count() == 1;
 
 	//column/row selection
 	output.isColumnSelection = true;
@@ -692,7 +692,7 @@ void DataGrid::copySelectionToClipboard_(QChar decimal_point)
 		}
 	}
 	//single selection range
-	else if (info.isSingleSelection)
+	else if (info.isSingleRangeSelection)
 	{
 		QTableWidgetSelectionRange range = selectedRanges()[0];
 
@@ -726,6 +726,7 @@ void DataGrid::copySelectionToClipboard_(QChar decimal_point)
 
 void DataGrid::pasteColumn_()
 {
+	//load data from clipboard into tmp dataset
 	DataSet data_tmp;
 	try
 	{
@@ -735,26 +736,44 @@ void DataGrid::pasteColumn_()
 	}
 	catch (FileIOException& e)
 	{
-		QMessageBox::warning(this, "Error pasting data.", e.message());
+		QMessageBox::warning(this, "Error parsing data from clipboard!", e.message());
 		return;
 	}
 
+	//case 1  - single cell selected and single value pasted > paste into single cell
+	QList<QTableWidgetSelectionRange> ranges = selectedRanges();
+	if(data_tmp.isSingleValue() && ranges.count()==1 && ranges[0].rowCount()==1 && ranges[0].columnCount()==1)
+	{
+		try
+		{
+			int c = ranges[0].leftColumn();
+			int r = ranges[0].topRow();
+			data_->column(c).setString(r, data_tmp.column(0).string(0));
+		}
+		catch (Exception& e)
+		{
+			QMessageBox::warning(this, "Error pasting single value!", e.message());
+			return;
+		}
+		return;
+	}
+
+	//case 2 - column pasted
 	if (data_->rowCount()!=0 && data_tmp.rowCount()!=data_->rowCount())
 	{
 		QMessageBox::warning(this, "Error pasting data.", "The number of rows does not match.\nExpected " + QString::number(data_->rowCount()) + " rows, but got " + QString::number(data_tmp.rowCount()) + ".");
 		return;
 	}
 
-	// Determine index
+	//determine index
 	int index = -1;
 	if (selectedColumns().size()==1)
 	{
 		index = selectedColumns().at(0);
 	}
 
-	// Insert columns
-	int cols_inserted = data_tmp.columnCount();
-	for (int i=0; i<cols_inserted; ++i)
+	//insert columns
+	for (int i=0; i<data_tmp.columnCount(); ++i)
 	{
 		BaseColumn& col = data_tmp.column(i);
 		if (col.type()==BaseColumn::NUMERIC)
@@ -914,7 +933,6 @@ void DataGrid::grepLines()
 		{
 			if(data_->column(c).string(r).contains(value, case_sensitive))
 			{
-				qDebug() << r << c << data_->column(c).string(r);
 				matches[r] = true;
 				break;
 			}
