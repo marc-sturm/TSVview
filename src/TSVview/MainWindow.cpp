@@ -274,7 +274,8 @@ void  MainWindow::on_resizeToContent_triggered(bool)
 	QTime timer;
 	timer.start();
 
-	GUIHelper::resizeTableCells(grid_, 0.5*width());
+	GUIHelper::resizeTableCellWidths(grid_, 0.3*width());
+	GUIHelper::resizeTableCellHeightsToMinimum(grid_);
 
 	qDebug() << "resizing to content: ms=" << timer.elapsed();
 

@@ -42,7 +42,9 @@ void MyChartView::keyPressEvent(QKeyEvent* event)
 
 void MyChartView::mouseDoubleClickEvent(QMouseEvent* event)
 {
-	if (event->button()==Qt::LeftButton)
+	QPoint global_pos = mapToGlobal(event->pos());
+	QRect global_legend_rect(mapToGlobal(chart()->legend()->pos().toPoint()), chart()->legend()->size().toSize());
+	if (event->button()==Qt::LeftButton && !global_legend_rect.contains(global_pos))
 	{
 		emit zoomIn();
 		event->accept();
