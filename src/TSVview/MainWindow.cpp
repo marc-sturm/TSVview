@@ -639,6 +639,11 @@ void MainWindow::on_showComments_triggered(bool)
 	dlg->exec();
 }
 
+void MainWindow::on_fileNameToClipboard_triggered(bool)
+{
+	QApplication::clipboard()->setText(file_.name);
+}
+
 void MainWindow::keyPressEvent(QKeyEvent* e)
 {
 	if (e->key()==Qt::Key_Delete && e->modifiers()==Qt::NoModifier)

@@ -59,6 +59,8 @@
     <addaction name="findText"/>
     <addaction name="filter"/>
     <addaction name="separator"/>
+    <addaction name="fileNameToClipboard"/>
+    <addaction name="separator"/>
     <addaction name="transpose"/>
     <addaction name="grep"/>
     <addaction name="separator"/>
@@ -267,6 +269,11 @@
   <action name="grep">
    <property name="text">
     <string>Grep</string>
+   </property>
+  </action>
+  <action name="fileNameToClipboard">
+   <property name="text">
+    <string>Copy file name to clipboard</string>
    </property>
   </action>
  </widget>

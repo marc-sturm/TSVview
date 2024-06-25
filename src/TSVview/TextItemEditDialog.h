@@ -14,11 +14,17 @@ public:
 	void setText(QString text);
 	QString text() const;
 
+signals:
+	void enterPressed();
+
 private slots:
 	void checkText();
+	void acceptIfTextIsValid();
 
 private:
 	Ui::TextItemEditDialog ui_;
+	bool eventFilter(QObject* obj, QEvent* event) override; //event filter for capturing Enter in edit
+	bool textIsValid();
 };
 
 #endif // TEXTITEMEDITDIALOG_H
