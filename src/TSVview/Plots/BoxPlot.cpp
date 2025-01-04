@@ -5,6 +5,7 @@
 #include <QBoxSet>
 #include <QBoxPlotSeries>
 #include <QDebug>
+#include "Helper.h"
 #include "BoxPlot.h"
 #include "ParameterEditor.h"
 #include "DataSet.h"
@@ -59,6 +60,8 @@ void BoxPlot::plot()
 		QBoxSet* set = new QBoxSet();
 
 		QVector<double> values = data_->numericColumn(c).values(filter);
+		Helper::removeIf(values, [] (double v) { return !BasicStatistics::isValidFloat(v); });
+
 		if (values.count()==0)
 		{
 			values << BasicStatistics::mean(data_->numericColumn(c).values());

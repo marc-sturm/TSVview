@@ -183,7 +183,10 @@ void ScatterPlot::addSeries()
 		if (filter_[i])
 		{
 			double x = col1_.value(i);
-			double y =  col2_.value(i);
+			double y = col2_.value(i);
+
+			if (!BasicStatistics::isValidFloat(x) || !BasicStatistics::isValidFloat(y)) continue;
+
 			if (add_noise)
 			{
 				x += Helper::randomNumber(-1,1) * noise_perc_x;

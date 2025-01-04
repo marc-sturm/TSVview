@@ -60,7 +60,11 @@ void DataPlot::setData(const DataSet& data, QList<int> cols, QString filename)
 		for(int i=0; i<col.count(); ++i)
 		{
 			if (!filter.at(i)) continue;
-			series->append(pos, col.value(i));
+
+			double value = col.value(i);
+			if (!BasicStatistics::isValidFloat(value)) continue;
+
+			series->append(pos, value);
 			pos += 1.0;
 		}
 

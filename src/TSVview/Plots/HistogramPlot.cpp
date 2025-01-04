@@ -147,6 +147,8 @@ QPair<double, double> HistogramPlot::getMinMax()
 	bool show_filtered = params_.getBool("filtered");
 	for (int i=0; i<filter_.count(); ++i)
 	{
+		if (!BasicStatistics::isValidFloat(col_[i])) continue;
+
 		if (show_filtered || filter_[i])
 		{
 			if (col_[i]<min) min = col_[i];
