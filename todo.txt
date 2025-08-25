@@ -1,5 +1,5 @@
 - add date support (german, US and ISO)
-
-optional:
-- add support for loading/storing .txt.gz format?
+- add support for storing table as html
+- add support for loading/storing .txt.gz format > VersatileFile
+- color dots in scatter plot according to ENUM column
 - show outliers in bar plot?
