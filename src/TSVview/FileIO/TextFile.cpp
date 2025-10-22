@@ -229,7 +229,7 @@ void TextFile::store(DataSet& data, QString filename, Parameters params)
 {
 	// open file
 	QFile file(filename);
-	if (!file.open(QFile::WriteOnly | QFile::Truncate | QFile::Text))
+	if (!file.open(QFile::WriteOnly | QFile::Truncate))
 	{
 		THROW(FileIOException,"Could not open file '" + filename + "' for writing.");
 	}
