@@ -806,36 +806,52 @@ void DataGrid::pasteDataset_()
 
 void DataGrid::keyPressEvent(QKeyEvent* event)
 {
+	bool handled = false;
 	if (event->key()==Qt::Key_C && (QGuiApplication::keyboardModifiers()&Qt::ControlModifier) && (QGuiApplication::keyboardModifiers()&Qt::ShiftModifier))
 	{
 		copySelectionToClipboardGerman_();
+		handled = true;
 	}
 	else if(event->matches(QKeySequence::Copy) )
 	{
 		copySelectionToClipboard_();
+		handled = true;
 	}
-	else if(event->matches(QKeySequence::Paste) )
+	else if(event->matches(QKeySequence::Paste))
 	{
-		if (columnCount()!=0)
-		{
-			pasteColumn_();
-		}
-		else
+		if (columnCount()==0)
 		{
 			pasteDataset_();
 		}
+		else if (selectedColumns().count()==1 && selectedItems().count()==rowCount())
+		{
+			pasteColumn_();
+		}
+		else if (selectedItems().count()==1)
+		{
+			QString text = QApplication::clipboard()->text();
+			if (!text.contains("\t"))
+			{
+				while (text.endsWith('\n') || text.endsWith('\r')) text.chop(1);
+				if (!text.contains("\n"))
+				{
+					selectedItems()[0]->setText(text);
+				}
+			}
+		}
+
+		handled = true;
 	}
 	else if (event->key()==Qt::Key_F2 && event->modifiers() == Qt::NoModifier)
 	{
 		if (selectedItems().count()==1)
 		{
 			editCurrentItem(selectedItems()[0]);
+			handled = true;
 		}
 	}
-	else
-	{
-		QTableWidget::keyPressEvent(event);
-	}
+
+	if (!handled) QTableWidget::keyPressEvent(event);
 }
 
 void DataGrid::renderHeaders()

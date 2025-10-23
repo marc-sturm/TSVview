@@ -40,14 +40,12 @@ MainWindow::MainWindow(QWidget *parent)
 	statusBar()->addPermanentWidget(info_widget_);
 
 	//create grid and dataset
-	grid_ = new DataGrid();
-	setCentralWidget(grid_);
-	connect(grid_, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(tableContextMenu(QPoint)));
-	connect(grid_, SIGNAL(rendered()), this, SLOT(updateInfoWidget()));
+	connect(ui_.grid, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(tableContextMenu(QPoint)));
+	connect(ui_.grid, SIGNAL(rendered()), this, SLOT(updateInfoWidget()));
 	connect(&data_, SIGNAL(modificationStatusChanged(bool)), this, SLOT(datasetStatusChanged(bool)));
 	connect(&data_, SIGNAL(filtersChanged()), this, SLOT(updateFilters()));
 	connect(&data_, SIGNAL(headersChanged()), this, SLOT(updateFilters()));
-	grid_->setData(data_);
+	ui_.grid->setData(data_);
 
 	recent_files_ = Settings::stringList("recent_files", true);
 	updateRecentFilesMenu_();
@@ -70,13 +68,13 @@ MainWindow::MainWindow(QWidget *parent)
 	filter_widget_->setVisible(false);
 	addDockWidget(Qt::RightDockWidgetArea, filter_widget_);
 	connect(filter_widget_, SIGNAL(filterEnabledChanged(bool)), this, SLOT(toggleFilter(bool)));
-	connect(filter_widget_, SIGNAL(editFilter(int)), grid_, SLOT(editFilter(int)));
-	connect(filter_widget_, SIGNAL(removeFilter(int)), grid_, SLOT(removeFilter(int)));
-	connect(filter_widget_, SIGNAL(removeAllFilters()), grid_, SLOT(removeAllFilters()));
-	connect(filter_widget_, SIGNAL(reduceToFiltered()), grid_, SLOT(reduceToFiltered()));
-	connect(filter_widget_, SIGNAL(loadFilter()), grid_, SLOT(loadFilter()));
-	connect(filter_widget_, SIGNAL(storeFilter()), grid_, SLOT(storeFilter()));
-	connect(filter_widget_, SIGNAL(deleteFilter()), grid_, SLOT(deleteFilter()));
+	connect(filter_widget_, SIGNAL(editFilter(int)), ui_.grid, SLOT(editFilter(int)));
+	connect(filter_widget_, SIGNAL(removeFilter(int)), ui_.grid, SLOT(removeFilter(int)));
+	connect(filter_widget_, SIGNAL(removeAllFilters()), ui_.grid, SLOT(removeAllFilters()));
+	connect(filter_widget_, SIGNAL(reduceToFiltered()), ui_.grid, SLOT(reduceToFiltered()));
+	connect(filter_widget_, SIGNAL(loadFilter()), ui_.grid, SLOT(loadFilter()));
+	connect(filter_widget_, SIGNAL(storeFilter()), ui_.grid, SLOT(storeFilter()));
+	connect(filter_widget_, SIGNAL(deleteFilter()), ui_.grid, SLOT(deleteFilter()));
 
 	//enable drop event
 	setAcceptDrops(true);
@@ -214,7 +212,7 @@ void MainWindow::openFile_(QString filename, bool remember_path)
 
 	//update GUI
 	updateFilters();
-	grid_->render();
+	ui_.grid->render();
 
 	//re-enable data signals
 	data_.blockSignals(false);
@@ -274,20 +272,20 @@ void  MainWindow::on_resizeToContent_triggered(bool)
 	QTime timer;
 	timer.start();
 
-	GUIHelper::resizeTableCellWidths(grid_, 0.3*width());
-	GUIHelper::resizeTableCellHeightsToMinimum(grid_);
+	GUIHelper::resizeTableCellWidths(ui_.grid, 0.3*width());
+	GUIHelper::resizeTableCellHeightsToMinimum(ui_.grid);
 
 	qDebug() << "resizing to content: ms=" << timer.elapsed();
 
-	grid_->resizeColumnsToContents();
+	ui_.grid->resizeColumnsToContents();
 
 	//limit column width to 50% of window width
 	int max_width = 0.5 * width();
-	for (int i=0; i<grid_->columnCount(); ++i)
+	for (int i=0; i<ui_.grid->columnCount(); ++i)
 	{
-		if (grid_->columnWidth(i)>max_width)
+		if (ui_.grid->columnWidth(i)>max_width)
 		{
-			grid_->setColumnWidth(i, max_width);
+			ui_.grid->setColumnWidth(i, max_width);
 		}
 	}
 }
@@ -429,23 +427,23 @@ void MainWindow::on_transpose_triggered(bool /*checked*/)
 		data_.addColumn(headers[c], cols[c]);
 		data_.blockSignals(false);
 	}
-	grid_->render();
+	ui_.grid->render();
 }
 
 void MainWindow::on_grep_triggered(bool /*checked*/)
 {
-	grid_->grepLines();
+	ui_.grid->grepLines();
 }
 
 
 void MainWindow::tableContextMenu(QPoint point)
 {
-	QMenu* main_menu = grid_->createStandardContextMenu();
+	QMenu* main_menu = ui_.grid->createStandardContextMenu();
 
-	if (grid_->selectionInfo().isColumnSelection)
+	if (ui_.grid->selectionInfo().isColumnSelection)
 	{
 		//overall and selected columns count
-		QList<int> selected = grid_->selectedColumns();
+		QList<int> selected = ui_.grid->selectedColumns();
 		int selected_count = selected.size();
 		int text_count = 0;
 		for (int i=0; i<selected.size(); ++i)
@@ -481,7 +479,7 @@ void MainWindow::tableContextMenu(QPoint point)
 	}
 
 	//execute
-	main_menu->exec(grid_->viewport()->mapToGlobal(point));
+	main_menu->exec(ui_.grid->viewport()->mapToGlobal(point));
 	delete main_menu;
 }
 
@@ -508,7 +506,7 @@ void MainWindow::smooth_(Smoothing::Type type, QString suffix)
 		return;
 	}
 
-	int index = grid_->selectedColumns().at(0);
+	int index = ui_.grid->selectedColumns().at(0);
 	QString header = data_.column(index).header();
 	QVector<double> dataset = data_.numericColumn(index).values();
 
@@ -529,7 +527,7 @@ QString MainWindow::fileNameLabel()
 
 void MainWindow::histogram()
 {
-	int index = grid_->selectedColumns()[0];
+	int index = ui_.grid->selectedColumns()[0];
 
 	HistogramPlot* hist = new HistogramPlot();
 	hist->setData(data_, index, QFileInfo(file_.name).baseName());
@@ -539,7 +537,7 @@ void MainWindow::histogram()
 
 void MainWindow::basicStatistics()
 {
-	int index = grid_->selectedColumns().at(0);
+	int index = ui_.grid->selectedColumns().at(0);
 
 	StatisticsSummaryWidget* stats = new StatisticsSummaryWidget();
 	stats->setData(data_.numericColumn(index).statistics(data_.getRowFilter()));
@@ -549,8 +547,8 @@ void MainWindow::basicStatistics()
 
 void MainWindow::scatterPlot()
 {
-	int x = grid_->selectedColumns().at(0);
-	int y = grid_->selectedColumns().at(1);
+	int x = ui_.grid->selectedColumns().at(0);
+	int y = ui_.grid->selectedColumns().at(1);
 	ScatterPlot* plot = new ScatterPlot();
 	plot->setData(data_, x, y, QFileInfo(file_.name).baseName());
 	auto dlg = GUIHelper::createDialog(plot, "Scatterplot of '" + data_.column(x).headerOrIndex(x) + "' and '" + data_.column(y).headerOrIndex(y) + "'" + fileNameLabel());
@@ -560,7 +558,7 @@ void MainWindow::scatterPlot()
 void MainWindow::dataPlot()
 {
 	DataPlot* plot = new DataPlot();
-	plot->setData(data_, grid_->selectedColumns(), QFileInfo(file_.name).baseName());
+	plot->setData(data_, ui_.grid->selectedColumns(), QFileInfo(file_.name).baseName());
 	auto dlg = GUIHelper::createDialog(plot, "Plot" + fileNameLabel());
 	dlg->exec();
 }
@@ -568,7 +566,7 @@ void MainWindow::dataPlot()
 void MainWindow::boxPlot()
 {
 	BoxPlot* plot = new BoxPlot();
-	plot->setData(data_, grid_->selectedColumns(), QFileInfo(file_.name).baseName());
+	plot->setData(data_, ui_.grid->selectedColumns(), QFileInfo(file_.name).baseName());
 	auto dlg = GUIHelper::createDialog(plot, "BoxPlot" + fileNameLabel());
 	dlg->exec();
 }
@@ -621,12 +619,12 @@ void MainWindow::on_toggleColumnIndex_triggered(bool)
 
 	Settings::setBoolean("show_column_index", !show_cols);
 
-	grid_->renderHeaders();
+	ui_.grid->renderHeaders();
 }
 
 void MainWindow::on_toggleRowColors_triggered(bool)
 {
-	grid_->setAlternatingRowColors(!grid_->alternatingRowColors());
+	ui_.grid->setAlternatingRowColors(!ui_.grid->alternatingRowColors());
 }
 
 void MainWindow::on_showComments_triggered(bool)
@@ -648,7 +646,7 @@ void MainWindow::keyPressEvent(QKeyEvent* e)
 {
 	if (e->key()==Qt::Key_Delete && e->modifiers()==Qt::NoModifier)
 	{
-		grid_->removeSelectedColumns();
+		ui_.grid->removeSelectedColumns();
 	}
 	else if (e->key()==Qt::Key_F3 && e->modifiers()==Qt::NoModifier)
 	{
@@ -671,13 +669,13 @@ void MainWindow::goToRow(int row)
 		return;
 	}
 
-	grid_->scrollToItem(grid_->item(row, 0));
+	ui_.grid->scrollToItem(ui_.grid->item(row, 0));
 }
 
 void MainWindow::findText(QString text, Qt::CaseSensitivity case_sensitive, DataGrid::FindType type)
 {
 	//clear selection
-	grid_->clearSelection();
+	ui_.grid->clearSelection();
 
 	//clear last search info
 	find_.items.clear();
@@ -690,7 +688,7 @@ void MainWindow::findText(QString text, Qt::CaseSensitivity case_sensitive, Data
 	}
 
 	//search
-	find_.items = grid_->findItems(text, case_sensitive, type);
+	find_.items = ui_.grid->findItems(text, case_sensitive, type);
 
 	// abort if not found
 	if (find_.items.count()==0)
@@ -704,17 +702,17 @@ void MainWindow::findText(QString text, Qt::CaseSensitivity case_sensitive, Data
 	int row = find_.items[0].second;
 
 	// scroll
-	QTableWidgetItem* item = grid_->item(row, col);
-	grid_->scrollToItem(item);
+	QTableWidgetItem* item = ui_.grid->item(row, col);
+	ui_.grid->scrollToItem(item);
 
 	// set selection
-	grid_->setRangeSelected(QTableWidgetSelectionRange(row, col, row, col), true);
+	ui_.grid->setRangeSelected(QTableWidgetSelectionRange(row, col, row, col), true);
 }
 
 void MainWindow::findNext()
 {
 	//clear selection
-	grid_->clearSelection();
+	ui_.grid->clearSelection();
 
 	//abort reasons
 	if(find_.items.count() == 0)
@@ -734,17 +732,17 @@ void MainWindow::findNext()
 	int row = find_.items[find_.last].second;
 
 	// scroll
-	QTableWidgetItem* item = grid_->item(row, col);
-	grid_->scrollToItem(item);
+	QTableWidgetItem* item = ui_.grid->item(row, col);
+	ui_.grid->scrollToItem(item);
 
 	// set selection
-	grid_->setRangeSelected(QTableWidgetSelectionRange(row, col, row, col), true);
+	ui_.grid->setRangeSelected(QTableWidgetSelectionRange(row, col, row, col), true);
 }
 
 void MainWindow::toggleFilter(bool enabled)
 {
 	data_.setFiltersEnabled(enabled);
-	grid_->render();
+	ui_.grid->render();
 }
 
 void MainWindow::updateFilters()
@@ -765,12 +763,12 @@ void MainWindow::updateFilters()
 void MainWindow::updateInfoWidget()
 {
 	QString filter_info;
-	if (data_.rowCount()!=grid_->rowCount())
+	if (data_.rowCount()!=ui_.grid->rowCount())
 	{
 		filter_info = " (of " + QString::number(data_.rowCount()) + ")";
 	}
 
-	info_widget_->setText("cols: " + QString::number(data_.columnCount()) + " rows: " + QString::number(grid_->rowCount()) + filter_info);
+	info_widget_->setText("cols: " + QString::number(data_.columnCount()) + " rows: " + QString::number(ui_.grid->rowCount()) + filter_info);
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent* e)

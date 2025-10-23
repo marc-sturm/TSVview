@@ -18,7 +18,26 @@
     <normaloff>:/Icons/Icon.png</normaloff>:/Icons/Icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="horizontalLayout"/>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="DataGrid" name="grid"/>
+    </item>
+   </layout>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QMenuBar" name="menubar">
@@ -277,6 +296,13 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>DataGrid</class>
+   <extends>QTableWidget</extends>
+   <header>DataGrid.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="Resources.qrc"/>
  </resources>

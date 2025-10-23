@@ -78,7 +78,6 @@ private:
 	DelayedInitializationTimer delayed_init_timer_;
 	DataSet data_;
 
-	DataGrid* grid_;
 	QStringList recent_files_;
 	GoToDockWidget* goto_widget_;
 	FilterWidget* filter_widget_;
