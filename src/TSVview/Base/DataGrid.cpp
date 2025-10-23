@@ -740,25 +740,7 @@ void DataGrid::pasteColumn_()
 		return;
 	}
 
-	//case 1  - single cell selected and single value pasted > paste into single cell
-	QList<QTableWidgetSelectionRange> ranges = selectedRanges();
-	if(data_tmp.isSingleValue() && ranges.count()==1 && ranges[0].rowCount()==1 && ranges[0].columnCount()==1)
-	{
-		try
-		{
-			int c = ranges[0].leftColumn();
-			int r = ranges[0].topRow();
-			data_->column(c).setString(r, data_tmp.column(0).string(0));
-		}
-		catch (Exception& e)
-		{
-			QMessageBox::warning(this, "Error pasting single value!", e.message());
-			return;
-		}
-		return;
-	}
-
-	//case 2 - column pasted
+	//check if entire column is pasted
 	if (data_->rowCount()!=0 && data_tmp.rowCount()!=data_->rowCount())
 	{
 		QMessageBox::warning(this, "Error pasting data.", "The number of rows does not match.\nExpected " + QString::number(data_->rowCount()) + " rows, but got " + QString::number(data_tmp.rowCount()) + ".");
@@ -812,7 +794,7 @@ void DataGrid::keyPressEvent(QKeyEvent* event)
 		copySelectionToClipboardGerman_();
 		handled = true;
 	}
-	else if(event->matches(QKeySequence::Copy) )
+	else if(event->matches(QKeySequence::Copy))
 	{
 		copySelectionToClipboard_();
 		handled = true;
@@ -835,7 +817,17 @@ void DataGrid::keyPressEvent(QKeyEvent* event)
 				while (text.endsWith('\n') || text.endsWith('\r')) text.chop(1);
 				if (!text.contains("\n"))
 				{
-					selectedItems()[0]->setText(text);
+					try
+					{
+						int col = selectedItems()[0]->column();
+						int row = correctRowIfFiltered(selectedItems()[0]->row());
+						data_->column(col).setString(row, text);
+					}
+					catch (Exception& e)
+					{
+						QMessageBox::warning(this, "Error pasting single value!", e.message());
+						return;
+					}
 				}
 			}
 		}
@@ -847,8 +839,19 @@ void DataGrid::keyPressEvent(QKeyEvent* event)
 		if (selectedItems().count()==1)
 		{
 			editCurrentItem(selectedItems()[0]);
-			handled = true;
 		}
+		handled = true;
+	}
+	else if(event->matches(QKeySequence::Delete))
+	{
+		if (selectedItems().count()==1)
+		{
+			int col = selectedItems()[0]->column();
+			int row = correctRowIfFiltered(selectedItems()[0]->row());
+			data_->column(col).setString(row, "");
+		}
+
+		handled = true;
 	}
 
 	if (!handled) QTableWidget::keyPressEvent(event);
@@ -1177,28 +1180,7 @@ void DataGrid::editCurrentItem(QTableWidgetItem* item)
 	}
 
 	int col = item->column();
-	int row = item->row();
-
-	//correct row if filtered
-	QBitArray filter = data_->getRowFilter();
-	if (filter.count(true)!=data_->rowCount())
-	{
-		int r_filtered = -1;
-		for (int i=0; i<data_->rowCount(); ++i)
-		{
-			if (filter[i])
-			{
-				++r_filtered;
-			}
-
-			if (r_filtered==row)
-			{
-				row = i;
-
-				break;
-			}
-		}
-	}
+	int row = correctRowIfFiltered(item->row());
 
 	//edit numeric columns
 	if (data_->column(col).type() == BaseColumn::NUMERIC)
@@ -1239,6 +1221,32 @@ QString DataGrid::itemText(int row, int col, bool is_numeric, QChar decimal_poin
 	}
 
 	return text;
+}
+
+int DataGrid::correctRowIfFiltered(int row) const
+{
+	if (data_->filtersEnabled())
+	{
+		QBitArray filter = data_->getRowFilter();
+
+		int r_filtered = -1;
+		for (int i=0; i<data_->rowCount(); ++i)
+		{
+			if (filter[i])
+			{
+				++r_filtered;
+			}
+
+			if (r_filtered==row)
+			{
+				row = i;
+
+				break;
+			}
+		}
+	}
+
+	return row;
 }
 
 void DataGrid::loadFilter()
