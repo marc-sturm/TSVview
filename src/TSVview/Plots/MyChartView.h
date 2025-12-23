@@ -4,8 +4,6 @@
 #include <QChartView>
 #include <QLegendMarker>
 
-using namespace QtCharts;
-
 class MyChartView
 	: public QChartView
 {

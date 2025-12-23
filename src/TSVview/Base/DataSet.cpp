@@ -71,7 +71,7 @@ void DataSet::removeColumns(QSet<int> columns)
 	}
 
 	//sort coumns in reverse order
-	QList<int> column_list = columns.toList();
+	QList<int> column_list = SET_TO_LIST(columns);
 	std::sort(column_list.begin(), column_list.end(), std::greater<int>());
 
 	//remove columns
@@ -294,15 +294,15 @@ void DataSet::mergeColumns(QList<int> cols, QString header, QString sep)
 	}
 
 	//remove old columns and add new one
-	removeColumns(cols.toSet());
+	removeColumns(LIST_TO_SET(cols));
 	addColumn(header, new_col, true, first_col);
 }
 
 void DataSet::reduceToRows(QSet<int> rows)
 {
 	//convert rows set to ordered list
-	QList<int> keep_rows = rows.toList();
-	qSort(keep_rows.begin(), keep_rows.end());
+	QList<int> keep_rows = SET_TO_LIST(rows);
+	std::sort(keep_rows.begin(), keep_rows.end());
 
 	//update all columns
 	blockSignals(true);

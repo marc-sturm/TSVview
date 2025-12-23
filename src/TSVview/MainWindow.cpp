@@ -17,14 +17,13 @@
 #include "DataPlot.h"
 #include "Settings.h"
 #include "Smoothing.h"
-#include "Filter.h"
 #include "CustomExceptions.h"
 #include "GUIHelper.h"
-#include "ScrollableTextDialog.h"
-#include "Helper.h"
 #include "ScatterPlot.h"
 #include "HistogramPlot.h"
 #include "BoxPlot.h"
+#include <QStyleFactory>
+#include <QLibraryInfo>
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
@@ -34,6 +33,7 @@ MainWindow::MainWindow(QWidget *parent)
 	, recent_files_()
 {
 	ui_.setupUi(this);
+	QApplication::setStyle(QStyleFactory::create("windowsvista"));
 
 	//create info widget in status bar
 	info_widget_ = new QLabel("cols: 0 rows: 0");
@@ -147,7 +147,7 @@ void MainWindow::on_openTXT_triggered(bool)
 	storeModifiedDataset_();
 
 	QString filename = QFileDialog::getOpenFileName(this, "Open text file", Settings::path("path_open", true), "All files (*.*);;Text files (*.txt);;CSV files (*.csv);;TSV files (*.tsv)");
-	if (filename==QString::null)
+	if (filename.isEmpty())
 	{
 		return;
 	}
@@ -214,6 +214,10 @@ void MainWindow::openFile_(QString filename, bool remember_path)
 	updateFilters();
 	ui_.grid->render();
 
+	//resize
+	GUIHelper::resizeTableCellWidths(ui_.grid, 300, 1000);
+	GUIHelper::resizeTableCellHeightsToMinimum(ui_.grid, 1000);
+
 	//re-enable data signals
 	data_.blockSignals(false);
 }
@@ -248,7 +252,7 @@ void MainWindow::on_saveFileAs_triggered(bool)
 {
 	QString selected_filter = "";
 	QString filename = QFileDialog::getSaveFileName(this, "Save file", Settings::path("path_open", true) + file_.name, "Text files (*.txt *.csv *.tsv)", &selected_filter);
-	if (filename==QString::null)
+	if (filename.isEmpty())
 	{
 		return;
 	}
@@ -269,7 +273,7 @@ void MainWindow::on_saveFileAs_triggered(bool)
 
 void  MainWindow::on_resizeToContent_triggered(bool)
 {
-	QTime timer;
+	QElapsedTimer timer;
 	timer.start();
 
 	GUIHelper::resizeTableCellWidths(ui_.grid, 0.3*width());
@@ -527,7 +531,7 @@ QString MainWindow::fileNameLabel()
 
 void MainWindow::histogram()
 {
-	int index = ui_.grid->selectedColumns()[0];
+	int index = ui_.grid->selectedColumns().at(0);
 
 	HistogramPlot* hist = new HistogramPlot();
 	hist->setData(data_, index, QFileInfo(file_.name).baseName());
@@ -573,7 +577,16 @@ void MainWindow::boxPlot()
 
 void MainWindow::on_about_triggered(bool /*checked*/)
 {
-	QMessageBox::about(this, "About " + QApplication::applicationName(), QApplication::applicationName() + " " + QApplication::applicationVersion() +"\n\nThis program is free software.\n\nThis program is provided as is with no warranty of any kind, including the warranty of design, merchantability and fitness for a particular purpose.");
+	QString about_text = QApplication::applicationName() + " " + QApplication::applicationVersion();
+
+	about_text += "\n\n";
+	about_text += "A free TSV viewer.";
+
+	about_text += "\n";
+	about_text += "Architecture: " + QSysInfo::buildCpuArchitecture() + "\n";
+	about_text += "Qt version: " + QLibraryInfo::version().toString() + "\n";
+
+	QMessageBox::about(this, QApplication::applicationName(), about_text);
 }
 
 void MainWindow::addToRecentFiles_(QString filename)

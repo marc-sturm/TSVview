@@ -1,6 +1,7 @@
 #include "Parameters.h"
 #include "CustomExceptions.h"
 #include <QPoint>
+#include <QRegularExpression>
 
 Parameters::Parameters(QObject* object)
 	: QObject(object)
@@ -480,7 +481,7 @@ void Parameters::checkKey_(QString key)
 	{
 		THROW(ParameterException, "Invalid key '" + key + "'. Invalid use of section separator ':'.");
 	}
-	else if (!QRegExp("[A-Za-z0-9_: -\\[\\]]+").exactMatch(key))
+	else if (!QRegularExpression("[A-Za-z0-9_: -\\[\\]]+").match(key).hasMatch())
 	{
 		THROW(ParameterException, "Invalid key '" + key + "'. Invalid character used.");
 	}

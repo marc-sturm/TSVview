@@ -17,7 +17,7 @@ void MyChartView::mouseMoveEvent(QMouseEvent* event)
 	if (mouse_tracking_)
 	{
 		//convert coordinates
-		QPointF widget_pos = event->localPos();
+		QPointF widget_pos = event->position();
 		QPointF scene_pos = mapToScene(QPoint(static_cast<int>(widget_pos.x()), static_cast<int>(widget_pos.y())));
 		QPointF chart_item_pos = chart()->mapFromScene(scene_pos);
 		QPointF pos = chart()->mapToValue(chart_item_pos);

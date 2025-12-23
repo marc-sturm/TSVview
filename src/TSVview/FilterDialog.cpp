@@ -2,6 +2,7 @@
 
 #include <QMenu>
 #include <QSet>
+#include "cppCORE_global.h"
 
 FilterDialog::FilterDialog(BaseColumn* column, QWidget* parent)
 	: QDialog(parent)
@@ -113,8 +114,8 @@ void FilterDialog::updateDropdownText()
 		}
 
 		//add ordered string values to menu
-		QList<QString> ordered = set.toList();
-		qSort(ordered);
+		QList<QString> ordered = SET_TO_LIST(set);
+		std::sort(ordered.begin(), ordered.end());
 		foreach(QString value, ordered)
 		{
 			ui_.text_dropdown->menu()->addAction(value);
