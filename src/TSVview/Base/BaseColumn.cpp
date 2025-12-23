@@ -1,6 +1,5 @@
 #include "BaseColumn.h"
-
-#include <QRegExp>
+#include <QRegularExpression>
 
 BaseColumn::BaseColumn(Type type)
   : QObject(0)
@@ -41,7 +40,7 @@ bool BaseColumn::setHeader(const QString& header)
   }
 
   //check if name contains only valid characters
-  if (!QRegExp("[A-Za-z0-9_ +/.:äöüÄÖÜß-)(#]*").exactMatch(header))
+  if (!QRegularExpression("[A-Za-z0-9_ +/.:äöüÄÖÜß-)(#]*").match(header).hasMatch())
   {
     return false;
   }

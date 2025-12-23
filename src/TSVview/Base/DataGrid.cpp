@@ -9,7 +9,7 @@
 #include <QTextStream>
 #include <QDebug>
 #include <QTime>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <algorithm>
 #include <math.h>
 #include "GrepDialog.h"
@@ -193,7 +193,7 @@ void DataGrid::render()
 		return;
 	}
 
-	QTime timer;
+	QElapsedTimer timer;
 	timer.start();
 
 	// get row/column count
@@ -305,7 +305,7 @@ void DataGrid::removeSelectedColumns()
 		return;
 	}
 
-	data_->removeColumns(selectedColumns().toSet());
+	data_->removeColumns(LIST_TO_SET(selectedColumns()));
 }
 
 void DataGrid::renameColumn_()
@@ -562,7 +562,7 @@ void DataGrid::addColumn_()
 		formula.replace("]", "] ");
 
 		//check the columns used in the formula
-		QStringList parts = formula.split(QRegExp("\\s+"));
+		QStringList parts = formula.split(QRegularExpression("\\s+"));
 		QMap<int, QString> cols;
 		for(int i=0; i<parts.size(); ++i)
 		{
@@ -1115,13 +1115,13 @@ QVector< QPair<int, int> > DataGrid::findItems(QString text, Qt::CaseSensitivity
 	}
 	else if (type == DataGrid::FIND_REGEXP)
 	{
-		QRegExp regexp(text, case_sensitive, QRegExp::RegExp2);
+		QRegularExpression regexp(text, case_sensitive ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption);
 
 		for (int row=0; row<rowCount(); ++row)
 		{
 			for (int col=0; col<columnCount(); ++col)
 			{
-				if (regexp.indexIn(item(row, col)->text()) != -1)
+				if (regexp.match(item(row, col)->text()).hasMatch())
 				{
 					hits.append(qMakePair(col, row));
 				}

@@ -75,7 +75,7 @@ private:
 			, description("")
 			, type(Int)
 			, v_variant()
-			, restriction(QVariant::Invalid)
+			, restriction()
 			, separator(false)
 		{
 		}

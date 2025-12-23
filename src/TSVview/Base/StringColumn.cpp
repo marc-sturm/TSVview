@@ -1,7 +1,7 @@
 #include "StringColumn.h"
 #include "CustomExceptions.h"
 #include <algorithm>
-#include <QRegExp>
+#include <QRegularExpression>
 
 StringColumn::StringColumn()
 	: BaseColumn(STRING)
@@ -94,23 +94,23 @@ void StringColumn::matchFilter(QBitArray& array) const
 	}
 	else if (type == Filter::STRING_REGEXP)
 	{
-		QRegExp regexp(value);
+		QRegularExpression regexp(value);
 		for (int r=0; r<count(); ++r)
 		{
 			if (array[r])
 			{
-				array[r] = (regexp.indexIn(values_[r])!=-1);
+				array[r] = regexp.match(values_[r]).hasMatch();
 			}
 		}
 	}
 	else if (type == Filter::STRING_REGEXP_NOT)
 	{
-		QRegExp regexp(value);
+		QRegularExpression regexp(value);
 		for (int r=0; r<count(); ++r)
 		{
 			if (array[r])
 			{
-				array[r] = (regexp.indexIn(values_[r])==-1);
+				array[r] = regexp.match(values_[r]).hasMatch();
 			}
 		}
 	}

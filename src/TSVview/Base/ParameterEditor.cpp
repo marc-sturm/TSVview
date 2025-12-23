@@ -23,7 +23,7 @@ ParameterEditor::ParameterEditor(QWidget* parent)
 	//create layout
 	setLayout(new QBoxLayout(QBoxLayout::TopToBottom));
 	setMaximumSize(300, 2000);  //workaround for QDoubleSpinBox bug
-	layout()->setMargin(2);
+	layout()->setContentsMargins(QMargins(2,2,2,2));
 }
 
 void ParameterEditor::setParameters(Parameters& parameters)
@@ -64,12 +64,12 @@ void ParameterEditor::setupUi()
 	}
 
 	//add stack pages
-	int pages = std::max(1, sections.size());
+	int pages = std::max(qsizetype(1), sections.size());
 	for (int i=0; i<pages; ++i)
 	{
 		QWidget* w = new QWidget(stack_);
 		w->setLayout(new QFormLayout());
-		w->layout()->setMargin(0);
+		w->layout()->setContentsMargins(QMargins(0,0,0,0));
 		stack_->addWidget(w);
 	}
 

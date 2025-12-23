@@ -3,7 +3,7 @@
 #include <QTextStream>
 #include <QStringList>
 #include <QDebug>
-#include <QTime>
+#include <QElapsedTimer>
 #include <QMessageBox>
 #include "TextFile.h"
 #include "CustomExceptions.h"
@@ -25,7 +25,7 @@ void TextFile::load(DataSet& data, QString filename, Parameters params, int prev
 	}
 
 	QTextStream stream(&file);
-	QTime timer;
+	QElapsedTimer timer;
 	timer.start();
 	fromStream(data, stream, params, filename, preview_lines);
 	qDebug() << "loading data c=" << data.columnCount() << "r=" << data.rowCount() << "ms=" << timer.restart();
@@ -39,7 +39,7 @@ void TextFile::fromStream(DataSet& data, QTextStream& stream, QString location, 
 		params = defaultParameters();
 	}
 
-	QTime timer;
+	QElapsedTimer timer;
 	timer.start();
 	fromStream(data, stream, params, location, preview_lines);
 	qDebug() << "loading data c=" << data.columnCount() << "r=" << data.rowCount() << "ms=" << timer.restart();
@@ -120,7 +120,7 @@ void TextFile::fromStream(DataSet& data, QTextStream& stream, Parameters params,
 			QString part = parts[0];
 			parts[0] = part.mid(1);
 			part = parts[parts.count()-1];
-			parts[parts.count()-1] = part.mid(0, part.count()-1);
+			parts[parts.count()-1] = part.mid(0, part.size()-1);
 		}
 
 		//add data to columns

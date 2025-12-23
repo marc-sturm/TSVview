@@ -84,7 +84,7 @@ void Smoothing::movingMedian_(QVector<double>& data, Parameters params)
 		{
 			values.append(data.at(j));
 		}
-		qSort(values);
+		std::sort(values.begin(), values.end());
 		output[i] = values[hws];
 	}
 

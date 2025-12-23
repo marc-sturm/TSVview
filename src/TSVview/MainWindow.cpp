@@ -25,6 +25,7 @@
 #include "ScatterPlot.h"
 #include "HistogramPlot.h"
 #include "BoxPlot.h"
+#include <QStyleFactory>
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
@@ -34,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
 	, recent_files_()
 {
 	ui_.setupUi(this);
+	setStyle(QStyleFactory::create("windowsvista"));
 
 	//create info widget in status bar
 	info_widget_ = new QLabel("cols: 0 rows: 0");
@@ -147,7 +149,7 @@ void MainWindow::on_openTXT_triggered(bool)
 	storeModifiedDataset_();
 
 	QString filename = QFileDialog::getOpenFileName(this, "Open text file", Settings::path("path_open", true), "All files (*.*);;Text files (*.txt);;CSV files (*.csv);;TSV files (*.tsv)");
-	if (filename==QString::null)
+	if (filename.isEmpty())
 	{
 		return;
 	}
@@ -248,7 +250,7 @@ void MainWindow::on_saveFileAs_triggered(bool)
 {
 	QString selected_filter = "";
 	QString filename = QFileDialog::getSaveFileName(this, "Save file", Settings::path("path_open", true) + file_.name, "Text files (*.txt *.csv *.tsv)", &selected_filter);
-	if (filename==QString::null)
+	if (filename.isEmpty())
 	{
 		return;
 	}
@@ -269,7 +271,7 @@ void MainWindow::on_saveFileAs_triggered(bool)
 
 void  MainWindow::on_resizeToContent_triggered(bool)
 {
-	QTime timer;
+	QElapsedTimer timer;
 	timer.start();
 
 	GUIHelper::resizeTableCellWidths(ui_.grid, 0.3*width());

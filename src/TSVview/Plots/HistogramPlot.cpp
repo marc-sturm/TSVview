@@ -156,5 +156,5 @@ QPair<double, double> HistogramPlot::getMinMax()
 		}
 	}
 
-	return qMakePair<double, double>(min, max);
+	return qMakePair(min, max);
 }
