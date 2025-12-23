@@ -40,7 +40,7 @@ bool BaseColumn::setHeader(const QString& header)
   }
 
   //check if name contains only valid characters
-  if (!QRegularExpression("[A-Za-z0-9_ +/.:äöüÄÖÜß-)(#]*").match(header).hasMatch())
+  if (!QRegularExpression("[A-Za-z0-9_ +/.:äöüÄÖÜß)(#-]*").match(header).hasMatch())
   {
     return false;
   }

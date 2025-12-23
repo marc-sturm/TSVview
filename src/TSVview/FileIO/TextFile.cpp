@@ -167,7 +167,7 @@ void TextFile::fromStream(DataSet& data, QTextStream& stream, Parameters params,
 				QString part = parts[0];
 				parts[0] = part.mid(1);
 				part = parts[parts.count()-1];
-				parts[parts.count()-1] = part.mid(0, part.count()-1);
+				parts[parts.count()-1] = part.mid(0, part.size()-1);
 			}
 
 			for (int c=0; c<cols; ++c)

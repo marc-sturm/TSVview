@@ -17,15 +17,13 @@
 #include "DataPlot.h"
 #include "Settings.h"
 #include "Smoothing.h"
-#include "Filter.h"
 #include "CustomExceptions.h"
 #include "GUIHelper.h"
-#include "ScrollableTextDialog.h"
-#include "Helper.h"
 #include "ScatterPlot.h"
 #include "HistogramPlot.h"
 #include "BoxPlot.h"
 #include <QStyleFactory>
+#include <QLibraryInfo>
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
@@ -35,7 +33,7 @@ MainWindow::MainWindow(QWidget *parent)
 	, recent_files_()
 {
 	ui_.setupUi(this);
-	setStyle(QStyleFactory::create("windowsvista"));
+	QApplication::setStyle(QStyleFactory::create("windowsvista"));
 
 	//create info widget in status bar
 	info_widget_ = new QLabel("cols: 0 rows: 0");
@@ -215,6 +213,10 @@ void MainWindow::openFile_(QString filename, bool remember_path)
 	//update GUI
 	updateFilters();
 	ui_.grid->render();
+
+	//resize
+	GUIHelper::resizeTableCellWidths(ui_.grid, 300, 1000);
+	GUIHelper::resizeTableCellHeightsToMinimum(ui_.grid, 1000);
 
 	//re-enable data signals
 	data_.blockSignals(false);
@@ -529,7 +531,7 @@ QString MainWindow::fileNameLabel()
 
 void MainWindow::histogram()
 {
-	int index = ui_.grid->selectedColumns()[0];
+	int index = ui_.grid->selectedColumns().at(0);
 
 	HistogramPlot* hist = new HistogramPlot();
 	hist->setData(data_, index, QFileInfo(file_.name).baseName());
@@ -575,7 +577,16 @@ void MainWindow::boxPlot()
 
 void MainWindow::on_about_triggered(bool /*checked*/)
 {
-	QMessageBox::about(this, "About " + QApplication::applicationName(), QApplication::applicationName() + " " + QApplication::applicationVersion() +"\n\nThis program is free software.\n\nThis program is provided as is with no warranty of any kind, including the warranty of design, merchantability and fitness for a particular purpose.");
+	QString about_text = QApplication::applicationName() + " " + QApplication::applicationVersion();
+
+	about_text += "\n\n";
+	about_text += "A free TSV viewer.";
+
+	about_text += "\n";
+	about_text += "Architecture: " + QSysInfo::buildCpuArchitecture() + "\n";
+	about_text += "Qt version: " + QLibraryInfo::version().toString() + "\n";
+
+	QMessageBox::about(this, QApplication::applicationName(), about_text);
 }
 
 void MainWindow::addToRecentFiles_(QString filename)

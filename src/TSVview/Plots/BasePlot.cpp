@@ -25,7 +25,7 @@ BasePlot::BasePlot(QWidget *parent)
 	, y_label_(nullptr)
 {
 	//general settings
-	setMinimumWidth(800);
+	setMinimumWidth(900);
 	setMinimumHeight(600);
 
 	//create layout
