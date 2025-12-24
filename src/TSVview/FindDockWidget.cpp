@@ -31,6 +31,10 @@ void FindDockWidget::on_search_button_clicked()
 	emit searchForText(ui_.edit_field->text(), case_sensitive, type);
 }
 
+void FindDockWidget::on_next_button_clicked()
+{
+    emit searchNext();
+}
 void FindDockWidget::keyPressEvent(QKeyEvent* e)
 {
 	if (e->key()==Qt::Key_Escape && e->modifiers()==Qt::NoModifier)

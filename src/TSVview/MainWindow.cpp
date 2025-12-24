@@ -582,7 +582,7 @@ void MainWindow::on_about_triggered(bool /*checked*/)
 	about_text += "\n\n";
 	about_text += "A free TSV viewer.";
 
-	about_text += "\n";
+    about_text += "\n\n";
 	about_text += "Architecture: " + QSysInfo::buildCpuArchitecture() + "\n";
 	about_text += "Qt version: " + QLibraryInfo::version().toString() + "\n";
 
@@ -646,6 +646,7 @@ void MainWindow::on_showComments_triggered(bool)
 	browser->setText(data_.comments().join("\n"));
 	browser->setReadOnly(true);
 	browser->setLineWrapMode(QTextBrowser::NoWrap);
+    browser->setMinimumSize(800, 600);
 	auto dlg = GUIHelper::createDialog(browser, "Comments");
 	dlg->exec();
 }

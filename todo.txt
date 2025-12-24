@@ -1,5 +1,6 @@
 - add date support (german, US and ISO)
 - add support for storing table as html
 - add support for loading/storing .txt.gz format > VersatileFile
+- lower memory consumption (QHash)
 - color dots in scatter plot according to ENUM column
 - show outliers in bar plot?

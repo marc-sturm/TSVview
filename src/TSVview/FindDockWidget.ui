@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>421</width>
-    <height>113</height>
+    <width>540</width>
+    <height>112</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -17,10 +17,10 @@
    </sizepolicy>
   </property>
   <property name="features">
-   <set>QDockWidget::DockWidgetClosable</set>
+   <set>QDockWidget::DockWidgetFeature::DockWidgetClosable</set>
   </property>
   <property name="allowedAreas">
-   <set>Qt::BottomDockWidgetArea</set>
+   <set>Qt::DockWidgetArea::BottomDockWidgetArea</set>
   </property>
   <property name="windowTitle">
    <string>Find</string>
@@ -33,13 +33,16 @@
     </sizepolicy>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <property name="margin">
+    <property name="margin" stdset="0">
      <number>3</number>
     </property>
-    <item row="0" column="3">
+    <property name="spacing">
+     <number>3</number>
+    </property>
+    <item row="0" column="4">
      <spacer name="horizontalSpacer">
       <property name="orientation">
-       <enum>Qt::Horizontal</enum>
+       <enum>Qt::Orientation::Horizontal</enum>
       </property>
       <property name="sizeHint" stdset="0">
        <size>
@@ -49,37 +52,14 @@
       </property>
      </spacer>
     </item>
-    <item row="2" column="0" colspan="4">
-     <spacer name="verticalSpacer">
+    <item row="3" column="0" colspan="5">
+     <widget class="Line" name="line">
       <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>0</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="0" column="0">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Text:</string>
+       <enum>Qt::Orientation::Horizontal</enum>
       </property>
      </widget>
     </item>
-    <item row="0" column="1">
-     <widget class="QLineEdit" name="edit_field"/>
-    </item>
-    <item row="0" column="2">
-     <widget class="QPushButton" name="search_button">
-      <property name="text">
-       <string>Search</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0" colspan="4">
+    <item row="1" column="0" colspan="5">
      <widget class="QGroupBox" name="groupBox">
       <property name="title">
        <string>Options</string>
@@ -91,7 +71,10 @@
        <bool>false</bool>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout">
-       <property name="margin">
+       <property name="spacing">
+        <number>3</number>
+       </property>
+       <property name="margin" stdset="0">
         <number>3</number>
        </property>
        <item>
@@ -107,10 +90,10 @@
        <item>
         <spacer name="horizontalSpacer_3">
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
          <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
+          <enum>QSizePolicy::Policy::Fixed</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -130,7 +113,7 @@
        <item>
         <spacer name="horizontalSpacer_2">
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -143,10 +126,40 @@
       </layout>
      </widget>
     </item>
-    <item row="3" column="0" colspan="4">
-     <widget class="Line" name="line">
+    <item row="0" column="1">
+     <widget class="QLineEdit" name="edit_field"/>
+    </item>
+    <item row="0" column="0">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Text:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="2">
+     <widget class="QPushButton" name="search_button">
+      <property name="text">
+       <string>Search</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0" colspan="5">
+     <spacer name="verticalSpacer">
       <property name="orientation">
-       <enum>Qt::Horizontal</enum>
+       <enum>Qt::Orientation::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>0</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="0" column="3">
+     <widget class="QPushButton" name="next_button">
+      <property name="text">
+       <string>Find next</string>
       </property>
      </widget>
     </item>

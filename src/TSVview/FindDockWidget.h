@@ -19,6 +19,7 @@ signals:
 
 private slots:
 	void on_search_button_clicked();
+    void on_next_button_clicked();
 	void valueChanged();
 	void keyPressEvent(QKeyEvent* e);
 	void focusInEvent(QFocusEvent* e);

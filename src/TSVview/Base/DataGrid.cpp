@@ -1145,7 +1145,7 @@ QString DataGrid::findTypeToString(DataGrid::FindType type)
 		case DataGrid::FIND_END:
 			return "ends with";
 		case DataGrid::FIND_REGEXP:
-			return "matches (QRegExp)";
+            return "matches (regular expression))";
 	}
 
 	THROW(FindTypeException,"Unknown find type!");
