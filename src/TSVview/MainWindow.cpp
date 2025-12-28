@@ -90,7 +90,7 @@ void MainWindow::delayedInitialization()
 	if (QApplication::arguments().count()==2)
 	{
 		QString filename = QApplication::arguments().at(1);
-		openFile_(filename, true);
+		openFile_(filename);
 	}
 }
 
@@ -801,7 +801,7 @@ void MainWindow::dropEvent(QDropEvent* e)
 		return;
 	}
 
-	openFile_(filename, true);
+	openFile_(filename);
 }
 
 void MainWindow::fileChanged()

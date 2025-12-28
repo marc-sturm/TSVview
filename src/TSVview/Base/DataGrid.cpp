@@ -849,9 +849,9 @@ void DataGrid::keyPressEvent(QKeyEvent* event)
 			int col = selectedItems()[0]->column();
 			int row = correctRowIfFiltered(selectedItems()[0]->row());
 			data_->column(col).setString(row, "");
-		}
 
-		handled = true;
+			handled = true;
+		}
 	}
 
 	if (!handled) QTableWidget::keyPressEvent(event);

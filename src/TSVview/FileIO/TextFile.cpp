@@ -7,11 +7,13 @@
 #include <QMessageBox>
 #include "TextFile.h"
 #include "CustomExceptions.h"
+#include "VersatileFile.h"
 
 void TextFile::load(DataSet& data, QString filename, Parameters params, int preview_lines)
 {
-	QFile file(filename);
 	filename = QFileInfo(filename).fileName();
+
+	VersatileFile file(filename);
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
 	{
 		data.clear(true);
