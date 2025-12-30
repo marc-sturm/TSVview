@@ -162,31 +162,12 @@ void DataGrid::renderColumn_(int column, QBitArray rows_to_render)
 	}
 }
 
-void DataGrid::renderItem_(int row, int column, QBitArray rows_to_render)
-{
-	Q_ASSERT(rows_to_render.count()==data_->column(column).count());
-
-	int r_filtered = -1;
-	for (int r=0; r<data_->rowCount(); ++r)
-	{
-		if (rows_to_render[r])
-		{
-			++r_filtered;
-		}
-
-		if (r_filtered==row)
-		{
-			QTableWidgetItem* item = new QTableWidgetItem(data_->column(column).string(r));
-			item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-			setItem(row, column, item);
-
-			break;
-		}
-	}
-}
-
 void DataGrid::render()
 {
+    //clear
+    setColumnCount(0);
+    setRowCount(0);
+
 	//abort if dataset is not set
 	if (data_==0)
 	{

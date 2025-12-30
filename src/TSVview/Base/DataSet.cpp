@@ -79,21 +79,21 @@ void DataSet::removeColumns(QSet<int> columns)
 
 	//sort coumns in reverse order
 	QList<int> column_list = SET_TO_LIST(columns);
-	std::sort(column_list.begin(), column_list.end(), std::greater<int>());
+    std::sort(column_list.begin(), column_list.end(), std::greater<int>());
 
 	//remove columns
 	for (int i=0; i<column_list.count(); ++i)
 	{
-		int col = column_list[i];
-		Q_ASSERT(col<columns_.size());
+        int col = column_list[i];
+        Q_ASSERT(col<columns_.size());
 
-		delete(columns_[col]);
-		columns_.remove(col);
-	}
+        delete(columns_[col]);
+        columns_.remove(col);
+    }
 
 	emit dataChanged();
 	emit filtersChanged();
-	setModified(true);
+    setModified(true);
 }
 
 void DataSet::addColumn(QString header, const QVector<double>& data, bool auto_format, int index)
@@ -432,7 +432,6 @@ QBitArray DataSet::getRowFilter(bool update) const
 	return filtered_rows_;
 }
 
-
 void DataSet::load(QString filename, QString display_name)
 {
     if (display_name.isEmpty()) display_name = filename;
@@ -448,6 +447,7 @@ void DataSet::load(QString filename, QString display_name)
     QStringList filters;
     int line_nr = -1;
     int cols = -1;
+    int rows = -1;
     VersatileTextStream file(filename);
     while (!file.atEnd())
     {
@@ -466,6 +466,10 @@ void DataSet::load(QString filename, QString display_name)
                 {
                     filters << line;
                 }
+                else if (line.startsWith("##TSVVIEW-ROWS##"))
+                {
+                    rows = line.split("##")[2].toInt();
+                }
                 else
                 {
                     comments << line;
@@ -480,7 +484,10 @@ void DataSet::load(QString filename, QString display_name)
                 for (int c=0; c<cols; ++c)
                 {
                     numeric_columns << c;
-                    addColumn(parts[c], QVector<QString>(), false);
+
+                    QVector<QString> values;
+                    if (rows!=-1) values.reserve(rows);
+                    addColumn(parts[c], values, false);
                 }
             }
             continue;
@@ -729,8 +736,10 @@ void DataSet::storePlain(QString filename)
     QTextStream stream(&file);
     foreach(const QString& comment, comments())
     {
+        if (comment.startsWith("##TSVVIEW-ROWS##")) continue;
         stream << comment << '\n';
     }
+    stream << "##TSVVIEW-ROWS##" << rowCount() << '\n';
 
     //write filters
     for (int col=0; col<columnCount(); ++col)
@@ -771,9 +780,12 @@ void DataSet::storeGzipped(QString filename)
     //write comments
     foreach(const QString& comment, comments())
     {
+        if (comment.startsWith("##TSVVIEW-ROWS##")) continue;
         QByteArray tmp = (comment +'\n').toUtf8();
         gzwrite(file, tmp.constData(), tmp.size());
     }
+    QByteArray tmp = ("##TSVVIEW-ROWS##" + QByteArray::number(rowCount()) + '\n');
+    gzwrite(file, tmp.constData(), tmp.size());
 
     //write filters
     for (int col=0; col<columnCount(); ++col)
@@ -786,8 +798,7 @@ void DataSet::storeGzipped(QString filename)
     }
 
     // write header
-
-    QByteArray tmp = ('#' + headers().join('\t') +'\n').toUtf8();
+    tmp = ('#' + headers().join('\t') +'\n').toUtf8();
     gzwrite(file, tmp.constData(), tmp.size());
 
     // write data

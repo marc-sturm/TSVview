@@ -40,10 +40,14 @@ public:
 		values_.reserve(rows);
 	}
 	virtual void sort(bool reverse=false);
-	virtual int count() const
+    virtual qsizetype count() const
 	{
 		return values_.count();
 	}
+    virtual qsizetype capacity() const
+    {
+        return values_.capacity();
+    };
 	virtual BaseColumn* clone() const
 	{
 		return new NumericColumn(*this);

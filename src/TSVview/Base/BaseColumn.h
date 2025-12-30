@@ -51,7 +51,8 @@ public:
 	virtual void resize(int rows) = 0;
 	virtual void reserve(int rows) = 0;
 	virtual void sort(bool reverse=false) = 0;
-	virtual int count() const = 0;
+    virtual qsizetype count() const = 0;
+    virtual qsizetype capacity() const = 0;
 	virtual BaseColumn* clone() const = 0;
 
 	const Filter& filter() const

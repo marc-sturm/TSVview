@@ -97,8 +97,7 @@ protected:
 	DataSet* data_;
 	int preview_;
 
-	void keyPressEvent(QKeyEvent* event);
-	void renderItem_(int row, int column, QBitArray rows_to_render = QBitArray());
+    void keyPressEvent(QKeyEvent* event);
 	void renderColumn_(int column, QBitArray rows_to_render = QBitArray());
 	static bool isNumeric_(QString string);
 	QString itemText(int row, int col, bool is_numeric, QChar decimal_point);

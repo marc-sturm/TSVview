@@ -1,5 +1,4 @@
-- lower memory consumption (QHash, union QString/QByteArray)
+- add date support (german, US and ISO)
 - keep decimal places in numeric columns if same in all rows
 - color dots in scatter plot according to ENUM column
-- add date support (german, US and ISO)
 - show outliers in bar plot?

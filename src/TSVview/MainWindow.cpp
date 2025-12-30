@@ -672,12 +672,15 @@ void MainWindow::on_actionGenerateExampleData_triggered(bool)
 
     //add string column
     QVector<QString> c1;
-    c1.reserve(rows);
-    for(int i=0; i<rows; ++i)
+    for(int rep=0; rep<5; ++rep)
     {
-        c1 << Helper::randomString(8);
+        c1.clear();
+        for(int i=0; i<rows; ++i)
+        {
+            c1 << Helper::randomString(4);
+        }
+        tmp.addColumn("col_string"+QString::number(rep+1), c1);
     }
-    tmp.addColumn("col1_string", c1);
 
     //add int column
     QVector<double> c2;
@@ -686,7 +689,7 @@ void MainWindow::on_actionGenerateExampleData_triggered(bool)
     {
         c2 << (int)std::round(Helper::randomNumber(0, 10000));
     }
-    tmp.addColumn("col1_int", c2);
+    tmp.addColumn("col_int", c2);
 
     //add float column
     c2.clear();
@@ -694,7 +697,7 @@ void MainWindow::on_actionGenerateExampleData_triggered(bool)
     {
         c2 << Helper::randomNumber(0, 100);
     }
-    tmp.addColumn("col1_float", c2);
+    tmp.addColumn("col_float", c2);
 
     //store
     tmp.store(QApplication::applicationDirPath() + "/example_data.tsv");
