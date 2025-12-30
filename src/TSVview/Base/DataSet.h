@@ -5,6 +5,12 @@
 #include "NumericColumn.h"
 #include <QSet>
 
+enum ExportFormat
+{
+    HTML,
+    CSV
+};
+
 /// A dataset (martix) consisting of several formatted columns (string, float).
 class DataSet
 		: public QObject
@@ -21,6 +27,8 @@ public:
     void import(QString filename, QString display_name, Parameters params, int preview_lines = -1);
     //store TSV of TSV.GZ file.
     void store(QString filename);
+    //export
+    void storeAs(QString filename, ExportFormat format);
 
 	const BaseColumn& column(int column) const
 	{
@@ -143,6 +151,13 @@ protected:
 
     void storePlain(QString filename);
     void storeGzipped(QString filename);
+    void storeAsHtml(QString filename);
+    static void writeHtml(QTextStream& stream, int indent, QByteArray text, bool newline=false);
+
+    void storeAsCsv(QString filename);
+    static QString escapeForCsv(QString s);
+
+
 
 private:
 	//not implemented

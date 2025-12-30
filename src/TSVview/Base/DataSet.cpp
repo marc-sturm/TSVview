@@ -716,7 +716,6 @@ void DataSet::store(QString filename)
     qDebug() << QString("storing")+(is_gz ? " (GZ)" : "")+" ms=" << timer.elapsed();
 }
 
-
 void DataSet::storePlain(QString filename)
 {
     // open file
@@ -813,3 +812,131 @@ void DataSet::storeGzipped(QString filename)
     gzclose(file);
 }
 
+void DataSet::storeAs(QString filename, ExportFormat format)
+{
+    if (format==ExportFormat::HTML)
+    {
+        storeAsHtml(filename);
+    }
+    else if (format==ExportFormat::CSV)
+    {
+        storeAsCsv(filename);
+    }
+    else THROW(NotImplementedException, "Invalid format!");
+}
+
+void DataSet::storeAsHtml(QString filename)
+{
+    // open file
+    QFile file(filename);
+    if (!file.open(QFile::WriteOnly | QFile::Truncate))
+    {
+        THROW(FileAccessException, "Could not open file '" + filename + "' for writing.");
+    }
+
+    // write header
+    QTextStream stream(&file);
+    int indent = 0;
+
+    //before table
+    writeHtml(stream, indent, "<html>", true);
+    indent += 2;
+    writeHtml(stream, indent, "<head>", true);
+    indent += 2;
+    writeHtml(stream, indent, "<style>", true);
+    indent += 2;
+    writeHtml(stream, indent, "table { border-collapse: collapse; width: auto; border: 1px solid #444; }", true);
+    writeHtml(stream, indent, "table td { border: 1px solid #444; padding: 2px; }", true);
+    writeHtml(stream, indent, "table th { border: 1px solid #444; text-align: left; padding: 2px; background: #ccc; font-weight: 600; }", true);
+    writeHtml(stream, indent, "table tr:nth-child(even) td { background: #f3f3f3; }", true);
+    writeHtml(stream, indent, "table tr:hover td { background: #d0d7df; }", true);
+    indent -= 2;
+    writeHtml(stream, indent, "</style>", true);
+    indent -= 2;
+    writeHtml(stream, indent, "</head>", true);
+    writeHtml(stream, indent, "<body>", true);
+    indent += 2;
+    writeHtml(stream, indent, "<table>", true);
+    indent += 2;
+
+    //header line
+    QStringList header_names = headers();
+    writeHtml(stream, indent, "<tr>", true);
+    indent += 2;
+    for(int i=0; i<header_names.count(); ++i)
+    {
+        writeHtml(stream, indent, "<th>"+header_names[i].toUtf8()+"</th>", true);
+    }
+    indent -= 2;
+    writeHtml(stream, indent, "</tr>", true);
+
+    //content lines
+    for (int row=0; row<rowCount(); ++row)
+    {
+        writeHtml(stream, indent, "<tr>", true);
+        indent += 2;
+        for(int col=0; col<columnCount(); ++col)
+        {
+            writeHtml(stream, indent, "<td>"+column(col).string(row).toUtf8()+"</td>", true);
+        }
+        indent -= 2;
+        writeHtml(stream, indent, "</tr>", true);
+    }
+
+    //after
+    indent -= 2;
+    writeHtml(stream, indent, "</table>", true);
+    indent -= 2;
+    writeHtml(stream, indent, "</body>", true);
+    indent -= 2;
+    writeHtml(stream, indent, "</html>", true);
+}
+
+void DataSet::writeHtml(QTextStream& stream, int indent, QByteArray text, bool newline)
+{
+    if (indent>0) stream << QByteArray().fill(' ', indent);
+    stream << text;
+    if (newline) stream << "\n";
+}
+
+void DataSet::storeAsCsv(QString filename)
+{
+    // open file
+    QFile file(filename);
+    if (!file.open(QFile::WriteOnly | QFile::Truncate))
+    {
+        THROW(FileAccessException, "Could not open file '" + filename + "' for writing.");
+    }
+
+    // write header
+    QTextStream stream(&file);
+
+    QStringList header_names = headers();
+    for (int col=0; col<header_names.count(); ++col)
+    {
+        if (col!=0) stream << ',';
+        stream << escapeForCsv(header_names[col]);
+    }
+    stream << '\n';
+
+    // write data
+    for (int row=0; row<rowCount(); ++row)
+    {
+        if (row!=0) stream << '\n';
+        for (int col=0; col<columnCount(); ++col)
+        {
+            if (col!=0) stream << ',';
+            stream << escapeForCsv(column(col).string(row));
+        }
+    }
+}
+
+QString DataSet::escapeForCsv(QString s)
+{
+    s.replace("\"", "\"\"");
+    if (s.contains(',') || s.contains('"') || s.contains('\n'))
+    {
+        s = "\"" + s + "\"";
+    }
+    return s;
+}

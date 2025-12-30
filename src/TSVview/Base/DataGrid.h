@@ -71,7 +71,7 @@ protected slots:
 	void copySelectionToClipboard_();
 	void copySelectionToClipboardGerman_();
 	void copySelectionToClipboard_(QChar decimal_point);
-	void pasteColumn_();
+    void pasteColumn_(int index=-1);
 	void pasteDataset_();
 	void addColumn_();
 	void renameColumn_();

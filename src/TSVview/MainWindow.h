@@ -43,6 +43,7 @@ public slots:
 	void on_toggleRowColors_triggered(bool);
 	void on_showComments_triggered(bool);
 	void on_fileNameToClipboard_triggered(bool);
+    void on_fileFolderInExplorer_triggered(bool);
     void on_actionShowDatasetInfo_triggered(bool);
     void on_actionGenerateExampleData_triggered(bool);
 	void tableContextMenu(QPoint point);

@@ -252,12 +252,18 @@ void MainWindow::on_saveFile_triggered(bool)
 
 void MainWindow::on_actionExportHTML_triggered(bool)
 {
-    qDebug() << __LINE__; //TODO
+    if (data_.columnCount()==0) return;
+
+    QString filename = QFileDialog::getSaveFileName(this, "Export as HTML",  filename_+".html", "HTML files (*.html);;All files (*.*)");
+    data_.storeAs(filename, ExportFormat::HTML);
 }
 
 void MainWindow::on_actionExportCSV_triggered(bool)
 {
-    qDebug() << __LINE__; //TODO
+    if (data_.columnCount()==0) return;
+
+    QString filename = QFileDialog::getSaveFileName(this, "Export as CSV",  filename_+".csv", "CSV files (*.csv);;All files (*.*)");
+    data_.storeAs(filename, ExportFormat::CSV);
 }
 
 void  MainWindow::on_resizeToContent_triggered(bool)
@@ -645,6 +651,13 @@ void MainWindow::on_fileNameToClipboard_triggered(bool)
     QApplication::clipboard()->setText(filename_);
 }
 
+void MainWindow::on_fileFolderInExplorer_triggered(bool)
+{
+    if (filename_.isEmpty()) return;
+
+    QDesktopServices::openUrl(QUrl(QFileInfo(filename_).path()));
+}
+
 void MainWindow::on_actionShowDatasetInfo_triggered(bool)
 {
     qDebug() << "cols:" << data_.columnCount() << "rows:" << data_.rowCount() << "modified:" << data_.modified();
@@ -662,7 +675,7 @@ void MainWindow::on_actionGenerateExampleData_triggered(bool)
     c1.reserve(rows);
     for(int i=0; i<rows; ++i)
     {
-        c1 << Helper::randomString(20);
+        c1 << Helper::randomString(8);
     }
     tmp.addColumn("col1_string", c1);
 

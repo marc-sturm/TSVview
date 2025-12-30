@@ -725,7 +725,7 @@ void DataGrid::copySelectionToClipboard_(QChar decimal_point)
 	QApplication::clipboard()->setText(selected_text);
 }
 
-void DataGrid::pasteColumn_()
+void DataGrid::pasteColumn_(int index)
 {
 	//load data from clipboard into tmp dataset
 	DataSet data_tmp;
@@ -752,13 +752,6 @@ void DataGrid::pasteColumn_()
 	{
 		QMessageBox::warning(this, "Error pasting data.", "The number of rows does not match.\nExpected " + QString::number(data_->rowCount()) + " rows, but got " + QString::number(data_tmp.rowCount()) + ".");
 		return;
-	}
-
-	//determine index
-	int index = -1;
-	if (selectedColumns().size()==1)
-	{
-		index = selectedColumns().at(0);
 	}
 
 	//insert columns
@@ -811,15 +804,21 @@ void DataGrid::keyPressEvent(QKeyEvent* event)
 	}
 	else if(event->matches(QKeySequence::Paste))
 	{
-		if (columnCount()==0)
+        QList<int> selected_cols = selectedColumns();
+        QList<QTableWidgetItem*> selected_items = selectedItems();
+        if (columnCount()==0)
 		{
 			pasteDataset_();
 		}
-		else if (selectedColumns().count()==1 && selectedItems().count()==rowCount())
+        else if (selected_cols.count()==1 && selected_items.count()==rowCount())
 		{
-			pasteColumn_();
+            pasteColumn_(selected_cols[0]);
 		}
-		else if (selectedItems().count()==1)
+        else if (selected_cols.count()==0 && selected_items.count()==0)
+        {
+            pasteColumn_(-1);
+        }
+        else if (selected_items.count()==1)
 		{
 			QString text = QApplication::clipboard()->text();
 			if (!text.contains("\t"))
@@ -829,8 +828,8 @@ void DataGrid::keyPressEvent(QKeyEvent* event)
 				{
 					try
 					{
-						int col = selectedItems()[0]->column();
-						int row = correctRowIfFiltered(selectedItems()[0]->row());
+                        int col = selected_items[0]->column();
+                        int row = correctRowIfFiltered(selected_items[0]->row());
 						data_->column(col).setString(row, text);
 					}
 					catch (Exception& e)
