@@ -3,14 +3,6 @@
 
 #include "Exceptions.h"
 
-/// Exception for import error
-class FileIOException
-		: public Exception
-{
-public:
-	FileIOException(QString message, QString file, int line, ExceptionType type);
-};
-
 /// Exception for parameter handling errors
 class ParameterException
 		: public Exception
@@ -20,36 +12,12 @@ public:
 
 };
 
-/// Exception for signal processing calculations
-class SignalProcessingException
-		: public Exception
-{
-public:
-	SignalProcessingException(QString message, QString file, int line, ExceptionType type);
-};
-
 /// Exception in case of wrong filter type
 class FilterTypeException
 		: public Exception
 {
 public:
 	FilterTypeException(QString message, QString file, int line, ExceptionType type);
-};
-
-/// Exception in case of unmatching find type
-class FindTypeException
-		: public Exception
-{
-public:
-	FindTypeException(QString message, QString file, int line, ExceptionType type);
-};
-
-/// Exception used to abort actions, but clean up
-class CleanUpException
-		: public Exception
-{
-public:
-	CleanUpException();
 };
 
 #endif

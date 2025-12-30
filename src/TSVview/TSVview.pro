@@ -23,7 +23,6 @@ SOURCES += \
     Base/DataSet.cpp \
     Base/ParameterEditor.cpp \
     FileIO/TextImportPreview.cpp \
-    FileIO/TextFile.cpp \
     Plots/BasePlot.cpp \
     Plots/ScatterPlot.cpp \
     Plots/HistogramPlot.cpp \
@@ -56,7 +55,6 @@ HEADERS += \
     Base/DataSet.h \
     Base/ParameterEditor.h \
     FileIO/TextImportPreview.h \
-    FileIO/TextFile.h \
     Plots/BasePlot.h \
     Plots/ScatterPlot.h \
     Plots/HistogramPlot.h \

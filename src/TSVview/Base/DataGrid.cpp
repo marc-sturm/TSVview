@@ -12,10 +12,10 @@
 #include <QRegularExpression>
 #include <algorithm>
 #include <math.h>
+#include <QTemporaryFile>
 #include "GrepDialog.h"
 #include "DataGrid.h"
 #include "CustomExceptions.h"
-#include "TextFile.h"
 #include "Settings.h"
 #include "TextImportPreview.h"
 #include "FilterDialog.h"
@@ -24,6 +24,7 @@
 #include "GUIHelper.h"
 #include "AddColumnDialog.h"
 #include "TextItemEditDialog.h"
+#include "Helper.h"
 
 DataGrid::DataGrid(QWidget* parent)
 	: QTableWidget(parent)
@@ -729,12 +730,18 @@ void DataGrid::pasteColumn_()
 	//load data from clipboard into tmp dataset
 	DataSet data_tmp;
 	try
-	{
-		QString text = QApplication::clipboard()->text();
-		QTextStream stream(&text);
-		TextFile::fromStream(data_tmp, stream, "[clipboard]");
+	{        
+        //create tmp file (with automatic cleanup)
+        QString tmp_filename = Helper::tempFileName(".txt");
+        auto cleanup = qScopeGuard([&] { QFile::remove(tmp_filename); });
+
+        //store clipboard to tmp file
+        Helper::storeTextFile(tmp_filename, QApplication::clipboard()->text().split('\n'));
+
+        //load data
+        data_tmp.load(tmp_filename, "[clipboard]");
 	}
-	catch (FileIOException& e)
+    catch (FileAccessException& e)
 	{
 		QMessageBox::warning(this, "Error parsing data from clipboard!", e.message());
 		return;
@@ -771,18 +778,21 @@ void DataGrid::pasteColumn_()
 
 void DataGrid::pasteDataset_()
 {
-	QString text = QApplication::clipboard()->text();
-	QTextStream stream(&text);
-	TextImportPreview preview(stream, "[clipboard]", false, this);
-	if(!preview.exec())
-	{
-		return;
-	}
+    //create tmp file (with automatic cleanup)
+    QString tmp_filename = Helper::tempFileName(".txt");
+    auto cleanup = qScopeGuard([&] { QFile::remove(tmp_filename); });
+
+    //store clipboard to tmp file
+    Helper::storeTextFile(tmp_filename, QApplication::clipboard()->text().split('\n'));
+
+    //show import dialog
+    TextImportPreview preview(tmp_filename, "[clipboard]", false, this);
+    if(!preview.exec()) return;
 
 	data_->blockSignals(true);
-	stream.seek(0);
-	TextFile::fromStream(*data_, stream, "[clipboard]", preview.parameters());
-	data_->blockSignals(false);
+    data_->import(tmp_filename, "[clipboard]", preview.parameters());
+    data_->blockSignals(false);
+    data_->setModified(true, true);
 	render();
 }
 
@@ -888,21 +898,26 @@ void DataGrid::removeFilter_()
 
 void DataGrid::removeDuplicates_()
 {
+    if (selectedColumns().count()==0) return;
+
 	int col = selectedColumns()[0];
 
 	//count values
-	QHash<QString, QList<int>> value_to_rows;
+    QHash<QString, int> value_to_first_row;
 	for (int r=0; r<data_->rowCount(); ++r)
 	{
 		QString value = data_->column(col).string(r);
-		value_to_rows[value].append(r);
+        if (!value_to_first_row.contains(value))
+        {
+            value_to_first_row[value] = r;
+        }
 	}
 
 	//remove duplicates
 	QSet<int> rows_to_keep;
-	for (auto it=value_to_rows.begin(); it!=value_to_rows.end(); ++it)
+    for (auto it=value_to_first_row.begin(); it!=value_to_first_row.end(); ++it)
 	{
-		rows_to_keep << it.value()[0];
+        rows_to_keep << it.value();
 	}
 
 	//reduce to rows without duplicates
@@ -911,6 +926,8 @@ void DataGrid::removeDuplicates_()
 
 void DataGrid::keepDuplicates_()
 {
+    if (selectedColumns().count()==0) return;
+
 	int col = selectedColumns()[0];
 
 	//count values
@@ -968,7 +985,7 @@ void DataGrid::grepLines()
 		if (matches[r]) rows_to_keep << r;
 	}
 
-	data_->reduceToRows(rows_to_keep);
+    data_->reduceToRows(rows_to_keep);
 }
 
 void DataGrid::editFilter(int column)
@@ -1148,7 +1165,7 @@ QString DataGrid::findTypeToString(DataGrid::FindType type)
             return "matches (regular expression))";
 	}
 
-	THROW(FindTypeException,"Unknown find type!");
+    THROW(ProgrammingException, "Unknown find type integer '"+QString::number(type)+"'!");
 }
 
 void DataGrid::columnChanged(int column, bool until_end)

@@ -3,11 +3,15 @@
 #include <algorithm>
 #include <QDebug>
 #include <BasicStatistics.h>
+#include <QMessageBox>
+#include "CustomExceptions.h"
+#include "VersatileTextStream.h"
+#include "Helper.h"
 
 DataSet::DataSet()
 	: QObject(0)
 	, columns_()
-	, modified_(true)
+    , modified_(false)
 	, filters_enabled_(true)
 	, filtered_rows_()
 {
@@ -22,16 +26,19 @@ DataSet::~DataSet()
 
 void DataSet::clear(bool emit_signals)
 {
+    //delete data
 	for (int i=0; i<columns_.count(); ++i)
 	{
 		delete(columns_[i]);
 	}
-
 	columns_.clear();
+    modified_ = false;
+    filters_enabled_ = true;
+    filtered_rows_.clear();
 
 	if (emit_signals)
 	{
-		setModified(true);
+        emit modificationStatusChanged(false);
 		emit filtersChanged();
 		emit headersChanged();
 		emit dataChanged();
@@ -176,11 +183,14 @@ void DataSet::replaceColumn(int index, QString header, const QVector<double>& da
 	setModified(true);
 }
 
-void DataSet::setModified(bool modified)
+void DataSet::setModified(bool modified, bool force_emit)
 {
-	if (modified_!=modified)
-	{
-		modified_ = modified;
+    bool changed = modified_!=modified;
+
+    modified_ = modified;
+
+    if (changed || force_emit)
+    {
 		emit modificationStatusChanged(modified_);
 	}
 }
@@ -337,7 +347,8 @@ void DataSet::reduceToRows(QSet<int> rows)
 	}
 	blockSignals(false);
 
-	emit dataChanged();
+    emit dataChanged();
+    setModified(true, true);
 }
 
 void DataSet::convertStringToNumeric(int c)
@@ -419,4 +430,321 @@ QBitArray DataSet::getRowFilter(bool update) const
 	}
 
 	return filtered_rows_;
+}
+
+
+void DataSet::load(QString filename, QString display_name)
+{
+    if (display_name.isEmpty()) display_name = filename;
+
+    //clear
+    clear(true);
+
+    QElapsedTimer timer;
+    timer.start();
+
+    QSet<int> numeric_columns;
+    QStringList comments;
+    QStringList filters;
+    int line_nr = -1;
+    int cols = -1;
+    VersatileTextStream file(filename);
+    while (!file.atEnd())
+    {
+        QString line = file.readLine(true);
+        ++line_nr;
+
+        //skip empty lines
+        if (line.isEmpty()) continue;
+
+        //header/comment lines
+        if (line[0]=='#')
+        {
+            if (line.startsWith("##")) //comment
+            {
+                if (line.startsWith("##TSVVIEW-FILTER##"))
+                {
+                    filters << line;
+                }
+                else
+                {
+                    comments << line;
+                }
+            }
+            else //header
+            {
+                if (cols!=-1) THROW(FileParseException, "Found second header line in " + display_name + ":\n"+line);
+
+                QStringList parts = line.mid(1).split('\t');
+                cols = parts.size();
+                for (int c=0; c<cols; ++c)
+                {
+                    numeric_columns << c;
+                    addColumn(parts[c], QVector<QString>(), false);
+                }
+            }
+            continue;
+        }
+
+        //content line
+        QStringList parts = line.split('\t');
+
+        //check number of elements is correct
+        if (parts.count()!=cols) THROW(FileParseException, "Mixed number of columns in " + display_name + "!\nExpected " + QString::number(cols) + " based on header line, but found " + QString::number(parts.count()) + " in line " + QString::number(line_nr) + ":\n" + line);
+
+        //add data to columns
+        for (int c=0; c<cols; ++c)
+        {
+            column(c).appendString(parts[c]);
+        }
+
+        //try to convert numbers
+        foreach(int c, numeric_columns)
+        {
+            if (!Helper::isNumeric(parts[c])) numeric_columns.remove(c);
+        }
+    }
+
+    //add comments
+    setComments(comments);
+
+    qDebug() << "loading data from file: c=" << columnCount() << "r=" << rowCount() << "ms=" << timer.restart();
+
+    //convert numeric columns
+    foreach(int c, numeric_columns)
+    {
+        convertStringToNumeric(c);
+        column(c).autoFormat();
+    }
+
+    //apply filters
+    QStringList filter_errors;
+    foreach (QString line, filters)
+    {
+        line = line.trimmed();
+
+        int col = -1;
+        Filter filter = Filter::fromString(line, col);
+        if (filter.type()==Filter::NONE)
+        {
+            filter_errors << "Unparsable filter line: " + line;
+        }
+        else if (col<0 || col>=columnCount())
+        {
+            filter_errors << "Filter line with invalid column index: " + line;
+        }
+        else
+        {
+            try
+            {
+                column(col).setFilter(filter);
+            }
+            catch (FilterTypeException& e)
+            {
+                filter_errors << "Filter line not matching column type: " + line;
+            }
+        }
+    }
+    //show filter errors
+    if (!filter_errors.isEmpty())
+    {
+        QMessageBox::warning(QApplication::activeWindow(), "Filter errors", filter_errors.join("\n"));
+    }
+
+    setModified(false);
+
+    qDebug() << "converting numeric columns: ms=" << timer.elapsed();
+}
+
+void DataSet::import(QString filename, QString display_name, Parameters params, int preview_lines)
+{
+    //clear
+    clear(true);
+
+    QElapsedTimer timer;
+    timer.start();
+
+    QChar comment_char = params.getChar("comment");
+    QString separator = params.getChar("separator");
+    QChar quote = params.getChar("quote");
+    bool has_quote = (quote!=QChar::Null);
+    if (has_quote)
+    {
+        separator = quote + separator + quote;
+    }
+    bool first_line_is_comment = params.getBool("first_line_is_comment");
+    QSet<int> numeric_columns;
+
+    QStringList comments;
+    bool is_first_content_line = true;
+    int cols = -1;
+    int row = 0;
+    VersatileTextStream file(filename);
+    while (!file.atEnd() && (preview_lines==-1 || row < preview_lines))
+    {
+        QString line = file.readLine(true);
+
+        //skip empty lines
+        if (line.isEmpty()) continue;
+
+        //skip comment lines
+        if (comment_char!=QChar::Null && line[0]==comment_char)
+        {
+            comments << line;
+            continue;
+        }
+
+        //skip first line if requested
+        if (first_line_is_comment && is_first_content_line)
+        {
+            is_first_content_line = false;
+            comments << line;
+            continue;
+        }
+
+        //split
+        QStringList parts = line.split(separator);
+
+        //first content line > init columns
+        if (cols==-1)
+        {
+            cols = parts.size();
+            for (int i=0; i<cols; ++i)
+            {
+                numeric_columns << i;
+                addColumn("", QVector<QString>(), false);
+            }
+        }
+
+        //check number of elements is correct
+        if (parts.count()!=cols)
+        {
+            THROW(FileParseException, "Number of columns differs in " + display_name + "!\nExpected " + QString::number(cols) + ", but found " + QString::number(parts.count()) + " in line " + QString::number(row+1) + ":\n" + line);
+        }
+
+        //handle quotes
+        if (has_quote)
+        {
+            QString part = parts[0];
+            parts[0] = part.mid(1);
+            part = parts[parts.count()-1];
+            parts[parts.count()-1] = part.mid(0, part.size()-1);
+        }
+
+        //add data to columns
+        for (int c=0; c<cols; ++c)
+        {
+            column(c).appendString(parts[c]);
+        }
+
+        //try to convert numbers
+        foreach(int c, numeric_columns)
+        {
+            bool ok = true;
+            parts[c].toDouble(&ok);
+            if (!ok) numeric_columns.remove(c);
+        }
+
+        ++row;
+    }
+
+    //get colmun headers from the first comment line that has the correct count
+    foreach(QString comment_line, comments)
+    {
+        //remove comment character if present
+        if (comment_char!=QChar::Null)
+        {
+            comment_line = comment_line.mid(1);
+        }
+
+        //skip empty and double-comment lines
+        if (comment_line.trimmed().isEmpty() || comment_line[0]==comment_char)
+        {
+            continue;
+        }
+
+        //split
+        QStringList parts = comment_line.split(separator);
+
+        //use if it has the right size
+        if (parts.size()==cols)
+        {
+            //handle quotes
+            if (has_quote)
+            {
+                QString part = parts[0];
+                parts[0] = part.mid(1);
+                part = parts[parts.count()-1];
+                parts[parts.count()-1] = part.mid(0, part.size()-1);
+            }
+
+            for (int c=0; c<cols; ++c)
+            {
+                column(c).setHeader(parts[c]);
+            }
+            break;
+        }
+    }
+
+    //convert numeric columns
+    foreach(int c, numeric_columns)
+    {
+        convertStringToNumeric(c);
+        column(c).autoFormat();
+    }
+
+    setModified(true, true);
+
+    qDebug() << "import data: c=" << columnCount() << "r=" << rowCount() << "ms=" << timer.restart();
+}
+
+void DataSet::store(QString filename)
+{
+    QElapsedTimer timer;
+    timer.start();
+
+    // open file
+    QFile file(filename);
+    if (!file.open(QFile::WriteOnly | QFile::Truncate))
+    {
+        THROW(FileAccessException, "Could not open file '" + filename + "' for writing.");
+    }
+
+    //write comments
+    QTextStream stream(&file);
+    foreach(const QString& comment, comments())
+    {
+        stream << comment << '\n';
+    }
+
+    //write filters
+    for (int col=0; col<columnCount(); ++col)
+    {
+        if (column(col).filter().type()!=Filter::NONE)
+        {
+            stream << column(col).filter().toString(col) << '\n';
+        }
+    }
+
+    // write header
+    stream << '#' << headers().join('\t') << '\n';
+
+    // write data
+    for (int row=0; row<rowCount(); ++row)
+    {
+        if (row!=0)
+        {
+            stream << '\n';
+        }
+        for (int col=0; col<columnCount(); ++col)
+        {
+            if (col!=0)
+            {
+                stream << '\t';
+            }
+            stream << column(col).string(row);
+        }
+    }
+
+    qDebug() << "storing: ms=" << timer.elapsed();
 }

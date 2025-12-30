@@ -10,29 +10,30 @@
 #include <QWindow>
 #include <QTextBrowser>
 #include "MainWindow.h"
-#include "TextFile.h"
 #include "TextImportPreview.h"
 #include "StatisticsSummaryWidget.h"
-#include "CustomExceptions.h"
 #include "DataPlot.h"
 #include "Settings.h"
 #include "Smoothing.h"
-#include "CustomExceptions.h"
 #include "GUIHelper.h"
 #include "ScatterPlot.h"
 #include "HistogramPlot.h"
 #include "BoxPlot.h"
 #include <QStyleFactory>
 #include <QLibraryInfo>
+#include <QProcessEnvironment>
+#include "Helper.h"
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
 	, ui_()
 	, delayed_init_timer_(this, true)
 	, data_()
+    , debug_(QProcessEnvironment::systemEnvironment().contains("QTDIR"))
 	, recent_files_()
 {
 	ui_.setupUi(this);
+    ui_.menuDebug->setVisible(debug_);
 	QApplication::setStyle(QStyleFactory::create("windowsvista"));
 
 	//create info widget in status bar
@@ -44,7 +45,7 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(ui_.grid, SIGNAL(rendered()), this, SLOT(updateInfoWidget()));
 	connect(&data_, SIGNAL(modificationStatusChanged(bool)), this, SLOT(datasetStatusChanged(bool)));
 	connect(&data_, SIGNAL(filtersChanged()), this, SLOT(updateFilters()));
-	connect(&data_, SIGNAL(headersChanged()), this, SLOT(updateFilters()));
+    connect(&data_, SIGNAL(headersChanged()), this, SLOT(updateFilters()));
 	ui_.grid->setData(data_);
 
 	recent_files_ = Settings::stringList("recent_files", true);
@@ -80,7 +81,7 @@ MainWindow::MainWindow(QWidget *parent)
 	setAcceptDrops(true);
 
 	//init file
-	setFile("untitled");
+    setFile("");
 	connect(&file_watcher_, SIGNAL(fileChanged()), this, SLOT(fileChanged()));
 }
 
@@ -105,11 +106,11 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
 void MainWindow::storeModifiedDataset_()
 {
-	if (data_.modified() && data_.columnCount()!=0)
+    if (data_.modified() && data_.columnCount()!=0)
 	{
 		QMessageBox box(this);
 		box.setWindowTitle(QApplication::applicationName());
-		box.setText("Save changes to '" + file_.name + "'?");
+        box.setText("Save changes to '" + filename_ + "'?");
 		box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
 		box.setDefaultButton(QMessageBox::No);
 		if (box.exec() == QMessageBox::Yes)
@@ -126,7 +127,7 @@ void MainWindow::datasetStatusChanged(bool /*modified*/)
 
 void MainWindow::updateWindowTitle_()
 {
-	QString title = QApplication::applicationName() + " - " + file_.name;
+    QString title = QApplication::applicationName() + " - " + (filename_.isEmpty() ? "untitled" : filename_);
 	if (data_.modified())
 	{
 		title += "*";
@@ -138,24 +139,31 @@ void MainWindow::on_newFile_triggered(bool)
 {
 	storeModifiedDataset_();
 
-	setFile("untitled");
+    setFile("");
 	data_.clear(true);
 }
 
-void MainWindow::on_openTXT_triggered(bool)
+void MainWindow::on_openTsvFile_triggered(bool)
 {
 	storeModifiedDataset_();
 
-	QString filename = QFileDialog::getOpenFileName(this, "Open text file", Settings::path("path_open", true), "All files (*.*);;Text files (*.txt);;CSV files (*.csv);;TSV files (*.tsv)");
-	if (filename.isEmpty())
-	{
-		return;
-	}
+    QString filename = QFileDialog::getOpenFileName(this, "Open TSV file", Settings::path("path_open", true), "TSV files (*.tsv *.tsv.gz)");
+    if (filename.isEmpty()) return;
 
 	openFile_(filename);
 }
 
-void MainWindow::openFile_(QString filename, bool remember_path)
+void MainWindow::on_actionImportTxtFile_triggered(bool)
+{
+    storeModifiedDataset_();
+
+    QString filename = QFileDialog::getOpenFileName(this, "Inport text file", Settings::path("path_open", true), "All files(*.*);;All files(*.csv);;Txt files(*.txt)");
+    if (filename.isEmpty()) return;
+
+    openFile_(filename, true, true);
+}
+
+void MainWindow::openFile_(QString filename, bool remember_path, bool show_import_dialog)
 {
 	//close plots
 	QWindowList windows = QApplication::allWindows();
@@ -167,108 +175,105 @@ void MainWindow::openFile_(QString filename, bool remember_path)
 		}
 	}
 
-	//update settings
-	if (remember_path)
-	{
-		Settings::setPath("path_open", filename);
-	}
+    //update open path in settings
+    if (remember_path) Settings::setPath("path_open", filename);
 
 	//reset GUI
-	setFile("untitled");
+    setFile("");
 
 	//load file
-	data_.blockSignals(true);
-	try
-	{
-		Parameters param = TextFile::defaultParameters();
-		if (!filename.endsWith(".tsv"))
-		{
-			QFile file(filename);
-			if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-			{
-				QMessageBox::warning(this, "Error", "Could not open file '" + filename + "' for reading.");
-				throw CleanUpException();
-			}
-
-			QTextStream stream(&file);
-			TextImportPreview preview(stream, filename, filename.endsWith(".csv") ,this);
-			if(!preview.exec()) throw CleanUpException();
-
-			param = preview.parameters();
+    data_.blockSignals(true);
+    try
+    {
+        Parameters param;
+        bool load_file = true;
+        bool import = false;
+        if (show_import_dialog || !isTsv(filename))
+        {
+            TextImportPreview preview(filename, filename, filename.endsWith(".csv") ,this);
+            if(preview.exec())
+            {
+                param = preview.parameters();
+                import = true;
+            }
+            else
+            {
+                load_file = false;
+            }
 		}
 
-		TextFile::load(data_, filename, param);
-
-		setFile(filename, param);
-	}
-	catch (CleanUpException&)
-	{
-		//no error message, just clean up
-	}
+        if (load_file)
+        {
+            if (import)
+            {
+                data_.import(filename, filename, param);
+            }
+            else
+            {
+                data_.load(filename, filename);
+                setFile(filename); //TODO set when loading
+            }
+        }
+    }
 	catch (Exception& e)
 	{
 		QMessageBox::warning(this, "Error loading file.", e.message());
-	}
+    }
 
 	//update GUI
 	updateFilters();
-	ui_.grid->render();
+    ui_.grid->render();
 
 	//resize
-	GUIHelper::resizeTableCellWidths(ui_.grid, 300, 1000);
-	GUIHelper::resizeTableCellHeightsToMinimum(ui_.grid, 1000);
+    GUIHelper::resizeTableCellWidths(ui_.grid, 300, 1000);
+    GUIHelper::resizeTableCellHeightsToMinimum(ui_.grid, 1000);
 
 	//re-enable data signals
-	data_.blockSignals(false);
+    data_.blockSignals(false);
 }
 
 void MainWindow::on_saveFile_triggered(bool)
 {
-	if (file_.name.isEmpty())
-	{
-		on_saveFileAs_triggered(true);
-		return;
+    //no filename > get it from the user
+    if (filename_.isEmpty())
+    {
+        QString filename = QFileDialog::getSaveFileName(this, "Save file", Settings::path("path_open", true) + filename_, "TSV files (*.tsv *.tsv.gz)");
+        if (filename.isEmpty()) return;
+
+        filename_ = filename;
+        Settings::setPath("path_open", filename_);
 	}
 
-	//disable file watcher
-	file_watcher_.clearFile();
+    //disable file watcher
+    file_watcher_.clearFile();
 
+    //store
 	try
 	{
-		TextFile::store(data_, file_.name, file_.param);
+        data_.store(filename_);
 	}
-	catch (FileIOException& e)
+    catch (FileAccessException& e)
 	{
-		QMessageBox::warning(this, "Error storing file '"+file_.name + "'", e.message());
+        QMessageBox::warning(this, "Error storing file '"+filename_ + "'", e.message());
 	}
 
+    //update name (and add to recent files)
+    setFile(filename_);
+
 	//re-enable file watcher
-	file_watcher_.setFile(file_.name);
+    file_watcher_.setFile(filename_);
 
 	data_.setModified(false);
 }
 
-void MainWindow::on_saveFileAs_triggered(bool)
+void MainWindow::on_actionExportHTML_triggered(bool)
 {
-	QString selected_filter = "";
-	QString filename = QFileDialog::getSaveFileName(this, "Save file", Settings::path("path_open", true) + file_.name, "Text files (*.txt *.csv *.tsv)", &selected_filter);
-	if (filename.isEmpty())
-	{
-		return;
-	}
+    qDebug() << __LINE__; //TODO
+}
 
-	Settings::setPath("path_open", filename);
-
-	// get parameters
-	Parameters params = TextFile::defaultParameters();
-	if (!ParameterEditor::asDialog(this->windowIcon(), "Text file parameters", params))
-	{
-		return;
-	}
-
-	setFile(filename, params);
-
-	on_saveFile_triggered(true);
+void MainWindow::on_actionExportCSV_triggered(bool)
+{
+    qDebug() << __LINE__; //TODO
 }
 
 void  MainWindow::on_resizeToContent_triggered(bool)
@@ -521,12 +526,12 @@ void MainWindow::smooth_(Smoothing::Type type, QString suffix)
 
 QString MainWindow::fileNameLabel()
 {
-	if (file_.name.isEmpty())
+    if (filename_.isEmpty())
 	{
 		return "";
 	}
 
-	return " (" + QFileInfo(file_.name).fileName() + ")";
+    return " (" + QFileInfo(filename_).fileName() + ")";
 }
 
 void MainWindow::histogram()
@@ -534,7 +539,7 @@ void MainWindow::histogram()
 	int index = ui_.grid->selectedColumns().at(0);
 
 	HistogramPlot* hist = new HistogramPlot();
-	hist->setData(data_, index, QFileInfo(file_.name).baseName());
+    hist->setData(data_, index, QFileInfo(filename_).baseName());
 	auto dlg = GUIHelper::createDialog(hist, "Histogram of '" + data_.column(index).headerOrIndex(index) + fileNameLabel());
 	dlg->exec();
 }
@@ -554,7 +559,7 @@ void MainWindow::scatterPlot()
 	int x = ui_.grid->selectedColumns().at(0);
 	int y = ui_.grid->selectedColumns().at(1);
 	ScatterPlot* plot = new ScatterPlot();
-	plot->setData(data_, x, y, QFileInfo(file_.name).baseName());
+    plot->setData(data_, x, y, QFileInfo(filename_).baseName());
 	auto dlg = GUIHelper::createDialog(plot, "Scatterplot of '" + data_.column(x).headerOrIndex(x) + "' and '" + data_.column(y).headerOrIndex(y) + "'" + fileNameLabel());
 	dlg->exec();
 }
@@ -562,7 +567,7 @@ void MainWindow::scatterPlot()
 void MainWindow::dataPlot()
 {
 	DataPlot* plot = new DataPlot();
-	plot->setData(data_, ui_.grid->selectedColumns(), QFileInfo(file_.name).baseName());
+    plot->setData(data_, ui_.grid->selectedColumns(), QFileInfo(filename_).baseName());
 	auto dlg = GUIHelper::createDialog(plot, "Plot" + fileNameLabel());
 	dlg->exec();
 }
@@ -570,7 +575,7 @@ void MainWindow::dataPlot()
 void MainWindow::boxPlot()
 {
 	BoxPlot* plot = new BoxPlot();
-	plot->setData(data_, ui_.grid->selectedColumns(), QFileInfo(file_.name).baseName());
+    plot->setData(data_, ui_.grid->selectedColumns(), QFileInfo(filename_).baseName());
 	auto dlg = GUIHelper::createDialog(plot, "BoxPlot" + fileNameLabel());
 	dlg->exec();
 }
@@ -598,9 +603,9 @@ void MainWindow::addToRecentFiles_(QString filename)
 		recent_files_.prepend(filename);
 	}
 
-	while (recent_files_.size() > 10)
+    if (recent_files_.size() > 20)
 	{
-		recent_files_.removeLast();
+        recent_files_.resize(20);
 	}
 
 	Settings::setStringList("recent_files", recent_files_);
@@ -653,7 +658,49 @@ void MainWindow::on_showComments_triggered(bool)
 
 void MainWindow::on_fileNameToClipboard_triggered(bool)
 {
-	QApplication::clipboard()->setText(file_.name);
+    QApplication::clipboard()->setText(filename_);
+}
+
+void MainWindow::on_actionShowDatasetInfo_triggered(bool)
+{
+    qDebug() << "cols:" << data_.columnCount() << "rows:" << data_.rowCount() << "modified:" << data_.modified();
+}
+
+void MainWindow::on_actionGenerateExampleData_triggered(bool)
+{
+    int rows = QInputDialog::getInt(this, "Generate example data", "rows:", 0);
+    if (rows<1) return;
+
+    DataSet tmp;
+
+    //add string column
+    QVector<QString> c1;
+    c1.reserve(rows);
+    for(int i=0; i<rows; ++i)
+    {
+        c1 << Helper::randomString(20);
+    }
+    tmp.addColumn("col1_string", c1);
+
+    //add int column
+    QVector<double> c2;
+    c2.reserve(rows);
+    for(int i=0; i<rows; ++i)
+    {
+        c2 << (int)std::round(Helper::randomNumber(0, 10000));
+    }
+    tmp.addColumn("col1_int", c2);
+
+    //add float column
+    c2.clear();
+    for(int i=0; i<rows; ++i)
+    {
+        c2 << Helper::randomNumber(0, 100);
+    }
+    tmp.addColumn("col1_float", c2);
+
+    //store
+    tmp.store(QApplication::applicationDirPath() + "/example_data.tsv");
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* e)
@@ -807,28 +854,27 @@ void MainWindow::dropEvent(QDropEvent* e)
 void MainWindow::fileChanged()
 {
 	//do nothing if the file no longer exists
-	if (!QFile::exists(file_.name)) return;
+    if (!QFile::exists(filename_)) return;
 
 	//disable file watcher (to avaoid several opended reload dialogs)
 	file_watcher_.clearFile();
 
 	//show message box
-	QMessageBox::StandardButton button = QMessageBox::information(this, "File changed", "The file '" + file_.name + "' was changed outside of TSVview.\nDo you want to re-load the file from disk?", QMessageBox::Yes, QMessageBox::No);
+    QMessageBox::StandardButton button = QMessageBox::information(this, "File changed", "The file '" + filename_ + "' was changed outside of TSVview.\nDo you want to re-load the file from disk?", QMessageBox::Yes, QMessageBox::No);
 
 	//re-enable file watcher
-	file_watcher_.setFile(file_.name);
+    file_watcher_.setFile(filename_);
 
 	//reload file if dialog is accepted
 	if (button == QMessageBox::Yes)
 	{
-		openFile_(file_.name, false);
+        openFile_(filename_, false);
 	}
 }
 
-void MainWindow::setFile(QString name, Parameters param)
+void MainWindow::setFile(QString name)
 {
-	file_.name = name;
-	file_.param = param;
+    filename_ = name;
 
 	//update recent files
 	if (!name.isEmpty())
@@ -840,9 +886,15 @@ void MainWindow::setFile(QString name, Parameters param)
 	file_watcher_.clearFile();
 	if (!name.isEmpty())
 	{
-		file_watcher_.setFile(file_.name);
+        file_watcher_.setFile(filename_);
 	}
 
 	//update window title
 	updateWindowTitle_();
+}
+
+bool MainWindow::isTsv(QString filename)
+{
+    filename = filename.toLower();
+    return filename.endsWith(".tsv") || filename.endsWith(".tsv.gz");
 }

@@ -1,5 +1,9 @@
-- add date support (german, US and ISO)
-- add support for storing table as html
+- add support for GZ when storing
+- fix pasting columns without selected
+- transpose/grep > edit main menu
+- add export to other formats: html, csv
 - lower memory consumption (QHash, union QString/QByteArray)
+- keep decimal places in numeric columns if same in all rows
 - color dots in scatter plot according to ENUM column
+- add date support (german, US and ISO)
 - show outliers in bar plot?

@@ -1,23 +1,16 @@
-#include <QFileInfo>
-#include <QPushButton>
-#include <QMenu>
-#include <QInputDialog>
-#include <QTextBrowser>
-
 #include "FilePreview.h"
-#include "DataSet.h"
-#include "CustomExceptions.h"
-#include "Settings.h"
+#include "VersatileTextStream.h"
 
-FilePreview::FilePreview(QTextStream& stream, QString location, QWidget *parent)
+
+FilePreview::FilePreview(QString filename, QString display_name, QWidget *parent)
 	: QDialog(parent)
 	, ui_()
-	, stream_(stream)
-	, location_(location)
+    , filename_(filename)
+    , display_name_(display_name)
 {
 	ui_.setupUi(this);
 
-	setWindowTitle("File preview: " + QFileInfo(location).fileName());
+    setWindowTitle("File preview: " + display_name);
 
 	connect(ui_.reload_button, SIGNAL(clicked()), this, SLOT(showPreview()));
 
@@ -30,11 +23,11 @@ void FilePreview::showPreview()
 	int lines = ui_.lines->value();
 
 	int i=0;
-	QString text;
-	stream_.seek(0);
-	while (!stream_.atEnd() && i<lines)
+    QString text;
+    VersatileTextStream stream(filename_);
+    while (!stream.atEnd() && i<lines)
 	{
-		text += stream_.readLine() + "\n";
+        text += stream.readLine() + "\n";
 		++i;
 	}
 

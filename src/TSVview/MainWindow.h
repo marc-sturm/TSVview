@@ -30,9 +30,11 @@ public slots:
 	void on_grep_triggered(bool checked = false);
 	void on_exit_triggered(bool checked = false);
 	void on_newFile_triggered(bool);
-	void on_openTXT_triggered(bool);
+    void on_openTsvFile_triggered(bool);
+    void on_actionImportTxtFile_triggered(bool);
 	void on_saveFile_triggered(bool);
-	void on_saveFileAs_triggered(bool);
+    void on_actionExportHTML_triggered(bool);
+    void on_actionExportCSV_triggered(bool);
 	void on_resizeToContent_triggered(bool);
 	void on_goToRow_triggered(bool);
 	void on_findText_triggered(bool);
@@ -41,7 +43,8 @@ public slots:
 	void on_toggleRowColors_triggered(bool);
 	void on_showComments_triggered(bool);
 	void on_fileNameToClipboard_triggered(bool);
-
+    void on_actionShowDatasetInfo_triggered(bool);
+    void on_actionGenerateExampleData_triggered(bool);
 	void tableContextMenu(QPoint point);
 
 	QString fileNameLabel();
@@ -77,19 +80,14 @@ private:
 	Ui::MainWindow ui_;
 	DelayedInitializationTimer delayed_init_timer_;
 	DataSet data_;
+    bool debug_;
 
 	QStringList recent_files_;
 	GoToDockWidget* goto_widget_;
 	FilterWidget* filter_widget_;
 
 	///Open file struct
-	struct
-	{
-		QString name;
-		Parameters param;
-	}
-	file_;
-
+    QString filename_;
 	FileWatcher file_watcher_;
 
 	/// Last search struct
@@ -106,11 +104,12 @@ private:
 	void smooth_(Smoothing::Type type, QString suffix);
 	void updateWindowTitle_();
 	void closeEvent(QCloseEvent* event);
-	void openFile_(QString filename, bool remember_path = true);
+    void openFile_(QString filename, bool remember_path=true, bool show_import_dialog=false);
 	void storeModifiedDataset_();
 	void addToRecentFiles_(QString filename);
 	void updateRecentFilesMenu_();
-	void setFile(QString name, Parameters param = Parameters());
+    void setFile(QString name);
+    static bool isTsv(QString filename);
 };
 
 #endif

@@ -15,6 +15,13 @@ public:
 	DataSet();
 	~DataSet();
 
+    //load TSV or TSV.GZ file. If display name is not set, the filename is used.
+    void load(QString filename, QString display_name="");
+    //import data from TXT file.
+    void import(QString filename, QString display_name, Parameters params, int preview_lines = -1);
+    //store TSV of TSV.GZ file.
+    void store(QString filename);
+
 	const BaseColumn& column(int column) const
 	{
 		Q_ASSERT(column<columns_.size());
@@ -90,7 +97,7 @@ public:
 	{
 		return modified_;
 	}
-	void setModified(bool changed);
+    void setModified(bool changed, bool force_emit=false);
 
 	bool filtersEnabled() const
 	{
@@ -100,11 +107,17 @@ public:
 	bool filtersPresent() const;
 	QBitArray getRowFilter(bool update = true) const;
 
-	void setComments(QStringList& comments)
+    void setComments(const QStringList& comments)
 	{
-		comments_ = comments;
+        comments_.clear();
+        foreach(QString comment, comments)
+        {
+            while (comment.endsWith('\n') || comment.endsWith('\r')) comment.chop(1);
+
+            comments_ << comment;
+        }
 	}
-	QStringList comments() const
+    const QStringList& comments() const
 	{
 		return comments_;
 	}
