@@ -185,34 +185,18 @@ void MainWindow::openFile_(QString filename, bool remember_path, bool show_impor
     data_.blockSignals(true);
     try
     {
-        Parameters param;
-        bool load_file = true;
-        bool import = false;
         if (show_import_dialog || !isTsv(filename))
         {
             TextImportPreview preview(filename, filename, filename.endsWith(".csv") ,this);
             if(preview.exec())
             {
-                param = preview.parameters();
-                import = true;
-            }
-            else
-            {
-                load_file = false;
+                data_.import(filename, filename, preview.parameters());
             }
 		}
-
-        if (load_file)
+        else
         {
-            if (import)
-            {
-                data_.import(filename, filename, param);
-            }
-            else
-            {
-                data_.load(filename, filename);
-                setFile(filename); //TODO set when loading
-            }
+            data_.load(filename, filename);
+            setFile(filename); //TODO set when loading
         }
     }
 	catch (Exception& e)

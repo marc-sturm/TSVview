@@ -1,4 +1,3 @@
-- add support for GZ when storing
 - fix pasting columns without selected
 - transpose/grep > edit main menu
 - add export to other formats: html, csv

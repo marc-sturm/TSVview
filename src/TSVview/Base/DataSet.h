@@ -141,6 +141,9 @@ protected:
 	bool filters_enabled_;
 	mutable QBitArray filtered_rows_;
 
+    void storePlain(QString filename);
+    void storeGzipped(QString filename);
+
 private:
 	//not implemented
 	DataSet(const DataSet& rhs);

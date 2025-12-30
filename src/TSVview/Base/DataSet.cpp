@@ -703,6 +703,22 @@ void DataSet::store(QString filename)
     QElapsedTimer timer;
     timer.start();
 
+    bool is_gz = filename.endsWith(".gz", Qt::CaseInsensitive);
+    if (is_gz)
+    {
+        storeGzipped(filename);
+    }
+    else
+    {
+        storePlain(filename);
+    }
+
+    qDebug() << QString("storing")+(is_gz ? " (GZ)" : "")+" ms=" << timer.elapsed();
+}
+
+
+void DataSet::storePlain(QString filename)
+{
     // open file
     QFile file(filename);
     if (!file.open(QFile::WriteOnly | QFile::Truncate))
@@ -745,6 +761,55 @@ void DataSet::store(QString filename)
             stream << column(col).string(row);
         }
     }
-
-    qDebug() << "storing: ms=" << timer.elapsed();
 }
+
+void DataSet::storeGzipped(QString filename)
+{
+    // open file
+    gzFile file = gzopen(filename.toUtf8().constData(), "wb");
+    if (!file) THROW(FileAccessException, "Could not open file '" + filename + "' for writing.");
+
+    //write comments
+    foreach(const QString& comment, comments())
+    {
+        QByteArray tmp = (comment +'\n').toUtf8();
+        gzwrite(file, tmp.constData(), tmp.size());
+    }
+
+    //write filters
+    for (int col=0; col<columnCount(); ++col)
+    {
+        if (column(col).filter().type()!=Filter::NONE)
+        {
+            QByteArray tmp = (column(col).filter().toString(col) + '\n').toUtf8();
+            gzwrite(file, tmp.constData(), tmp.size());
+        }
+    }
+
+    // write header
+
+    QByteArray tmp = ('#' + headers().join('\t') +'\n').toUtf8();
+    gzwrite(file, tmp.constData(), tmp.size());
+
+    // write data
+    for (int row=0; row<rowCount(); ++row)
+    {
+        QByteArray tmp;
+        if (row!=0)
+        {
+            tmp.append('\n');
+        }
+        for (int col=0; col<columnCount(); ++col)
+        {
+            if (col!=0)
+            {
+                tmp.append('\t');
+            }
+            tmp.append(column(col).string(row).toUtf8());
+        }
+        gzwrite(file, tmp.constData(), tmp.size());
+    }
+
+    gzclose(file);
+}
+
