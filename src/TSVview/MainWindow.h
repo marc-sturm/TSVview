@@ -33,9 +33,11 @@ public slots:
     void on_openTsvFile_triggered(bool);
     void on_actionImportTxtFile_triggered(bool);
 	void on_saveFile_triggered(bool);
+    void on_actionSaveAs_triggered(bool);
     void on_actionExportHTML_triggered(bool);
     void on_actionExportCSV_triggered(bool);
-	void on_resizeToContent_triggered(bool);
+    void on_resizeColumnWidth_triggered(bool);
+    void on_resizeColumnHeight_triggered(bool);
 	void on_goToRow_triggered(bool);
 	void on_findText_triggered(bool);
 	void on_filter_triggered(bool);

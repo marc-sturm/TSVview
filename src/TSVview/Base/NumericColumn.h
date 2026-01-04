@@ -2,7 +2,7 @@
 #define NUMERICCOLUMN_H
 
 #include "BaseColumn.h"
-#include "StatisticsSummaryWidget.h"
+#include "StatisticsSummary.h"
 #include <QVector>
 
 class NumericColumn
@@ -13,10 +13,16 @@ class NumericColumn
 public:
 	NumericColumn();
 
-	QVector<double> values(QBitArray filter = QBitArray()) const;
-	void setValues(const QVector<double>& values)
+    const QVector<double>& values() const
+    {
+        return values_;
+    }
+    QVector<double> values(const QBitArray& filter) const;
+    void setValues(const QVector<double>& values, const QVector<char>& decimals)
 	{
+        Q_ASSERT(values_.count()==decimals.count());
 		values_ = values;
+        decimals_ = decimals;
 		emit dataChanged();
 	}
 	double value(int row) const
@@ -24,20 +30,38 @@ public:
 		Q_ASSERT(row<values_.count());
 		return values_[row];
 	}
-	void setValue(int row, double value)
+    void setValue(int row, double value, char decimals=-1)
 	{
-		Q_ASSERT(row<values_.count());
+        Q_ASSERT(row>0 && row<values_.count());
 		values_[row] = value;
+        if (decimals>=0) decimals_[row] = decimals;
 		emit dataChanged();
-	}
+    }
+    const QVector<char>& decimals() const
+    {
+        return decimals_;
+    }
+    void setDecimals(QVector<char> decimals)
+    {
+        Q_ASSERT(values_.count()==decimals.count());
+        decimals_ = decimals;
+        emit dataChanged();
+    }
+    char decimals(int row) const
+    {
+        Q_ASSERT(row<decimals_.count());
+        return decimals_[row];
+    }
 	virtual void resize(int rows)
 	{
 		values_.resize(rows);
+        decimals_.resize(rows);
 		emit dataChanged();
 	}
 	virtual void reserve(int rows)
 	{
 		values_.reserve(rows);
+        decimals_.reserve(rows);
 	}
 	virtual void sort(bool reverse=false);
     virtual qsizetype count() const
@@ -57,7 +81,7 @@ public:
 	virtual QString string(int row) const
 	{
 		Q_ASSERT(row<values_.count());
-		return QString::number(values_[row], format_, decimal_places_);
+        return QString::number(values_[row], 'f', decimals_[row]);
 	}
 	virtual void setString(int row, const QString& value);
 	void appendString(const QString& value);
@@ -65,30 +89,17 @@ public:
 	virtual void setFilter(Filter filter);
 	virtual void matchFilter(QBitArray& array) const;
 
-	virtual void autoFormat();
-	int decimalPlaces() const
-	{
-		return decimal_places_;
-	}
-	char format() const
-	{
-		return format_;
-	}
-	void setFormat(char format, int decimal_places)
-	{
-		format_ = format;
-		decimal_places_ = decimal_places;
-		emit dataChanged();
-	}
+    StatisticsSummary statistics(const QBitArray& filter) const;
+    QPair<double, double> getMinMax(const QBitArray& filter) const;
 
-	StatisticsSummary statistics(QBitArray filter) const;
-	QPair<double, double> getMinMax(QBitArray filter) const;
+
+    //returns numeric value and decimal places. Throws an exception if value is not numeric, or NAN if nan_instead_of_exception=true.
+    static QPair<double, char> toDouble(const QString& value, bool nan_instead_of_exception=false);
 
 protected:
 	QVector<double> values_;
-	QString header_;
-	char format_;
-	int decimal_places_;
+    QVector<char> decimals_;
+    QString header_;
 
 	///NAN-aware comparator class for doubles. NAN is handled as numeric_limits<double>::max()
 	class NanAwareDoubleComp

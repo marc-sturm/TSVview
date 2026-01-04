@@ -43,11 +43,6 @@ public:
 	virtual void setString(int row, const QString& value) = 0;
 	virtual void appendString(const QString& value) = 0;
 
-	/// Automatically formats the column according to the content. The default implementation is empty.
-	virtual void autoFormat()
-	{
-	}
-
 	virtual void resize(int rows) = 0;
 	virtual void reserve(int rows) = 0;
 	virtual void sort(bool reverse=false) = 0;
@@ -62,6 +57,7 @@ public:
 	virtual void setFilter(Filter filter) = 0;
 	virtual void matchFilter(QBitArray& array) const = 0;
 
+    static QString typeToString(Type t);
 signals:
 	void dataChanged();
 	void filterChanged();

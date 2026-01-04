@@ -7,9 +7,8 @@
 NumericColumn::NumericColumn()
 	: BaseColumn(NUMERIC)
 	, values_()
-	, header_()
-	,	format_('g')
-	,	decimal_places_(6)
+    , decimals_()
+    , header_()
 {
 }
 
@@ -17,19 +16,15 @@ void NumericColumn::setString(int row, const QString& value)
 {
 	Q_ASSERT(row<values_.count());
 
-	bool ok = true;
-	double fvalue = value.toDouble(&ok);
-	if (!ok)
-	{
-		THROW(Exception,"Cannot convert '" + value + "' to a number!");
-	}
+    auto tmp = toDouble(value);
 
-	values_[row] = fvalue;
+    values_[row] = tmp.first;
+    decimals_[row] = tmp.second;
 
 	emit dataChanged();
 }
 
-StatisticsSummary NumericColumn::statistics(QBitArray filter) const
+StatisticsSummary NumericColumn::statistics(const QBitArray& filter) const
 {
 	if (filter.count()==0)
 	{
@@ -39,7 +34,7 @@ StatisticsSummary NumericColumn::statistics(QBitArray filter) const
 	return basicStatistics(values(filter));
 }
 
-QPair<double, double> NumericColumn::getMinMax(QBitArray filter) const
+QPair<double, double> NumericColumn::getMinMax(const QBitArray& filter) const
 {
 	if (filter.count()==0)
 	{
@@ -49,23 +44,15 @@ QPair<double, double> NumericColumn::getMinMax(QBitArray filter) const
 	return BasicStatistics::getMinMax(values(filter));
 }
 
-QVector<double> NumericColumn::values(QBitArray filter) const
+QVector<double> NumericColumn::values(const QBitArray& filter) const
 {
-	//not filtered
-	if (filter.count()==0)
-	{
-		return values_;
-	}
-
-	//filtered
 	QVector<double> output;
 	output.reserve(filter.count(true));
-
 	for (int i=0; i<filter.count(); ++i)
 	{
 		if (filter[i])
 		{
-			output.append(values_[i]);
+            output << values_[i];
 		}
 	}
 
@@ -74,11 +61,10 @@ QVector<double> NumericColumn::values(QBitArray filter) const
 
 void NumericColumn::appendString(const QString& value)
 {
-	bool ok = true;
-	double fvalue = value.toDouble(&ok);
-	if (!ok) THROW(Exception,"Cannot convert '" + value + "' to a number!");
+    auto tmp = toDouble(value);
 
-	values_.append(fvalue);
+    values_ << tmp.first;
+    decimals_ << tmp.second;
 
 	emit dataChanged();
 }
@@ -86,6 +72,7 @@ void NumericColumn::appendString(const QString& value)
 
 void NumericColumn::sort(bool reverse)
 {
+    //TODO also sort decimal places!!!
 	if (!reverse)
 	{
 		std::sort(values_.begin(), values_.end(), NanAwareDoubleComp());
@@ -96,26 +83,6 @@ void NumericColumn::sort(bool reverse)
 	}
 
 	emit dataChanged();
-}
-
-void NumericColumn::autoFormat()
-{
-	bool is_int = true;
-	for (int i=0; i<values_.count(); ++i)
-	{
-		double rest = fmod(values_[i], 1.0);
-		if (rest!=0.0)
-		{
-			is_int = false;
-			break;
-		}
-	}
-
-	if (is_int)
-	{
-		format_ = 'f';
-		decimal_places_ = 0;
-	}
 }
 
 void NumericColumn::setFilter(Filter filter)
@@ -222,8 +189,8 @@ NumericColumn::NanAwareDoubleComp::NanAwareDoubleComp(bool greater)
 bool NumericColumn::NanAwareDoubleComp::operator()(double a, double b) const
 {
 	//handle NAN
-	if (a!=a) a = std::numeric_limits<double>::max();
-	if (b!=b) b = std::numeric_limits<double>::max();
+    if (std::isnan(a)) a = std::numeric_limits<double>::max();
+    if (std::isnan(b)) b = std::numeric_limits<double>::max();
 
 	//compare
 	if (greater_)
@@ -236,4 +203,27 @@ bool NumericColumn::NanAwareDoubleComp::operator()(double a, double b) const
 	}
 
 	return false;
+}
+
+QPair<double, char> NumericColumn::toDouble(const QString& value, bool nan_instead_of_exception)
+{
+    bool ok = true;
+    double fvalue = value.toDouble(&ok);
+    if (!ok)
+    {
+        if (nan_instead_of_exception) return QPair<double, char>(NAN, 0);
+        THROW(Exception,"Cannot convert '" + value + "' to a number!");
+    }
+
+    char decimals = 0;
+    int dot_index = value.indexOf('.');
+    if (dot_index!=-1)
+    {
+        for (int i=dot_index; i<value.length(); ++i)
+        {
+            if (value[i].isDigit()) ++decimals;
+        }
+    }
+
+    return QPair<double, char>(fvalue, decimals);
 }

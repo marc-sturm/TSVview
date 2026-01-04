@@ -49,6 +49,11 @@ public:
 	//Applis the filter settings corrsponding to the given string representation
 	void filtersFromString(QString filters);
 
+    //Resize column width
+    void resizeColumnWidth();
+    //Resize column height
+    void resizeColumnHeight();
+
 signals:
 	void rendered();
 
@@ -75,8 +80,7 @@ protected slots:
 	void pasteDataset_();
 	void addColumn_();
 	void renameColumn_();
-	void mergeColumns_();
-	void setColumnFormat_();
+    void mergeColumns_();
 	void convertNumericNan_();
 	void convertNumericSingle_();
 	void convertNumericDict_();
@@ -92,14 +96,14 @@ protected slots:
 	void horizontalHeaderContextMenu(const QPoint&);
 	void verticalHeaderContextMenu(const QPoint&);
 	void editCurrentItem(QTableWidgetItem* item);
+    void setDecimals_();
 
 protected:
 	DataSet* data_;
 	int preview_;
 
     void keyPressEvent(QKeyEvent* event);
-	void renderColumn_(int column, QBitArray rows_to_render = QBitArray());
-	static bool isNumeric_(QString string);
+    void renderColumn_(int column, QBitArray rows_to_render = QBitArray());
 	QString itemText(int row, int col, bool is_numeric, QChar decimal_point);
 	int correctRowIfFiltered(int row) const;
 };

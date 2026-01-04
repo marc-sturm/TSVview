@@ -1,4 +1,5 @@
+- add support for nan, NAN, inf and INF
+- store column type in header to speed up loading
 - add date support (german, US and ISO)
-- keep decimal places in numeric columns if same in all rows
 - color dots in scatter plot according to ENUM column
 - show outliers in bar plot?

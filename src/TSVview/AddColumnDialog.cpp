@@ -40,3 +40,8 @@ bool AddColumnDialog::isFormula()
 {
 	return ui->formula->isChecked();
 }
+
+int AddColumnDialog::decimals()
+{
+    return ui->decimals->value();
+}

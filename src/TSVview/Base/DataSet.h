@@ -93,9 +93,9 @@ public:
 		removeColumns(QSet<int>() << column);
 	}
 	void removeColumns(QSet<int> columns);
-	void addColumn(QString header, const QVector<double>& data, bool auto_format = true, int index = -1);
-	void addColumn(QString header, const QVector<QString>& data, bool auto_format = true, int index = -1);
-	void replaceColumn(int index, QString header, const QVector<double>& data, bool auto_format = true);
+    void addColumn(QString header, const QVector<double>& data, const QVector<char>& decimals, int index = -1);
+    void addColumn(QString header, const QVector<QString>& data, int index = -1);
+    void replaceColumn(int index, QString header, const QVector<double>& data, const QVector<char>& decimals);
 	void sortByColumn(int column, bool reverse);
 	void mergeColumns(QList<int> cols, QString header, QString sep);
 	void reduceToRows(QSet<int> rows);

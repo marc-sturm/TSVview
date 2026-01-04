@@ -196,7 +196,7 @@ void MainWindow::openFile_(QString filename, bool remember_path, bool show_impor
         else
         {
             data_.load(filename, filename);
-            setFile(filename); //TODO set when loading
+            setFile(filename);
         }
     }
 	catch (Exception& e)
@@ -209,8 +209,8 @@ void MainWindow::openFile_(QString filename, bool remember_path, bool show_impor
     ui_.grid->render();
 
 	//resize
-    GUIHelper::resizeTableCellWidths(ui_.grid, 300, 1000);
-    GUIHelper::resizeTableCellHeightsToMinimum(ui_.grid, 1000);
+    on_resizeColumnWidth_triggered(true);
+    on_resizeColumnHeight_triggered(true);
 
 	//re-enable data signals
     data_.blockSignals(false);
@@ -250,6 +250,15 @@ void MainWindow::on_saveFile_triggered(bool)
 	data_.setModified(false);
 }
 
+void MainWindow::on_actionSaveAs_triggered(bool)
+{
+    if (data_.columnCount()==0) return;
+
+    QString filename = QFileDialog::getSaveFileName(this, "Save as",  filename_, "TSV files (*.tsv *.tsv.gz);;All files (*.*)");
+    data_.store(filename);
+    setFile(filename);
+}
+
 void MainWindow::on_actionExportHTML_triggered(bool)
 {
     if (data_.columnCount()==0) return;
@@ -266,27 +275,15 @@ void MainWindow::on_actionExportCSV_triggered(bool)
     data_.storeAs(filename, ExportFormat::CSV);
 }
 
-void  MainWindow::on_resizeToContent_triggered(bool)
+void  MainWindow::on_resizeColumnWidth_triggered(bool)
 {
-	QElapsedTimer timer;
-	timer.start();
+    ui_.grid->resizeColumnWidth();
+}
 
-	GUIHelper::resizeTableCellWidths(ui_.grid, 0.3*width());
-	GUIHelper::resizeTableCellHeightsToMinimum(ui_.grid);
 
-	qDebug() << "resizing to content: ms=" << timer.elapsed();
-
-	ui_.grid->resizeColumnsToContents();
-
-	//limit column width to 50% of window width
-	int max_width = 0.5 * width();
-	for (int i=0; i<ui_.grid->columnCount(); ++i)
-	{
-		if (ui_.grid->columnWidth(i)>max_width)
-		{
-			ui_.grid->setColumnWidth(i, max_width);
-		}
-	}
+void  MainWindow::on_resizeColumnHeight_triggered(bool)
+{
+    ui_.grid->resizeColumnHeight();
 }
 
 void  MainWindow::on_goToRow_triggered(bool)
@@ -374,10 +371,11 @@ void MainWindow::on_addToContext_triggered(bool)
 void MainWindow::on_transpose_triggered(bool /*checked*/)
 {
 	//nothing to do
-	if (data_.columnCount()==0) return;
+    const int col_count = data_.columnCount();
+    if (col_count==0) return;
 
 	//check that all columns are numeric
-	for (int i=1; i<data_.columnCount(); ++i)
+    for (int i=1; i<col_count; ++i)
 	{
 		if (data_.column(i).type()!=BaseColumn::NUMERIC)
 		{
@@ -389,10 +387,10 @@ void MainWindow::on_transpose_triggered(bool /*checked*/)
 	//create new header column
 	QString header_col_header = data_.column(0).header();
 	QVector<QString> header_col;
-	header_col.reserve(data_.columnCount()-1);
-	for (int c=1; c<data_.columnCount(); ++c)
+    header_col.reserve(col_count-1);
+    for (int c=1; c<col_count; ++c)
 	{
-		header_col.append(data_.column(c).header());
+        header_col << data_.column(c).header();
 	}
 
 	//create new headers
@@ -400,21 +398,26 @@ void MainWindow::on_transpose_triggered(bool /*checked*/)
 	headers.reserve(data_.rowCount());
 	for (int r=0; r<data_.rowCount(); ++r)
 	{
-		headers.append(data_.column(0).string(r));
+        headers << data_.column(0).string(r);
 	}
 
 	//create new data columns
 	QVector< QVector<double> > cols;
+    QVector< QVector<char> > decimals;
 	cols.reserve(data_.rowCount());
 	for (int r=0; r<data_.rowCount(); ++r)
 	{
 		QVector<double> col;
-		col.reserve(data_.columnCount());
-		for (int c=1; c<data_.columnCount(); ++c)
+        col.reserve(col_count);
+        QVector<char> dec;
+        dec.reserve(col_count);
+        for (int c=1; c<col_count; ++c)
 		{
-			col.append(data_.numericColumn(c).value(r));
+            col << data_.numericColumn(c).value(r);
+            dec << data_.numericColumn(c).decimals(r);
 		}
-		cols.append(col);
+        cols << col;
+        decimals << dec;
 	}
 
 	//update dataset and GUI
@@ -423,7 +426,7 @@ void MainWindow::on_transpose_triggered(bool /*checked*/)
 	for (int c=0; c<cols.count(); ++c)
 	{
 		data_.blockSignals(true);
-		data_.addColumn(headers[c], cols[c]);
+        data_.addColumn(headers[c], cols[c], decimals[c]);
 		data_.blockSignals(false);
 	}
 	ui_.grid->render();
@@ -470,7 +473,7 @@ void MainWindow::tableContextMenu(QPoint point)
 		action->setEnabled(selected_count>0);
 
 		//signal processing
-		menu = main_menu->addMenu("smoothing");
+        menu = main_menu->addMenu("Smoothing");
 		menu->setEnabled(selected_count==1 && text_count==0);
 		menu->addAction("Moving average", this, SLOT(smoothAverage()));
 		menu->addAction("Moving median", this, SLOT(smoothMedian()));
@@ -511,7 +514,7 @@ void MainWindow::smooth_(Smoothing::Type type, QString suffix)
 
 	Smoothing::smooth(dataset, type, params);
 
-	data_.addColumn(header + suffix, dataset);
+    data_.addColumn(header + suffix, dataset, data_.numericColumn(index).decimals());
 }
 
 QString MainWindow::fileNameLabel()
@@ -660,7 +663,13 @@ void MainWindow::on_fileFolderInExplorer_triggered(bool)
 
 void MainWindow::on_actionShowDatasetInfo_triggered(bool)
 {
-    qDebug() << "cols:" << data_.columnCount() << "rows:" << data_.rowCount() << "modified:" << data_.modified();
+    int col_count = data_.columnCount();
+    qDebug() << "cols:" << col_count << "rows:" << data_.rowCount() << "modified:" << data_.modified();
+    for (int c=0; c<col_count; ++c)
+    {
+        QString col_text = "colum " + QString::number(c) + ": type=" + BaseColumn::typeToString(data_.column(c).type());
+        qDebug() << col_text;
+    }
 }
 
 void MainWindow::on_actionGenerateExampleData_triggered(bool)
@@ -689,7 +698,7 @@ void MainWindow::on_actionGenerateExampleData_triggered(bool)
     {
         c2 << (int)std::round(Helper::randomNumber(0, 10000));
     }
-    tmp.addColumn("col_int", c2);
+    tmp.addColumn("col_int", c2, QVector<char>(rows, 0));
 
     //add float column
     c2.clear();
@@ -697,7 +706,7 @@ void MainWindow::on_actionGenerateExampleData_triggered(bool)
     {
         c2 << Helper::randomNumber(0, 100);
     }
-    tmp.addColumn("col_float", c2);
+    tmp.addColumn("col_float", c2, QVector<char>(rows, 2));
 
     //store
     tmp.store(QApplication::applicationDirPath() + "/example_data.tsv");
@@ -731,6 +740,7 @@ void MainWindow::goToRow(int row)
 	}
 
 	ui_.grid->scrollToItem(ui_.grid->item(row, 0));
+    ui_.grid->selectRow(row);
 }
 
 void MainWindow::findText(QString text, Qt::CaseSensitivity case_sensitive, DataGrid::FindType type)
