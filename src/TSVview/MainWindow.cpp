@@ -667,7 +667,7 @@ void MainWindow::on_actionShowDatasetInfo_triggered(bool)
     qDebug() << "cols:" << col_count << "rows:" << data_.rowCount() << "modified:" << data_.modified();
     for (int c=0; c<col_count; ++c)
     {
-        QString col_text = "colum " + QString::number(c) + ": type=" + BaseColumn::typeToString(data_.column(c).type());
+        QString col_text = "colum " + QString::number(c) + ": type=" + BaseColumn::typeToString(data_.column(c).type()) + " capacity=" + QString::number(data_.column(c).capacity());
         qDebug() << col_text;
     }
 }

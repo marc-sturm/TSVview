@@ -58,6 +58,7 @@ public:
 	virtual void matchFilter(QBitArray& array) const = 0;
 
     static QString typeToString(Type t);
+    static Type stringToType(QString str);
 signals:
 	void dataChanged();
 	void filterChanged();

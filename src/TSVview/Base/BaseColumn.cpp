@@ -59,3 +59,10 @@ QString BaseColumn::typeToString(Type type)
     else if (type==BaseColumn::STRING) return "string";
     else THROW(ProgrammingException, "Unhandled column type "+QString::number(type));
 }
+
+BaseColumn::Type BaseColumn::stringToType(QString str)
+{
+    if (str=="numeric") return BaseColumn::NUMERIC;
+    else if (str=="string") return BaseColumn::STRING;
+    else THROW(ProgrammingException, "Unhandled column name "+str);
+}

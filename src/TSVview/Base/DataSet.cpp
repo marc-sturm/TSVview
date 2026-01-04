@@ -447,6 +447,13 @@ void DataSet::load(QString filename, QString display_name)
     QSet<int> numeric_columns;
     QStringList comments;
     QStringList filters;
+    struct ColumnInfo
+    {
+        BaseColumn::Type type;
+        int width;
+    };
+    QHash<int, ColumnInfo> col_infos;
+    bool col_infos_complete = false;
     int line_nr = -1;
     int cols = -1;
     int rows = -1;
@@ -464,7 +471,7 @@ void DataSet::load(QString filename, QString display_name)
         {
             if (line.startsWith("##")) //comment
             {
-                if (line.startsWith("##TSVVIEW-"))
+                if (line.startsWith("##TSVVIEW-")) //TSVview-specific headers
                 {
                     if (line.startsWith("##TSVVIEW-FILTER##"))
                     {
@@ -473,6 +480,14 @@ void DataSet::load(QString filename, QString display_name)
                     else if (line.startsWith("##TSVVIEW-ROWS##"))
                     {
                         rows = line.split("##")[2].toInt();
+                    }
+                    else if (line.startsWith("##TSVVIEW-COLINFO##"))
+                    {
+                        QStringList parts = line.split("##");
+                        int col_index = Helper::toInt(parts[2], "colum index");
+                        BaseColumn::Type type = BaseColumn::stringToType(parts[3]);
+                        int width = Helper::toInt(parts[4], "colum width");
+                        col_infos[col_index] = ColumnInfo{type, width};
                     }
                 }
                 else
@@ -486,13 +501,29 @@ void DataSet::load(QString filename, QString display_name)
 
                 QStringList parts = line.mid(1).split('\t');
                 cols = parts.size();
+
+                if (col_infos.count()==cols) col_infos_complete = true;
                 for (int c=0; c<cols; ++c)
                 {
-                    numeric_columns << c;
+                    if (col_infos_complete && col_infos[c].type==BaseColumn::NUMERIC)
+                    {
+                        QVector<double> values;
+                        QVector<char> decimals;
+                        if (rows!=-1)
+                        {
+                            values.reserve(rows);
+                            decimals.reserve(rows);
+                        }
+                        addColumn(parts[c], values, decimals, false);
+                    }
+                    else
+                    {
+                        QVector<QString> values;
+                        if (rows!=-1) values.reserve(rows);
+                        addColumn(parts[c], values);
 
-                    QVector<QString> values;
-                    if (rows!=-1) values.reserve(rows);
-                    addColumn(parts[c], values, false);
+                        numeric_columns << c;
+                    }
                 }
             }
             continue;
@@ -511,13 +542,11 @@ void DataSet::load(QString filename, QString display_name)
         }
 
         //try to convert numbers
-        foreach(int c, numeric_columns)
+        if (!col_infos_complete)
         {
-            if (!isNumeric(parts[c]))
+            foreach(int c, numeric_columns)
             {
-
-                qDebug() << "not numeric: " << parts[c] << c;
-                numeric_columns.remove(c);
+                if (!isNumeric(parts[c])) numeric_columns.remove(c);
             }
         }
     }
@@ -528,9 +557,13 @@ void DataSet::load(QString filename, QString display_name)
     qDebug() << "loading data from file: c=" << columnCount() << "r=" << rowCount() << "ms=" << timer.restart();
 
     //convert numeric columns
-    foreach(int c, numeric_columns)
+    if (!col_infos_complete)
     {
-        convertStringToNumeric(c);
+        foreach(int c, numeric_columns)
+        {
+            convertStringToNumeric(c);
+        }
+        qDebug() << "converting numeric columns: ms=" << timer.restart();
     }
 
     //apply filters
@@ -568,8 +601,6 @@ void DataSet::load(QString filename, QString display_name)
     }
 
     setModified(false);
-
-    qDebug() << "converting numeric columns: ms=" << timer.elapsed();
 }
 
 void DataSet::import(QString filename, QString display_name, Parameters params, int preview_lines)
@@ -656,11 +687,7 @@ void DataSet::import(QString filename, QString display_name, Parameters params, 
         //try to convert numbers
         foreach(int c, numeric_columns)
         {
-            if (!isNumeric(parts[c]))
-            {
-                qDebug() << "not numeric: " << parts[c] << c;
-                numeric_columns.remove(c);
-            }
+            if (!isNumeric(parts[c])) numeric_columns.remove(c);
         }
 
         ++row;
@@ -746,10 +773,14 @@ void DataSet::storePlain(QString filename)
     QTextStream stream(&file);
     foreach(const QString& comment, comments())
     {
-        if (comment.startsWith("##TSVVIEW-ROWS##")) continue;
+        if (comment.startsWith("##TSVVIEW-")) continue;
         stream << comment << '\n';
     }
     stream << "##TSVVIEW-ROWS##" << rowCount() << '\n';
+    for (int col=0; col<columnCount(); ++col)
+    {
+        stream << "##TSVVIEW-COLINFO##" << QString::number(col) << "##" << BaseColumn::typeToString(column(col).type()) << "##-1\n";
+    }
 
     //write filters
     for (int col=0; col<columnCount(); ++col)
@@ -790,12 +821,18 @@ void DataSet::storeGzipped(QString filename)
     //write comments
     foreach(const QString& comment, comments())
     {
-        if (comment.startsWith("##TSVVIEW-ROWS##")) continue;
+        if (comment.startsWith("##TSVVIEW-")) continue;
         QByteArray tmp = (comment +'\n').toUtf8();
         gzwrite(file, tmp.constData(), tmp.size());
     }
     QByteArray tmp = ("##TSVVIEW-ROWS##" + QByteArray::number(rowCount()) + '\n');
     gzwrite(file, tmp.constData(), tmp.size());
+    for (int col=0; col<columnCount(); ++col)
+    {
+        QByteArray tmp = ("##TSVVIEW-COLINFO##" + QByteArray::number(col) + "##" + BaseColumn::typeToString(column(col).type()).toUtf8() + "##-1\n");
+        gzwrite(file, tmp.constData(), tmp.size());
+    }
+    //TODO write COLINFO
 
     //write filters
     for (int col=0; col<columnCount(); ++col)

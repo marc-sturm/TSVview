@@ -2,12 +2,6 @@
 ##comment1
 ##comment2
 ##comment3
-##TSVVIEW-ROWS##12
-##TSVVIEW-COLINFO##0##numeric##150
-##TSVVIEW-COLINFO##1##numeric##200
-##TSVVIEW-COLINFO##2##numeric##250
-##TSVVIEW-COLINFO##3##numeric##300
-##TSVVIEW-COLINFO##4##string##150
 #int1	int2	double1	double2	string
 1	2	3.22	nan	str1
 4	5	6.11	NAN	str2
