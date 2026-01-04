@@ -3,6 +3,7 @@
 
 #include "StringColumn.h"
 #include "NumericColumn.h"
+#include <Helper.h>
 #include <QSet>
 
 enum ExportFormat
@@ -129,6 +130,11 @@ public:
 	{
 		return comments_;
 	}
+
+    static bool isNumeric(const QString& str)
+    {
+        return str=="inf" || str=="INF" || str=="nan" || str=="NAN" || Helper::isNumeric(str);
+    }
 
 signals:
 	void headersChanged();

@@ -207,6 +207,18 @@ bool NumericColumn::NanAwareDoubleComp::operator()(double a, double b) const
 
 QPair<double, char> NumericColumn::toDouble(const QString& value, bool nan_instead_of_exception)
 {
+    //special handling inf
+    if (value=="inf" || value=="INF")
+    {
+        return QPair<double, char>(std::numeric_limits<double>::infinity(), 0);
+    }
+
+    // speical handling nan
+    if (value=="nan" || value=="NAN")
+    {
+        return QPair<double, char>(std::numeric_limits<double>::quiet_NaN(), 0);
+    }
+
     bool ok = true;
     double fvalue = value.toDouble(&ok);
     if (!ok)

@@ -1,4 +1,3 @@
-- add support for nan, NAN, inf and INF
 - store column type in header to speed up loading
 - add date support (german, US and ISO)
 - color dots in scatter plot according to ENUM column

@@ -513,7 +513,12 @@ void DataSet::load(QString filename, QString display_name)
         //try to convert numbers
         foreach(int c, numeric_columns)
         {
-            if (!Helper::isNumeric(parts[c])) numeric_columns.remove(c);
+            if (!isNumeric(parts[c]))
+            {
+
+                qDebug() << "not numeric: " << parts[c] << c;
+                numeric_columns.remove(c);
+            }
         }
     }
 
@@ -651,7 +656,11 @@ void DataSet::import(QString filename, QString display_name, Parameters params, 
         //try to convert numbers
         foreach(int c, numeric_columns)
         {
-            if (!Helper::isNumeric(parts[c])) numeric_columns.remove(c);
+            if (!isNumeric(parts[c]))
+            {
+                qDebug() << "not numeric: " << parts[c] << c;
+                numeric_columns.remove(c);
+            }
         }
 
         ++row;
