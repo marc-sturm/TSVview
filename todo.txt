@@ -1,7 +1,3 @@
-- store column with in dataset
-    - store
-    - update when determined automatically or resized manually by user
-    - keep when re-rendering
 - add date support (german, US and ISO)
 - color dots in scatter plot according to ENUM column
 - show outliers in bar plot?

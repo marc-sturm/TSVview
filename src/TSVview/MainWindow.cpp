@@ -182,6 +182,7 @@ void MainWindow::openFile_(QString filename, bool remember_path, bool show_impor
     setFile("");
 
 	//load file
+    QHash<int, ColumnInfo> col_infos;
     data_.blockSignals(true);
     try
     {
@@ -195,7 +196,7 @@ void MainWindow::openFile_(QString filename, bool remember_path, bool show_impor
 		}
         else
         {
-            data_.load(filename, filename);
+            col_infos = data_.load(filename, filename);
             setFile(filename);
         }
     }
@@ -208,9 +209,22 @@ void MainWindow::openFile_(QString filename, bool remember_path, bool show_impor
 	updateFilters();
     ui_.grid->render();
 
-	//resize
-    on_resizeColumnWidth_triggered(true);
-    on_resizeColumnHeight_triggered(true);
+    //resize
+    bool col_widths_from_file_used = false;
+    for(auto it=col_infos.begin(); it!=col_infos.end(); ++it)
+    {
+        int c = it.key();
+        if (col_infos.contains(c) && col_infos[c].width!=-1)
+        {
+            ui_.grid->setColumnWidth(c, col_infos[c].width);
+            col_widths_from_file_used = true;
+        }
+    }
+    if (!col_widths_from_file_used)
+    {
+        on_resizeColumnWidth_triggered(true);
+        on_resizeColumnHeight_triggered(true);
+    }
 
 	//re-enable data signals
     data_.blockSignals(false);
@@ -234,7 +248,7 @@ void MainWindow::on_saveFile_triggered(bool)
     //store
 	try
 	{
-        data_.store(filename_);
+        data_.store(filename_, ui_.grid->columnWidths());
 	}
     catch (FileAccessException& e)
 	{
@@ -255,7 +269,7 @@ void MainWindow::on_actionSaveAs_triggered(bool)
     if (data_.columnCount()==0) return;
 
     QString filename = QFileDialog::getSaveFileName(this, "Save as",  filename_, "TSV files (*.tsv *.tsv.gz);;All files (*.*)");
-    data_.store(filename);
+    data_.store(filename, ui_.grid->columnWidths());
     setFile(filename);
 }
 
@@ -709,7 +723,7 @@ void MainWindow::on_actionGenerateExampleData_triggered(bool)
     tmp.addColumn("col_float", c2, QVector<char>(rows, 2));
 
     //store
-    tmp.store(QApplication::applicationDirPath() + "/example_data.tsv");
+    tmp.store(QApplication::applicationDirPath() + "/example_data.tsv", QList<int>(tmp.columnCount(), -1));
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* e)

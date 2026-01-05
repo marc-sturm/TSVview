@@ -12,6 +12,12 @@ enum ExportFormat
     CSV
 };
 
+struct ColumnInfo
+{
+    BaseColumn::Type type;
+    int width;
+};
+
 /// A dataset (martix) consisting of several formatted columns (string, float).
 class DataSet
 		: public QObject
@@ -23,11 +29,11 @@ public:
 	~DataSet();
 
     //load TSV or TSV.GZ file. If display name is not set, the filename is used.
-    void load(QString filename, QString display_name="");
+    QHash<int, ColumnInfo> load(QString filename, QString display_name="");
     //import data from TXT file.
     void import(QString filename, QString display_name, Parameters params, int preview_lines = -1);
-    //store TSV of TSV.GZ file.
-    void store(QString filename);
+    //store TSV of TSV.GZ file. Column widths have to be given, but can be -1 if unkonwn.
+    void store(QString filename, const QList<int>& widths);
     //export
     void storeAs(QString filename, ExportFormat format);
 
@@ -155,8 +161,8 @@ protected:
 	bool filters_enabled_;
 	mutable QBitArray filtered_rows_;
 
-    void storePlain(QString filename);
-    void storeGzipped(QString filename);
+    void storePlain(QString filename, const QList<int>& widths);
+    void storeGzipped(QString filename, const QList<int>& widths);
     void storeAsHtml(QString filename);
     static void writeHtml(QTextStream& stream, int indent, QByteArray text, bool newline=false);
 

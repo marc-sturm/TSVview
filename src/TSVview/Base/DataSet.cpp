@@ -434,7 +434,7 @@ QBitArray DataSet::getRowFilter(bool update) const
 	return filtered_rows_;
 }
 
-void DataSet::load(QString filename, QString display_name)
+QHash<int, ColumnInfo> DataSet::load(QString filename, QString display_name)
 {
     if (display_name.isEmpty()) display_name = filename;
 
@@ -447,11 +447,6 @@ void DataSet::load(QString filename, QString display_name)
     QSet<int> numeric_columns;
     QStringList comments;
     QStringList filters;
-    struct ColumnInfo
-    {
-        BaseColumn::Type type;
-        int width;
-    };
     QHash<int, ColumnInfo> col_infos;
     bool col_infos_complete = false;
     int line_nr = -1;
@@ -484,10 +479,18 @@ void DataSet::load(QString filename, QString display_name)
                     else if (line.startsWith("##TSVVIEW-COLINFO##"))
                     {
                         QStringList parts = line.split("##");
+                        //index
                         int col_index = Helper::toInt(parts[2], "colum index");
-                        BaseColumn::Type type = BaseColumn::stringToType(parts[3]);
-                        int width = Helper::toInt(parts[4], "colum width");
-                        col_infos[col_index] = ColumnInfo{type, width};
+                        //infos
+                        int type = -1;
+                        int width = -1;
+                        QStringList parts2 = parts[3].split(";");
+                        foreach(QString key_value, parts2)
+                        {
+                            if (key_value.startsWith("type=")) type = BaseColumn::stringToType(key_value.split('=').at(1));
+                            if (key_value.startsWith("width=")) width = Helper::toInt(key_value.split('=').at(1), "column width");
+                        }
+                        col_infos[col_index] = ColumnInfo{(BaseColumn::Type)type, width};
                     }
                 }
                 else
@@ -601,6 +604,8 @@ void DataSet::load(QString filename, QString display_name)
     }
 
     setModified(false);
+
+    return col_infos;
 }
 
 void DataSet::import(QString filename, QString display_name, Parameters params, int preview_lines)
@@ -742,7 +747,7 @@ void DataSet::import(QString filename, QString display_name, Parameters params, 
     qDebug() << "import data: c=" << columnCount() << "r=" << rowCount() << "ms=" << timer.restart();
 }
 
-void DataSet::store(QString filename)
+void DataSet::store(QString filename, const QList<int>& widths)
 {
     QElapsedTimer timer;
     timer.start();
@@ -750,18 +755,20 @@ void DataSet::store(QString filename)
     bool is_gz = filename.endsWith(".gz", Qt::CaseInsensitive);
     if (is_gz)
     {
-        storeGzipped(filename);
+        storeGzipped(filename, widths);
     }
     else
     {
-        storePlain(filename);
+        storePlain(filename, widths);
     }
 
     qDebug() << QString("storing")+(is_gz ? " (GZ)" : "")+" ms=" << timer.elapsed();
 }
 
-void DataSet::storePlain(QString filename)
+void DataSet::storePlain(QString filename, const QList<int>& widths)
 {
+    if (widths.count()!=columnCount()) THROW(ProgrammingException, "Widths count and column count not matching in storePlain(...)!'");
+
     // open file
     QFile file(filename);
     if (!file.open(QFile::WriteOnly | QFile::Truncate))
@@ -777,17 +784,17 @@ void DataSet::storePlain(QString filename)
         stream << comment << '\n';
     }
     stream << "##TSVVIEW-ROWS##" << rowCount() << '\n';
-    for (int col=0; col<columnCount(); ++col)
+    for (int c=0; c<columnCount(); ++c)
     {
-        stream << "##TSVVIEW-COLINFO##" << QString::number(col) << "##" << BaseColumn::typeToString(column(col).type()) << "##-1\n";
+        stream << "##TSVVIEW-COLINFO##" << QString::number(c) << "##type=" << BaseColumn::typeToString(column(c).type()) << ";width=" << QString::number(widths[c]) << "\n";
     }
 
     //write filters
-    for (int col=0; col<columnCount(); ++col)
+    for (int c=0; c<columnCount(); ++c)
     {
-        if (column(col).filter().type()!=Filter::NONE)
+        if (column(c).filter().type()!=Filter::NONE)
         {
-            stream << column(col).filter().toString(col) << '\n';
+            stream << column(c).filter().toString(c) << '\n';
         }
     }
 
@@ -795,25 +802,27 @@ void DataSet::storePlain(QString filename)
     stream << '#' << headers().join('\t') << '\n';
 
     // write data
-    for (int row=0; row<rowCount(); ++row)
+    for (int r=0; r<rowCount(); ++r)
     {
-        if (row!=0)
+        if (r!=0)
         {
             stream << '\n';
         }
-        for (int col=0; col<columnCount(); ++col)
+        for (int c=0; c<columnCount(); ++c)
         {
-            if (col!=0)
+            if (c!=0)
             {
                 stream << '\t';
             }
-            stream << column(col).string(row);
+            stream << column(c).string(r);
         }
     }
 }
 
-void DataSet::storeGzipped(QString filename)
+void DataSet::storeGzipped(QString filename, const QList<int>& widths)
 {
+    if (widths.count()!=columnCount()) THROW(ProgrammingException, "Widths count and column count not matching in storeGzipped(...)!'");
+
     // open file
     gzFile file = gzopen(filename.toUtf8().constData(), "wb");
     if (!file) THROW(FileAccessException, "Could not open file '" + filename + "' for writing.");
@@ -827,19 +836,18 @@ void DataSet::storeGzipped(QString filename)
     }
     QByteArray tmp = ("##TSVVIEW-ROWS##" + QByteArray::number(rowCount()) + '\n');
     gzwrite(file, tmp.constData(), tmp.size());
-    for (int col=0; col<columnCount(); ++col)
+    for (int c=0; c<columnCount(); ++c)
     {
-        QByteArray tmp = ("##TSVVIEW-COLINFO##" + QByteArray::number(col) + "##" + BaseColumn::typeToString(column(col).type()).toUtf8() + "##-1\n");
+        QByteArray tmp = ("##TSVVIEW-COLINFO##" + QByteArray::number(c) + "##type=" + BaseColumn::typeToString(column(c).type()).toUtf8() + ";width="+QByteArray::number(widths[c]) +"\n");
         gzwrite(file, tmp.constData(), tmp.size());
     }
-    //TODO write COLINFO
 
     //write filters
-    for (int col=0; col<columnCount(); ++col)
+    for (int c=0; c<columnCount(); ++c)
     {
-        if (column(col).filter().type()!=Filter::NONE)
+        if (column(c).filter().type()!=Filter::NONE)
         {
-            QByteArray tmp = (column(col).filter().toString(col) + '\n').toUtf8();
+            QByteArray tmp = (column(c).filter().toString(c) + '\n').toUtf8();
             gzwrite(file, tmp.constData(), tmp.size());
         }
     }
@@ -849,20 +857,20 @@ void DataSet::storeGzipped(QString filename)
     gzwrite(file, tmp.constData(), tmp.size());
 
     // write data
-    for (int row=0; row<rowCount(); ++row)
+    for (int r=0; r<rowCount(); ++r)
     {
         QByteArray tmp;
-        if (row!=0)
+        if (r!=0)
         {
             tmp.append('\n');
         }
-        for (int col=0; col<columnCount(); ++col)
+        for (int c=0; c<columnCount(); ++c)
         {
-            if (col!=0)
+            if (c!=0)
             {
                 tmp.append('\t');
             }
-            tmp.append(column(col).string(row).toUtf8());
+            tmp.append(column(c).string(r).toUtf8());
         }
         gzwrite(file, tmp.constData(), tmp.size());
     }

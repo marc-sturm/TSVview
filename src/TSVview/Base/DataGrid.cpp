@@ -1395,3 +1395,13 @@ void DataGrid::resizeColumnHeight()
     qDebug() << "resizing column height to content: ms=" << timer.elapsed();
 }
 
+QList<int> DataGrid::columnWidths() const
+{
+    QList<int> output;
+    for (int c=0; c<columnCount(); ++c)
+    {
+       output << columnWidth(c);
+    }
+    return output;
+}
+

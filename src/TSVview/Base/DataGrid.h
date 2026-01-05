@@ -53,6 +53,8 @@ public:
     void resizeColumnWidth();
     //Resize column height
     void resizeColumnHeight();
+    //Column widths
+    QList<int> columnWidths() const;
 
 signals:
 	void rendered();
