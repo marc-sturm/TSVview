@@ -1,5 +1,6 @@
 #include "BaseColumn.h"
 #include <QRegularExpression>
+#include "Exceptions.h"
 
 BaseColumn::BaseColumn(Type type)
   : QObject(0)
@@ -50,4 +51,18 @@ bool BaseColumn::setHeader(const QString& header)
 	emit headerChanged();
 
   return true;
+}
+
+QString BaseColumn::typeToString(Type type)
+{
+    if (type==BaseColumn::NUMERIC) return "numeric";
+    else if (type==BaseColumn::STRING) return "string";
+    else THROW(ProgrammingException, "Unhandled column type "+QString::number(type));
+}
+
+BaseColumn::Type BaseColumn::stringToType(QString str)
+{
+    if (str=="numeric") return BaseColumn::NUMERIC;
+    else if (str=="string") return BaseColumn::STRING;
+    else THROW(ProgrammingException, "Unhandled column name "+str);
 }

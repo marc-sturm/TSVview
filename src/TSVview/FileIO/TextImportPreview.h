@@ -4,18 +4,17 @@
 #include <QDialog>
 #include <QTableWidget>
 #include <QTextStream>
-
 #include "ui_TextImportPreview.h"
 #include "DataGrid.h"
 #include "Parameters.h"
 
 class TextImportPreview
-		: public QDialog
+    : public QDialog
 {
 	Q_OBJECT
 
 public:
-	TextImportPreview(QTextStream& stream, QString location, bool csv_mode, QWidget* parent);
+    TextImportPreview(QString filename, QString display_name, bool csv_mode, QWidget* parent);
 	Parameters parameters() const;
 
 public slots:
@@ -27,10 +26,13 @@ private slots:
 private:
 	Ui::TextImportPreview ui_;
 	DataGrid* grid_;
-	QTextStream& stream_;
-	QString location_;
+    QString filename_;
+    QString display_name_;
 	Parameters params_;
 	DataSet data_;
+
+    static Parameters defaultParameters();
+
 };
 
 #endif

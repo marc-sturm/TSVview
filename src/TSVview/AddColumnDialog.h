@@ -20,6 +20,7 @@ public:
 	int insertBefore();
 	QString value();
 	bool isFormula();
+    int decimals();
 
 
 private:

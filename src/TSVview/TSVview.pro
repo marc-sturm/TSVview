@@ -6,13 +6,14 @@ TARGET = TSVview
 TEMPLATE = app
 RC_FILE	 = icon.rc
 
-CONFIG += c++11
-
 INCLUDEPATH += Base
 INCLUDEPATH += FileIO
 INCLUDEPATH += Plots
 INCLUDEPATH += Statistics
 INCLUDEPATH += Signal
+
+#include zlib library
+LIBS += -lz
 
 SOURCES += \
     GrepDialog.cpp \
@@ -23,7 +24,6 @@ SOURCES += \
     Base/DataSet.cpp \
     Base/ParameterEditor.cpp \
     FileIO/TextImportPreview.cpp \
-    FileIO/TextFile.cpp \
     Plots/BasePlot.cpp \
     Plots/ScatterPlot.cpp \
     Plots/HistogramPlot.cpp \
@@ -56,7 +56,6 @@ HEADERS += \
     Base/DataSet.h \
     Base/ParameterEditor.h \
     FileIO/TextImportPreview.h \
-    FileIO/TextFile.h \
     Plots/BasePlot.h \
     Plots/ScatterPlot.h \
     Plots/HistogramPlot.h \

@@ -3,7 +3,20 @@
 
 #include "StringColumn.h"
 #include "NumericColumn.h"
+#include <Helper.h>
 #include <QSet>
+
+enum ExportFormat
+{
+    HTML,
+    CSV
+};
+
+struct ColumnInfo
+{
+    BaseColumn::Type type;
+    int width;
+};
 
 /// A dataset (martix) consisting of several formatted columns (string, float).
 class DataSet
@@ -14,6 +27,15 @@ class DataSet
 public:
 	DataSet();
 	~DataSet();
+
+    //load TSV or TSV.GZ file. If display name is not set, the filename is used.
+    QHash<int, ColumnInfo> load(QString filename, QString display_name="");
+    //import data from TXT file.
+    void import(QString filename, QString display_name, Parameters params, int preview_lines = -1);
+    //store TSV of TSV.GZ file. Column widths have to be given, but can be -1 if unkonwn.
+    void store(QString filename, const QList<int>& widths);
+    //export
+    void storeAs(QString filename, ExportFormat format);
 
 	const BaseColumn& column(int column) const
 	{
@@ -78,9 +100,9 @@ public:
 		removeColumns(QSet<int>() << column);
 	}
 	void removeColumns(QSet<int> columns);
-	void addColumn(QString header, const QVector<double>& data, bool auto_format = true, int index = -1);
-	void addColumn(QString header, const QVector<QString>& data, bool auto_format = true, int index = -1);
-	void replaceColumn(int index, QString header, const QVector<double>& data, bool auto_format = true);
+    void addColumn(QString header, const QVector<double>& data, const QVector<char>& decimals, int index = -1);
+    void addColumn(QString header, const QVector<QString>& data, int index = -1);
+    void replaceColumn(int index, QString header, const QVector<double>& data, const QVector<char>& decimals);
 	void sortByColumn(int column, bool reverse);
 	void mergeColumns(QList<int> cols, QString header, QString sep);
 	void reduceToRows(QSet<int> rows);
@@ -90,7 +112,7 @@ public:
 	{
 		return modified_;
 	}
-	void setModified(bool changed);
+    void setModified(bool changed, bool force_emit=false);
 
 	bool filtersEnabled() const
 	{
@@ -100,14 +122,25 @@ public:
 	bool filtersPresent() const;
 	QBitArray getRowFilter(bool update = true) const;
 
-	void setComments(QStringList& comments)
+    void setComments(const QStringList& comments)
 	{
-		comments_ = comments;
+        comments_.clear();
+        foreach(QString comment, comments)
+        {
+            while (comment.endsWith('\n') || comment.endsWith('\r')) comment.chop(1);
+
+            comments_ << comment;
+        }
 	}
-	QStringList comments() const
+    const QStringList& comments() const
 	{
 		return comments_;
 	}
+
+    static bool isNumeric(const QString& str)
+    {
+        return str=="inf" || str=="INF" || str=="nan" || str=="NAN" || Helper::isNumeric(str);
+    }
 
 signals:
 	void headersChanged();
@@ -127,6 +160,16 @@ protected:
 	bool modified_;
 	bool filters_enabled_;
 	mutable QBitArray filtered_rows_;
+
+    void storePlain(QString filename, const QList<int>& widths);
+    void storeGzipped(QString filename, const QList<int>& widths);
+    void storeAsHtml(QString filename);
+    static void writeHtml(QTextStream& stream, int indent, QByteArray text, bool newline=false);
+
+    void storeAsCsv(QString filename);
+    static QString escapeForCsv(QString s);
+
+
 
 private:
 	//not implemented

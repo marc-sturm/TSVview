@@ -1,24 +1,21 @@
 #include <QFileInfo>
 #include <QPushButton>
-
 #include "TextImportPreview.h"
 #include "DataSet.h"
-#include "TextFile.h"
-#include "CustomExceptions.h"
 #include "FilePreview.h"
-#include "CustomExceptions.h"
+#include "Exceptions.h"
 
-TextImportPreview::TextImportPreview(QTextStream& stream, QString location, bool csv_mode, QWidget *parent)
+TextImportPreview::TextImportPreview(QString filename, QString display_name, bool csv_mode, QWidget* parent)
 	: QDialog(parent)
 	, ui_()
-	, stream_(stream)
-	, location_(location)
-	, params_(TextFile::defaultParameters())
+    , filename_(filename)
+    , display_name_(display_name)
+    , params_(defaultParameters())
 	, data_()
 {
 	ui_.setupUi(this);
 
-	setWindowTitle("Preview text import: " + QFileInfo(location).fileName());
+    setWindowTitle("Preview text import: " + display_name);
 
 	grid_ = new DataGrid();
 	ui_.gridWidget->layout()->addWidget(grid_);
@@ -126,25 +123,53 @@ void TextImportPreview::tryImport()
 
 	//Parse and render data
 	try
-	{
+    {
 		data_.blockSignals(true);
-		TextFile::fromStream(data_, stream_, location_, params_, 20);
-		data_.blockSignals(false);
-		ui_.error_message->setText("");
-		grid_->render();
-		grid_->resizeColumnsToContents();
-		ui_.buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
-	}
-	catch (FileIOException& e)
+        data_.import(filename_, display_name_, params_, 20);
+        data_.blockSignals(false);
+        ui_.error_message->setText("");
+        grid_->render();
+        grid_->resizeColumnsToContents();
+        ui_.buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
+    }
+    catch (Exception& e)
 	{
-		ui_.error_message->setText("<font color=red>Error:</font> " + e.message());
-		grid_->clearContents();
-		ui_.buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
-	}
+        ui_.error_message->setText("<font color=red>Error:</font> " + e.message());
+        grid_->clearContents();
+        ui_.buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+    }
 }
 
 void TextImportPreview::showFile()
 {
-	FilePreview* dialog = new FilePreview(stream_, location_, this);
+    FilePreview* dialog = new FilePreview(filename_, display_name_, this);
 	dialog->exec();
+}
+
+Parameters TextImportPreview::defaultParameters()
+{
+    Parameters params;
+
+    QStringList valid_separators;
+    valid_separators.append("\t");
+    valid_separators.append(" ");
+    valid_separators.append(",");
+    valid_separators.append(";");
+    valid_separators.append("|");
+    params.addChar("separator", "", '\t', valid_separators);
+
+    QStringList valid_comments;
+    valid_comments.append("#");
+    valid_comments.append(";");
+    valid_comments.append("");
+    params.addChar("comment", "", '#', valid_comments);
+
+    QStringList quotes;
+    quotes.append("");
+    quotes.append("'");
+    quotes.append("\"");
+    params.addChar("quote", "", QChar::Null, quotes);
+    params.addBool("first_line_is_comment", "", false);
+
+    return params;
 }

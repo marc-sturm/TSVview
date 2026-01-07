@@ -12,10 +12,10 @@
 #include <QRegularExpression>
 #include <algorithm>
 #include <math.h>
+#include <QTemporaryFile>
 #include "GrepDialog.h"
 #include "DataGrid.h"
 #include "CustomExceptions.h"
-#include "TextFile.h"
 #include "Settings.h"
 #include "TextImportPreview.h"
 #include "FilterDialog.h"
@@ -24,6 +24,7 @@
 #include "GUIHelper.h"
 #include "AddColumnDialog.h"
 #include "TextItemEditDialog.h"
+#include "Helper.h"
 
 DataGrid::DataGrid(QWidget* parent)
 	: QTableWidget(parent)
@@ -48,7 +49,7 @@ DataGrid::DataGrid(QWidget* parent)
 	//make sure the selection is visible when the table looses focus
 	QString fg = GUIHelper::colorToQssFormat(palette().color(QPalette::Active, QPalette::HighlightedText));
 	QString bg = GUIHelper::colorToQssFormat(palette().color(QPalette::Active, QPalette::Highlight));
-	setStyleSheet(QString("QTableWidget:!active { selection-color: %1; selection-background-color: %2; }").arg(fg).arg(bg));
+    setStyleSheet("QTableWidget:!active { selection-color: "+fg+"; selection-background-color: "+bg+"; }");
 
 	connect(this, SIGNAL(itemDoubleClicked(QTableWidgetItem*)), this, SLOT(editCurrentItem(QTableWidgetItem*)));
 }
@@ -161,31 +162,21 @@ void DataGrid::renderColumn_(int column, QBitArray rows_to_render)
 	}
 }
 
-void DataGrid::renderItem_(int row, int column, QBitArray rows_to_render)
-{
-	Q_ASSERT(rows_to_render.count()==data_->column(column).count());
-
-	int r_filtered = -1;
-	for (int r=0; r<data_->rowCount(); ++r)
-	{
-		if (rows_to_render[r])
-		{
-			++r_filtered;
-		}
-
-		if (r_filtered==row)
-		{
-			QTableWidgetItem* item = new QTableWidgetItem(data_->column(column).string(r));
-			item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-			setItem(row, column, item);
-
-			break;
-		}
-	}
-}
-
 void DataGrid::render()
 {
+    //store colum widths
+    QHash<QString, int> widths_before;
+    for (int c=0; c<columnCount(); ++c)
+    {
+        QString name = horizontalHeaderItem(c)->text();
+        if (name.startsWith("[") && name.contains("] ")) name = name.mid(name.indexOf(" ")+1);
+        widths_before[name] = columnWidth(c);
+    }
+
+    //clear
+    setColumnCount(0);
+    setRowCount(0);
+
 	//abort if dataset is not set
 	if (data_==0)
 	{
@@ -196,8 +187,7 @@ void DataGrid::render()
 	QElapsedTimer timer;
 	timer.start();
 
-	// get row/column count
-	int cols = data_->columnCount();
+    // get row/column count
 
 	//determine number of rows to render (if we need to filter)
 	QBitArray rows_to_render = data_->getRowFilter();
@@ -210,6 +200,7 @@ void DataGrid::render()
 	}
 
 	//render
+    int cols = data_->columnCount();
 	setColumnCount(cols);
 	setRowCount(rows);
 	renderHeaders();
@@ -217,6 +208,16 @@ void DataGrid::render()
 	{
 		renderColumn_(c, rows_to_render);
 	}
+
+    //restore column width
+    for (int c=0; c<columnCount(); ++c)
+    {
+        QString name = data_->column(c).header();
+        if (widths_before.contains(name))
+        {
+            setColumnWidth(c, widths_before[name]);
+        }
+    }
 
 	//add preview signs (if required)
 	if (preview_>0 && rows==preview_)
@@ -257,7 +258,7 @@ QMenu* DataGrid::createStandardContextMenu()
 		action->setEnabled(data_!=0);
 		action = menu->addAction(QIcon(":/Icons/Remove.png"), "Remove column(s)", this, SLOT(removeSelectedColumns()));
 		action->setEnabled(selected_count>0);
-		action = menu->addAction(QIcon(":/Icons/Add.png"), "Add column", this, SLOT(addColumn_()));
+        action = menu->addAction(QIcon(":/Icons/Add.png"), "Add column", this, SLOT(addColumn_()));
 		action->setEnabled(data_!=0 && data_->columnCount()!=0);
 
 		menu->addSeparator();
@@ -266,8 +267,8 @@ QMenu* DataGrid::createStandardContextMenu()
 		action->setEnabled(selected_count==1);
 		action = edit_menu->addAction(QIcon(":/Icons/Merge.png"), "Merge", this, SLOT(mergeColumns_()));
 		action->setEnabled(selected_count>1);
-		action = edit_menu->addAction("Set number format", this, SLOT(setColumnFormat_()));
-		action->setEnabled(selected_count==1 && text_count==0);
+        action = edit_menu->addAction("Set decimals", this, SLOT(setDecimals_()));
+        action->setEnabled(selected_count>0 && text_count==0);
 		action = edit_menu->addAction("Remove duplicates", this, SLOT(removeDuplicates_()));
 		action = edit_menu->addAction("Keep duplicates", this, SLOT(keepDuplicates_()));
 		action->setEnabled(selected_count==1);
@@ -342,79 +343,25 @@ void DataGrid::mergeColumns_()
 	data_->mergeColumns(columns, dialog.header(), dialog.separator());
 }
 
-void DataGrid::setColumnFormat_()
-{
-	int col_index = selectedColumns()[0];
-	NumericColumn& col = data_->numericColumn(col_index);
-
-	// get new format
-	QStringList items;
-	items << "auto" << "normal" << "scientific";
-
-	int current = 0;
-	if (col.format()=='f')
-	{
-		current = 1;
-	}
-	else if (col.format()=='e')
-	{
-		current = 2;
-	}
-
-	bool ok = true;
-	QString format = QInputDialog::getItem(this, "Format", "Select format:", items, current, false, &ok);
-	if (!ok)
-	{
-		return;
-	}
-
-	// get precision
-	ok = true;
-	int precision = QInputDialog::getInt(this, "Precision", "Select decimal places:", col.decimalPlaces(), 0, 20, 1, &ok);
-	if (!ok)
-	{
-		return;
-	}
-
-	// update data and view
-	if (format=="auto")
-	{
-		col.setFormat('g', precision);
-	}
-	else if (format=="normal")
-	{
-		col.setFormat('f', precision);
-	}
-	else
-	{
-		col.setFormat('e', precision);
-	}
-}
-
 void DataGrid::convertNumericNan_()
 {
 	//convert
 	int col_index = selectedColumns().at(0);
-	QVector<QString> data = data_->stringColumn(col_index).values();
+    const QVector<QString>& data = data_->stringColumn(col_index).values();
 	QVector<double> new_data;
-	new_data.resize(data.count());
+    new_data.reserve(data.count());
+    QVector<char> new_decimals;
+    new_decimals.reserve(data.count());
 	for (int i=0; i<data.count(); ++i)
 	{
-		bool ok = true;
-		double value = data[i].toDouble(&ok);
-		if (ok)
-		{
-			new_data[i] = value;
-		}
-		else
-		{
-			new_data[i] = NAN;
-		}
+        auto tmp = NumericColumn::toDouble(data[i], true);
+        new_data << tmp.first;
+        new_decimals << tmp.second;
 	}
 
 	//replace column
 	QString header = data_->column(col_index).header();
-	data_->replaceColumn(col_index, header, new_data, true);
+    data_->replaceColumn(col_index, header, new_data, new_decimals);
 }
 
 
@@ -424,7 +371,6 @@ void DataGrid::convertNumericSingle_()
 	bool ok = true;
 	QString fallback_str = QInputDialog::getText(this, "Fallback value", "value", QLineEdit::Normal, "nan", &ok);
 	if (!ok) return;
-
 	double fallback_value = fallback_str.toDouble(&ok);
 	if (!ok)
 	{
@@ -436,24 +382,20 @@ void DataGrid::convertNumericSingle_()
 	int col_index = selectedColumns().at(0);
 	QVector<QString> data = data_->stringColumn(col_index).values();
 	QVector<double> new_data;
-	new_data.resize(data.count());
+    new_data.reserve(data.count());
+    QVector<char> new_decimals;
+    new_decimals.reserve(data.count());
 	for (int i=0; i<data.count(); ++i)
 	{
-		ok = true;
-		double value = data[i].toDouble(&ok);
-		if (ok)
-		{
-			new_data[i] = value;
-		}
-		else
-		{
-			new_data[i] = fallback_value;
-		}
+        auto tmp = NumericColumn::toDouble(data[i], true);
+        if (std::isnan(tmp.first)) tmp.first = fallback_value;
+        new_data << tmp.first;
+        new_decimals << tmp.second;
 	}
 
 	//replace column
 	QString header = data_->column(col_index).header();
-	data_->replaceColumn(col_index, header, new_data, true);
+    data_->replaceColumn(col_index, header, new_data, new_decimals);
 }
 
 
@@ -467,7 +409,7 @@ void DataGrid::convertNumericDict_()
 	QVector<QString> data = data_->stringColumn(col_index).values();
 	for (int i=0; i<data.count(); ++i)
 	{
-		if (!isNumeric_(data[i]))
+        if (!Helper::isNumeric(data[i]))
 		{
 			not_convertable.insert(data[i]);
 
@@ -493,23 +435,19 @@ void DataGrid::convertNumericDict_()
 		//create new column
 		QVector<double> new_data;
 		new_data.reserve(data.count());
+        QVector<char> new_decimals;
+        new_decimals.reserve(data.count());
 		for (int i=0; i<data.count(); ++i)
-		{
-			bool ok = true;
-			double value = data[i].toDouble(&ok);
-			if(ok)
-			{
-				new_data.append(value);
-			}
-			else
-			{
-				new_data.append(map[data[i]]);
-			}
+        {
+            auto tmp = NumericColumn::toDouble(data[i], true);
+            if (std::isnan(tmp.first)) tmp.first = map[data[i]];
+            new_data << tmp.first;
+            new_decimals << tmp.second;
 		}
 
 		//replace column
 		QString header = data_->column(col_index).header();
-		data_->replaceColumn(col_index, header, new_data, true);
+        data_->replaceColumn(col_index, header, new_data, new_decimals);
 	}
 }
 
@@ -550,9 +488,10 @@ void DataGrid::addColumn_()
 	if (!dlg.isFormula())
 	{
 		QVector<QString> new_values(data_->rowCount(), dlg.value());
-		data_->addColumn(dlg.name(), new_values, true, dlg.insertBefore());
+        data_->addColumn(dlg.name(), new_values, dlg.insertBefore());
 		return;
 	}
+
 	//formula
 	try
 	{
@@ -613,14 +552,14 @@ void DataGrid::addColumn_()
 				THROW(Exception,"The formula '" + row_formula + "' could not be evaluated.");
 			}
 
-			new_values.append(value.toNumber());
+            new_values << value.toNumber();
 		}
 
-		data_->addColumn(dlg.name(), new_values, true, dlg.insertBefore());
+        data_->addColumn(dlg.name(), new_values, QVector<char>(rows_count, dlg.decimals()), dlg.insertBefore());
 	}
 	catch (Exception& e)
 	{
-		QMessageBox::warning(this, "Could not add a column", e.message());
+        QMessageBox::warning(this, "Error while adding numeric column", e.message());
 	}
 }
 
@@ -724,17 +663,23 @@ void DataGrid::copySelectionToClipboard_(QChar decimal_point)
 	QApplication::clipboard()->setText(selected_text);
 }
 
-void DataGrid::pasteColumn_()
+void DataGrid::pasteColumn_(int index)
 {
 	//load data from clipboard into tmp dataset
 	DataSet data_tmp;
 	try
-	{
-		QString text = QApplication::clipboard()->text();
-		QTextStream stream(&text);
-		TextFile::fromStream(data_tmp, stream, "[clipboard]");
+	{        
+        //create tmp file (with automatic cleanup)
+        QString tmp_filename = Helper::tempFileName(".txt");
+        auto cleanup = qScopeGuard([&] { QFile::remove(tmp_filename); });
+
+        //store clipboard to tmp file
+        Helper::storeTextFile(tmp_filename, QApplication::clipboard()->text().split('\n'));
+
+        //load data
+        data_tmp.load(tmp_filename, "[clipboard]");
 	}
-	catch (FileIOException& e)
+    catch (FileAccessException& e)
 	{
 		QMessageBox::warning(this, "Error parsing data from clipboard!", e.message());
 		return;
@@ -747,42 +692,43 @@ void DataGrid::pasteColumn_()
 		return;
 	}
 
-	//determine index
-	int index = -1;
-	if (selectedColumns().size()==1)
-	{
-		index = selectedColumns().at(0);
-	}
-
 	//insert columns
+    data_->blockSignals(true);
 	for (int i=0; i<data_tmp.columnCount(); ++i)
 	{
 		BaseColumn& col = data_tmp.column(i);
 		if (col.type()==BaseColumn::NUMERIC)
 		{
-			data_->addColumn(data_tmp.column(i).header(), data_tmp.numericColumn(i).values(), true, index);
+            data_->addColumn(data_tmp.column(i).header(), data_tmp.numericColumn(i).values(), data_tmp.numericColumn(i).decimals(), index);
 		}
 		else
 		{
-			data_->addColumn(data_tmp.column(i).header(), data_tmp.stringColumn(i).values(), true, index);
+            data_->addColumn(data_tmp.column(i).header(), data_tmp.stringColumn(i).values(), index);
 		}
 	}
+    data_->blockSignals(false);
+
+    //re-render
+    render();
 }
 
 void DataGrid::pasteDataset_()
 {
-	QString text = QApplication::clipboard()->text();
-	QTextStream stream(&text);
-	TextImportPreview preview(stream, "[clipboard]", false, this);
-	if(!preview.exec())
-	{
-		return;
-	}
+    //create tmp file (with automatic cleanup)
+    QString tmp_filename = Helper::tempFileName(".txt");
+    auto cleanup = qScopeGuard([&] { QFile::remove(tmp_filename); });
+
+    //store clipboard to tmp file
+    Helper::storeTextFile(tmp_filename, QApplication::clipboard()->text().split('\n'));
+
+    //show import dialog
+    TextImportPreview preview(tmp_filename, "[clipboard]", false, this);
+    if(!preview.exec()) return;
 
 	data_->blockSignals(true);
-	stream.seek(0);
-	TextFile::fromStream(*data_, stream, "[clipboard]", preview.parameters());
-	data_->blockSignals(false);
+    data_->import(tmp_filename, "[clipboard]", preview.parameters());
+    data_->blockSignals(false);
+    data_->setModified(true, true);
 	render();
 }
 
@@ -801,15 +747,21 @@ void DataGrid::keyPressEvent(QKeyEvent* event)
 	}
 	else if(event->matches(QKeySequence::Paste))
 	{
-		if (columnCount()==0)
+        QList<int> selected_cols = selectedColumns();
+        QList<QTableWidgetItem*> selected_items = selectedItems();
+        if (columnCount()==0)
 		{
 			pasteDataset_();
 		}
-		else if (selectedColumns().count()==1 && selectedItems().count()==rowCount())
+        else if (selected_cols.count()==1 && selected_items.count()==rowCount())
 		{
-			pasteColumn_();
+            pasteColumn_(selected_cols[0]);
 		}
-		else if (selectedItems().count()==1)
+        else if (selected_cols.count()==0 && selected_items.count()==0)
+        {
+            pasteColumn_(-1);
+        }
+        else if (selected_items.count()==1)
 		{
 			QString text = QApplication::clipboard()->text();
 			if (!text.contains("\t"))
@@ -819,8 +771,8 @@ void DataGrid::keyPressEvent(QKeyEvent* event)
 				{
 					try
 					{
-						int col = selectedItems()[0]->column();
-						int row = correctRowIfFiltered(selectedItems()[0]->row());
+                        int col = selected_items[0]->column();
+                        int row = correctRowIfFiltered(selected_items[0]->row());
 						data_->column(col).setString(row, text);
 					}
 					catch (Exception& e)
@@ -849,9 +801,9 @@ void DataGrid::keyPressEvent(QKeyEvent* event)
 			int col = selectedItems()[0]->column();
 			int row = correctRowIfFiltered(selectedItems()[0]->row());
 			data_->column(col).setString(row, "");
-		}
 
-		handled = true;
+			handled = true;
+		}
 	}
 
 	if (!handled) QTableWidget::keyPressEvent(event);
@@ -888,21 +840,26 @@ void DataGrid::removeFilter_()
 
 void DataGrid::removeDuplicates_()
 {
+    if (selectedColumns().count()==0) return;
+
 	int col = selectedColumns()[0];
 
 	//count values
-	QHash<QString, QList<int>> value_to_rows;
+    QHash<QString, int> value_to_first_row;
 	for (int r=0; r<data_->rowCount(); ++r)
 	{
 		QString value = data_->column(col).string(r);
-		value_to_rows[value].append(r);
+        if (!value_to_first_row.contains(value))
+        {
+            value_to_first_row[value] = r;
+        }
 	}
 
 	//remove duplicates
 	QSet<int> rows_to_keep;
-	for (auto it=value_to_rows.begin(); it!=value_to_rows.end(); ++it)
+    for (auto it=value_to_first_row.begin(); it!=value_to_first_row.end(); ++it)
 	{
-		rows_to_keep << it.value()[0];
+        rows_to_keep << it.value();
 	}
 
 	//reduce to rows without duplicates
@@ -911,10 +868,12 @@ void DataGrid::removeDuplicates_()
 
 void DataGrid::keepDuplicates_()
 {
+    if (selectedColumns().count()==0) return;
+
 	int col = selectedColumns()[0];
 
 	//count values
-	QHash<QString, QSet<int>> value_to_rows;
+    QHash<QString, QSet<int>> value_to_rows; //TODO just count (int instead of QSet<int>)
 	for (int r=0; r<data_->rowCount(); ++r)
 	{
 		QString value = data_->column(col).string(r);
@@ -965,10 +924,10 @@ void DataGrid::grepLines()
 	QSet<int> rows_to_keep;
 	for (int r=0; r<matches.count(); ++r)
 	{
-		if (matches[r]) rows_to_keep << r;
+        if (matches[r]) rows_to_keep << r;
 	}
 
-	data_->reduceToRows(rows_to_keep);
+    data_->reduceToRows(rows_to_keep);
 }
 
 void DataGrid::editFilter(int column)
@@ -1015,16 +974,19 @@ void DataGrid::reduceToFiltered()
 			NumericColumn& column = data_->numericColumn(c);
 
 			QVector<double> values;
-			values.reserve(filtered_rows.count());
+            values.reserve(filtered_rows.count());
+            QVector<char> decimals;
+            decimals.reserve(filtered_rows.count());
 			for (int r=0; r<filtered_rows.count(); ++r)
 			{
 				if (filtered_rows[r])
 				{
 					values.append(column.value(r));
+                    decimals.append(column.decimals(r));
 				}
 			}
 
-			column.setValues(values);
+            column.setValues(values, decimals);
 		}
 		//string column
 		else
@@ -1148,7 +1110,7 @@ QString DataGrid::findTypeToString(DataGrid::FindType type)
             return "matches (regular expression))";
 	}
 
-	THROW(FindTypeException,"Unknown find type!");
+    THROW(ProgrammingException, "Unknown find type integer '"+QString::number(type)+"'!");
 }
 
 void DataGrid::columnChanged(int column, bool until_end)
@@ -1185,11 +1147,12 @@ void DataGrid::editCurrentItem(QTableWidgetItem* item)
 	//edit numeric columns
 	if (data_->column(col).type() == BaseColumn::NUMERIC)
 	{
-		double value = data_->numericColumn(col).value(row);
+        NumericColumn& column = data_->numericColumn(col);
+        double value = column.value(row);
 		double new_value = QInputDialog::getDouble(this, "Edit numeric item", "Value", value, -std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), 5);
 		if (new_value != value)
 		{
-			data_->numericColumn(col).setValue(row, new_value);
+            column.setValue(row, new_value);
 		}
 	}
 	//edit string column
@@ -1204,11 +1167,17 @@ void DataGrid::editCurrentItem(QTableWidgetItem* item)
 	}
 }
 
-bool DataGrid::isNumeric_(QString string)
+void DataGrid::setDecimals_()
 {
-	bool ok = true;
-	string.toDouble(&ok);
-	return ok;
+    bool ok = true;
+    int decimals = QInputDialog::getInt(this, "Set decimals for numeric columns", "decimals:", 2, 0, 999, 1, &ok);
+    if (!ok) return;
+
+    foreach (int c, selectedColumns())
+    {
+        NumericColumn& col = data_->numericColumn(c);
+        col.setDecimals(QVector<char>(col.count(), decimals));
+    }
 }
 
 QString DataGrid::itemText(int row, int col, bool is_numeric, QChar decimal_point)
@@ -1394,5 +1363,45 @@ void DataGrid::filtersFromString(QString filter_string)
 	// trigger rendering (signal have been blocked)
 	data_->setFiltersEnabled(true);
 	render();
+}
+
+void DataGrid::resizeColumnWidth()
+{
+    QElapsedTimer timer;
+    timer.start();
+
+    GUIHelper::resizeTableCellWidths(this, 300, 1000);
+
+    //limit column width to 50% of window width
+    int max_width = 0.5 * width();
+    for (int i=0; i<columnCount(); ++i)
+    {
+        if (columnWidth(i)>max_width)
+        {
+            setColumnWidth(i, max_width);
+        }
+    }
+
+    qDebug() << "resizing column width to content: ms=" << timer.elapsed();
+}
+
+void DataGrid::resizeColumnHeight()
+{
+    QElapsedTimer timer;
+    timer.start();
+
+    GUIHelper::resizeTableCellHeightsToMinimum(this, 1000);
+
+    qDebug() << "resizing column height to content: ms=" << timer.elapsed();
+}
+
+QList<int> DataGrid::columnWidths() const
+{
+    QList<int> output;
+    for (int c=0; c<columnCount(); ++c)
+    {
+       output << columnWidth(c);
+    }
+    return output;
 }
 

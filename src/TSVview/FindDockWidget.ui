@@ -138,6 +138,9 @@
     </item>
     <item row="0" column="2">
      <widget class="QPushButton" name="search_button">
+      <property name="toolTip">
+       <string>Search for first instance in the file.</string>
+      </property>
       <property name="text">
        <string>Search</string>
       </property>
@@ -158,6 +161,9 @@
     </item>
     <item row="0" column="3">
      <widget class="QPushButton" name="next_button">
+      <property name="toolTip">
+       <string>Search for next instance (after the currently selected cell).</string>
+      </property>
       <property name="text">
        <string>Find next</string>
       </property>

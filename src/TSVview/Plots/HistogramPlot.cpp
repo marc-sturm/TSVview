@@ -14,7 +14,7 @@ HistogramPlot::HistogramPlot(QWidget *parent)
 	: BasePlot(parent)
 {
 	//set default parameters
-	params_.addInt("bins", "", 30, 1, 999);
+    params_.addInt("bins", "", 25, 1, 999);
 	params_.addColor("color", "", Qt::darkBlue);
 	params_.addDouble("min", "", 0.0);
 	params_.addDouble("max", "", 0.0);

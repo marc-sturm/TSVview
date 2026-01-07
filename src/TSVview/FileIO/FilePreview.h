@@ -3,17 +3,16 @@
 
 #include <QDialog>
 #include <QTableWidget>
-
 #include "ui_FilePreview.h"
-#include "DataGrid.h"
+#include "Parameters.h"
 
 class FilePreview
-		: public QDialog
+        : public QDialog
 {
 	Q_OBJECT
 
 public:
-	FilePreview(QTextStream& stream, QString location, QWidget* parent);
+    FilePreview(QString filename, QString display_name, QWidget* parent);
 	Parameters parameters() const;
 
 public slots:
@@ -21,8 +20,8 @@ public slots:
 
 private:
 	Ui::FilePreview ui_;
-	QTextStream& stream_;
-	QString location_;
+    QString filename_;
+    QString display_name_;
 };
 
 #endif
