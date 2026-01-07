@@ -23,6 +23,7 @@
 #include <QLibraryInfo>
 #include <QProcessEnvironment>
 #include "Helper.h"
+#include "Log.h"
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
@@ -33,8 +34,11 @@ MainWindow::MainWindow(QWidget *parent)
 	, recent_files_()
 {
 	ui_.setupUi(this);
-    ui_.menuDebug->setVisible(debug_);
+	if (!debug_) ui_.menuDebug->menuAction()->setVisible(false);
 	QApplication::setStyle(QStyleFactory::create("windowsvista"));
+
+	//enable log file
+	Log::setFileEnabled(true);
 
 	//create info widget in status bar
 	info_widget_ = new QLabel("cols: 0 rows: 0");

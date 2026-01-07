@@ -1370,10 +1370,10 @@ void DataGrid::resizeColumnWidth()
     QElapsedTimer timer;
     timer.start();
 
-    GUIHelper::resizeTableCellWidths(this, 300, 1000);
+	GUIHelper::resizeTableCellWidths(this, -1, 1000);
 
     //limit column width to 50% of window width
-    int max_width = 0.5 * width();
+	int max_width = 0.9 * width();
     for (int i=0; i<columnCount(); ++i)
     {
         if (columnWidth(i)>max_width)
