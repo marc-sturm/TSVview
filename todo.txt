@@ -1,3 +1,4 @@
+- set as unmodified when "save as" is used
 - add date support (german, US and ISO)
 - color dots in scatter plot according to ENUM column
 - show outliers in bar plot?
