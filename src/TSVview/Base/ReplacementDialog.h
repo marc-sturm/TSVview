@@ -17,7 +17,7 @@ public:
 	~ReplacementDialog();
 
 	void setKeys(QSet<QString> keys);
-	QMap<QString, double> getMap();
+	QMap<QString, QPair<double, char>> getMap();
 
 private:
 	Ui::ReplacementDialog ui_;

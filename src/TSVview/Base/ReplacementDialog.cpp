@@ -1,11 +1,10 @@
 #include "ReplacementDialog.h"
 #include "ui_ReplacementDialog.h"
-
 #include <math.h>
 #include <QDoubleValidator>
-
-#include "QLabel"
-#include "QLineEdit"
+#include <QLabel>
+#include <QLineEdit>
+#include "NumericColumn.h"
 
 ReplacementDialog::ReplacementDialog(QWidget *parent) :
 	QDialog(parent)
@@ -35,7 +34,9 @@ void ReplacementDialog::setKeys(QSet<QString> keys)
 
 		QLineEdit* edit = new QLineEdit();
 		edit->setObjectName("e" + QString::number(row));
-		edit->setValidator(new QDoubleValidator(edit));
+		QDoubleValidator* validator = new QDoubleValidator(edit);
+		validator->setLocale(QLocale::C);
+		edit->setValidator(validator);
 		layout->addWidget(edit, row, 1);
 
 		++row;
@@ -45,25 +46,16 @@ void ReplacementDialog::setKeys(QSet<QString> keys)
 	keys_ = keys;
 }
 
-QMap<QString, double> ReplacementDialog::getMap()
+QMap<QString, QPair<double, char> > ReplacementDialog::getMap()
 {
-	QMap<QString, double> output;
+	QMap<QString, QPair<double, char>> output;
 
 	int row = 0;
 	for (QSet<QString>::const_iterator it=keys_.begin(); it!=keys_.end(); ++it)
 	{
 		QLineEdit* edit = ui_.main->findChild<QLineEdit*>("e" + QString::number(row));
 
-		bool ok;
-		double value = edit->text().toDouble(&ok);
-		if (ok)
-		{
-			output.insert(*it, value);
-		}
-		else
-		{
-			output.insert(*it, NAN);
-		}
+		output.insert(*it, NumericColumn::toDouble(edit->text(), true));
 
 		++row;
 	}

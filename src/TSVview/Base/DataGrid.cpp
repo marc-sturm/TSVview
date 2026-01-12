@@ -430,7 +430,7 @@ void DataGrid::convertNumericDict_()
 
 	if (dialog->exec())
 	{
-		QMap<QString, double> map = dialog->getMap();
+		QMap<QString, QPair<double, char>> map = dialog->getMap();
 
 		//create new column
 		QVector<double> new_data;
@@ -440,7 +440,7 @@ void DataGrid::convertNumericDict_()
 		for (int i=0; i<data.count(); ++i)
         {
             auto tmp = NumericColumn::toDouble(data[i], true);
-            if (std::isnan(tmp.first)) tmp.first = map[data[i]];
+			if (std::isnan(tmp.first)) tmp = map[data[i]];
             new_data << tmp.first;
             new_decimals << tmp.second;
 		}

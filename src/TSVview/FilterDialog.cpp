@@ -40,12 +40,15 @@ FilterDialog::FilterDialog(BaseColumn* column, QWidget* parent)
 	else
 	{
 		ui_.text_dropdown->setMenu(new QMenu());
+		connect(ui_.text_dropdown->menu(), SIGNAL(aboutToShow()), this, SLOT(updateDropdownText()));
 	}
 
 	//set validator (for float)
 	if (column->type() == BaseColumn::NUMERIC)
 	{
-		ui_.value->setValidator(new QDoubleValidator(this));
+		QDoubleValidator* validator = new QDoubleValidator(this);
+		validator->setLocale(QLocale::C);
+		ui_.value->setValidator(validator);
 	}
 
 	//set current operation
@@ -69,7 +72,6 @@ FilterDialog::FilterDialog(BaseColumn* column, QWidget* parent)
 	//connect slot
 	connect(ui_.set, SIGNAL(clicked()), this, SLOT(set_()));
 	connect(ui_.text_dropdown, SIGNAL(triggered(QAction*)), this, SLOT(insertSelectedText(QAction*)));
-	connect(ui_.text_dropdown->menu(), SIGNAL(aboutToShow()), this, SLOT(updateDropdownText()));
 	connect(ui_.operation, SIGNAL(activated(int)), ui_.value, SLOT(selectAll()));
 	connect(ui_.operation, SIGNAL(activated(int)), ui_.value, SLOT(setFocus()));
 

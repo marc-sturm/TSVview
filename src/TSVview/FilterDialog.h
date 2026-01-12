@@ -2,7 +2,6 @@
 #define FILTERDIALOG_H
 
 #include <QDialog>
-
 #include "BaseColumn.h"
 #include "ui_FilterDialog.h"
 
