@@ -37,7 +37,8 @@ public slots:
     void on_actionExportHTML_triggered(bool);
     void on_actionExportCSV_triggered(bool);
     void on_resizeColumnWidth_triggered(bool);
-    void on_resizeColumnHeight_triggered(bool);
+	void on_resizeColumnHeightMinimum_triggered(bool);
+	void on_resizeColumnHeight_triggered(bool);
 	void on_goToRow_triggered(bool);
 	void on_findText_triggered(bool);
 	void on_filter_triggered(bool);

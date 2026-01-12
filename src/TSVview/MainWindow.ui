@@ -99,6 +99,7 @@
      <string>View</string>
     </property>
     <addaction name="resizeColumnWidth"/>
+    <addaction name="resizeColumnHeightMinimum"/>
     <addaction name="resizeColumnHeight"/>
     <addaction name="separator"/>
     <addaction name="toggleColumnIndex"/>
@@ -281,14 +282,19 @@
     <string>Open file folder in explorer</string>
    </property>
   </action>
-  <action name="resizeColumnHeight">
+  <action name="resizeColumnHeightMinimum">
    <property name="text">
-    <string>Resize column height to content</string>
+    <string>Resize column height to content (minimum for all)</string>
    </property>
   </action>
   <action name="actionSaveAs">
    <property name="text">
     <string>Save as</string>
+   </property>
+  </action>
+  <action name="resizeColumnHeight">
+   <property name="text">
+    <string>Resize column height to content (each row individually)</string>
    </property>
   </action>
  </widget>

@@ -1,5 +1,3 @@
-- improve column heights: T:\projects\diagnostic\LR_Diagnostik_Genome\Sample_DNA2508620B1_01\DNA2508620B1_01_cnvs_clincnv.tsv
-- set as unmodified when "save as" is used
 - add date support (german, US and ISO)
 - color dots in scatter plot according to ENUM column
 - show outliers in bar plot?

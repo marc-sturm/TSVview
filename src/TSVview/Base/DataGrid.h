@@ -50,9 +50,9 @@ public:
 	void filtersFromString(QString filters);
 
     //Resize column width
-    void resizeColumnWidth();
+	void resizeColumnWidth();
     //Resize column height
-    void resizeColumnHeight();
+	void resizeColumnHeight(bool use_minimum);
     //Column widths
     QList<int> columnWidths() const;
 

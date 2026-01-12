@@ -1370,28 +1370,24 @@ void DataGrid::resizeColumnWidth()
     QElapsedTimer timer;
     timer.start();
 
-	GUIHelper::resizeTableCellWidths(this, -1, 1000);
-
-    //limit column width to 50% of window width
-	int max_width = 0.9 * width();
-    for (int i=0; i<columnCount(); ++i)
-    {
-        if (columnWidth(i)>max_width)
-        {
-            setColumnWidth(i, max_width);
-        }
-    }
+	GUIHelper::resizeTableCellWidths(this, 800, 1000);
 
     qDebug() << "resizing column width to content: ms=" << timer.elapsed();
 }
 
-void DataGrid::resizeColumnHeight()
+void DataGrid::resizeColumnHeight(bool use_minimum)
 {
     QElapsedTimer timer;
     timer.start();
 
-    GUIHelper::resizeTableCellHeightsToMinimum(this, 1000);
-
+	if (use_minimum)
+	{
+		GUIHelper::resizeTableCellHeightsToMinimum(this, 1000);
+	}
+	else
+	{
+		this->resizeRowsToContents();
+	}
     qDebug() << "resizing column height to content: ms=" << timer.elapsed();
 }
 

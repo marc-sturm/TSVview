@@ -226,8 +226,8 @@ void MainWindow::openFile_(QString filename, bool remember_path, bool show_impor
     }
     if (!col_widths_from_file_used)
     {
-        on_resizeColumnWidth_triggered(true);
-        on_resizeColumnHeight_triggered(true);
+		ui_.grid->resizeColumnWidth();
+		ui_.grid->resizeColumnHeight(true);
     }
 
 	//re-enable data signals
@@ -275,6 +275,7 @@ void MainWindow::on_actionSaveAs_triggered(bool)
     QString filename = QFileDialog::getSaveFileName(this, "Save as",  filename_, "TSV files (*.tsv *.tsv.gz);;All files (*.*)");
     data_.store(filename, ui_.grid->columnWidths());
     setFile(filename);
+	data_.setModified(false);
 }
 
 void MainWindow::on_actionExportHTML_triggered(bool)
@@ -298,10 +299,14 @@ void  MainWindow::on_resizeColumnWidth_triggered(bool)
     ui_.grid->resizeColumnWidth();
 }
 
+void  MainWindow::on_resizeColumnHeightMinimum_triggered(bool)
+{
+	ui_.grid->resizeColumnHeight(true);
+}
 
 void  MainWindow::on_resizeColumnHeight_triggered(bool)
 {
-    ui_.grid->resizeColumnHeight();
+	ui_.grid->resizeColumnHeight(false);
 }
 
 void  MainWindow::on_goToRow_triggered(bool)
