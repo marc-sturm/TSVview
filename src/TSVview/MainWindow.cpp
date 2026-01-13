@@ -21,7 +21,6 @@
 #include "BoxPlot.h"
 #include <QStyleFactory>
 #include <QLibraryInfo>
-#include <QProcessEnvironment>
 #include "Helper.h"
 #include "Log.h"
 
@@ -30,7 +29,7 @@ MainWindow::MainWindow(QWidget *parent)
 	, ui_()
 	, delayed_init_timer_(this, true)
 	, data_()
-    , debug_(QProcessEnvironment::systemEnvironment().contains("QTDIR"))
+	, debug_(Helper::runningInQtCreator())
 	, recent_files_()
 {
 	ui_.setupUi(this);

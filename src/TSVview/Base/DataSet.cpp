@@ -536,6 +536,7 @@ QHash<int, ColumnInfo> DataSet::load(QString filename, QString display_name)
         QStringList parts = line.split('\t');
 
         //check number of elements is correct
+		if (cols==-1) THROW(FileParseException, "Invalid TSV file: no header line found!\nPlease use 'Import from file' to import data.");
         if (parts.count()!=cols) THROW(FileParseException, "Mixed number of columns in " + display_name + "!\nExpected " + QString::number(cols) + " based on header line, but found " + QString::number(parts.count()) + " in line " + QString::number(line_nr) + ":\n" + line);
 
         //add data to columns
