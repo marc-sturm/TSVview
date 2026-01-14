@@ -79,9 +79,12 @@ void HistogramPlot::plot()
 	Histogram hist(min, max, (max-min)/bins);
 	for (int i=0; i<filter_.count(); ++i)
 	{
+		double value = col_[i];
+		if (!BasicStatistics::isValidFloat(value)) continue;
+
 		if (filter_[i])
 		{
-			hist.inc(col_[i], true);
+			hist.inc(value, true);
 		}
 	}
 	QBarSet* set = new QBarSet("visible");
@@ -98,9 +101,12 @@ void HistogramPlot::plot()
 		Histogram hist2(min, max, (max-min)/bins);
 		for (int i=0; i<filter_.count(); ++i)
 		{
+			double value = col_[i];
+			if (!BasicStatistics::isValidFloat(value)) continue;
+
 			if (!filter_[i])
 			{
-				hist2.inc(col_[i], true);
+				hist2.inc(value, true);
 			}
 		}
 		QBarSet* set2 = new QBarSet("filtered");
@@ -147,12 +153,13 @@ QPair<double, double> HistogramPlot::getMinMax()
 	bool show_filtered = params_.getBool("filtered");
 	for (int i=0; i<filter_.count(); ++i)
 	{
-		if (!BasicStatistics::isValidFloat(col_[i])) continue;
+		double value = col_[i];
+		if (!BasicStatistics::isValidFloat(value)) continue;
 
 		if (show_filtered || filter_[i])
 		{
-			if (col_[i]<min) min = col_[i];
-			if (col_[i]>max) max = col_[i];
+			if (value<min) min = value;
+			if (value>max) max = value;
 		}
 	}
 
