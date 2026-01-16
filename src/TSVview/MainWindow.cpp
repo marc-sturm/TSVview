@@ -184,29 +184,41 @@ void MainWindow::openFile_(QString filename, bool remember_path, bool show_impor
 	//reset GUI
     setFile("");
 
-	//load file
-    QHash<int, ColumnInfo> col_infos;
-    data_.blockSignals(true);
-    try
-    {
-        if (show_import_dialog || !isTsv(filename))
-        {
-            TextImportPreview preview(filename, filename, filename.endsWith(".csv") ,this);
-            if(preview.exec())
-            {
-                data_.import(filename, filename, preview.parameters());
-            }
-		}
-        else
-        {
-            col_infos = data_.load(filename, filename);
-            setFile(filename);
-        }
-    }
-	catch (Exception& e)
+	//always show the import dialog if not TSV
+	if (!isTsv(filename)) show_import_dialog = true;
+
+	//try to load data if no import dialog shall be shown. If loading fails, show import dialog anyway.
+	data_.blockSignals(true);
+	QHash<int, ColumnInfo> col_infos;
+	if (!show_import_dialog) //try loading
 	{
-		QMessageBox::warning(this, "Error loading file.", e.message());
-    }
+		try
+		{
+			col_infos = data_.load(filename, filename);
+			setFile(filename);
+		}
+		catch (Exception& e)
+		{
+			show_import_dialog = true;
+		}
+	}
+
+	//show import dialog
+	if (show_import_dialog)
+	{
+		try
+		{
+			TextImportPreview preview(filename, filename, filename.endsWith(".csv") ,this);
+			if(preview.exec())
+			{
+				data_.import(filename, filename, preview.parameters());
+			}
+		}
+		catch (Exception& e)
+		{
+			QMessageBox::warning(this, "Error loading file.", e.message());
+		}
+	}
 
 	//update GUI
 	updateFilters();
