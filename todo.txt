@@ -1,4 +1,5 @@
 - bug: files without header are not loaded correctly when forcing the first line as header
+- bug: open GSvar via context menu > no file name
 - add date support (german, US and ISO)
 - color dots in scatter plot according to ENUM column
 - show outliers in bar plot?
