@@ -651,7 +651,7 @@ void DataSet::import(QString filename, QString display_name, Parameters params, 
         if (first_line_is_comment && is_first_content_line)
         {
             is_first_content_line = false;
-            comments << line;
+			comments << (comment_char+line);
             continue;
         }
 
@@ -743,7 +743,7 @@ void DataSet::import(QString filename, QString display_name, Parameters params, 
         convertStringToNumeric(c);
     }
 
-    setModified(true, true);
+	setModified(first_line_is_comment, true);
 
     qDebug() << "import data: c=" << columnCount() << "r=" << rowCount() << "ms=" << timer.restart();
 }

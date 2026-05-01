@@ -212,6 +212,7 @@ void MainWindow::openFile_(QString filename, bool remember_path, bool show_impor
 			if(preview.exec())
 			{
 				data_.import(filename, filename, preview.parameters());
+				setFile(filename);
 			}
 		}
 		catch (Exception& e)
@@ -892,6 +893,7 @@ void MainWindow::dropEvent(QDropEvent* e)
 		return;
 	}
 
+	storeModifiedDataset_();
 	openFile_(filename);
 }
 
