@@ -306,7 +306,7 @@ void DataGrid::removeSelectedColumns()
 		return;
 	}
 
-	data_->removeColumns(LIST_TO_SET(selectedColumns()));
+	data_->removeColumns(Helper::listToSet(selectedColumns()));
 }
 
 void DataGrid::renameColumn_()
@@ -870,10 +870,10 @@ void DataGrid::keepDuplicates_()
 {
     if (selectedColumns().count()==0) return;
 
-	int col = selectedColumns()[0];
+	int col = selectedColumns().at(0);
 
 	//count values
-    QHash<QString, QSet<int>> value_to_rows; //TODO just count (int instead of QSet<int>)
+	QHash<QString, QSet<int>> value_to_rows;
 	for (int r=0; r<data_->rowCount(); ++r)
 	{
 		QString value = data_->column(col).string(r);

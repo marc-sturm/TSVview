@@ -9,6 +9,7 @@
 #include "HistogramPlot.h"
 #include "Histogram.h"
 #include "ParameterEditor.h"
+#include "BasicStatistics.h"
 
 HistogramPlot::HistogramPlot(QWidget *parent)
 	: BasePlot(parent)

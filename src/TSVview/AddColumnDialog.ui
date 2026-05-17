@@ -141,6 +141,13 @@ columns the formula '[0] + [1]' would be used.</string>
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>name</tabstop>
+  <tabstop>pos_col</tabstop>
+  <tabstop>value</tabstop>
+  <tabstop>formula</tabstop>
+  <tabstop>decimals</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

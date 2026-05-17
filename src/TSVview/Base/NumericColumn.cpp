@@ -72,7 +72,6 @@ void NumericColumn::appendString(const QString& value)
 
 void NumericColumn::sort(bool reverse)
 {
-    //TODO also sort decimal places!!!
 	if (!reverse)
 	{
 		std::sort(values_.begin(), values_.end(), NanAwareDoubleComp());

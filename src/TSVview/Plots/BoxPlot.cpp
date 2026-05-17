@@ -9,6 +9,7 @@
 #include "BoxPlot.h"
 #include "ParameterEditor.h"
 #include "DataSet.h"
+#include "BasicStatistics.h"
 
 BoxPlot::BoxPlot(QWidget *parent)
 	: BasePlot(parent)
