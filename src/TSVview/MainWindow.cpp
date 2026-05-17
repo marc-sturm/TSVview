@@ -23,6 +23,7 @@
 #include <QLibraryInfo>
 #include "Helper.h"
 #include "Log.h"
+#include "AboutDialog.h"
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
@@ -610,16 +611,10 @@ void MainWindow::boxPlot()
 
 void MainWindow::on_about_triggered(bool /*checked*/)
 {
-	QString about_text = QApplication::applicationName() + " " + QApplication::applicationVersion();
-
-	about_text += "\n\n";
-	about_text += "A free TSV viewer.";
-
-    about_text += "\n\n";
-	about_text += "Architecture: " + QSysInfo::buildCpuArchitecture() + "\n";
-	about_text += "Qt version: " + QLibraryInfo::version().toString() + "\n";
-
-	QMessageBox::about(this, QApplication::applicationName(), about_text);
+	AboutDialog dlg(this);
+	dlg.setIcon(QPixmap(":/Icons/Icon.png"));
+	dlg.setDescription("A free TSV viewer.<br>For releases and issues, see <a href='https://github.com/marc-sturm/TSVview'>GitHub</a>.");
+	dlg.exec();
 }
 
 void MainWindow::addToRecentFiles_(QString filename)
