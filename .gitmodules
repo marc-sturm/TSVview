@@ -1,6 +1,6 @@
 [submodule "src/cppCORE"]
 	path = src/cppCORE
-	url = https://github.com/marc-sturm/cppCORE.git
+	url = https://github.com/imgag/cppCORE.git
 [submodule "src/cppGUI"]
 	path = src/cppGUI
-	url = https://github.com/marc-sturm/cppGUI.git
+	url = https://github.com/imgag/cppGUI.git
