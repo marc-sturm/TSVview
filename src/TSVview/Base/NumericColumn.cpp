@@ -103,7 +103,7 @@ void NumericColumn::setFilter(Filter filter)
 	emit filterChanged();
 }
 
-void NumericColumn::matchFilter(QBitArray &array) const
+void NumericColumn::matchFilter(QBitArray& array) const
 {
 	Filter::Type type = filter().type();
 	if (type == Filter::NONE)
@@ -111,7 +111,7 @@ void NumericColumn::matchFilter(QBitArray &array) const
 		return;
 	}
 
-	double value = filter().value().toFloat();
+	double value = filter().value().toDouble();
 
 	if (type == Filter::FLOAT_EXACT)
 	{

@@ -110,7 +110,7 @@ void StringColumn::matchFilter(QBitArray& array) const
 		{
 			if (array[r])
 			{
-				array[r] = regexp.match(values_[r]).hasMatch();
+				array[r] = !regexp.match(values_[r]).hasMatch();
 			}
 		}
 	}
