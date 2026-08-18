@@ -25,6 +25,7 @@
 #include "AddColumnDialog.h"
 #include "TextItemEditDialog.h"
 #include "Helper.h"
+#include "DateColumn.h"
 
 DataGrid::DataGrid(QWidget* parent)
 	: QTableWidget(parent)
@@ -311,7 +312,7 @@ void DataGrid::removeSelectedColumns()
 
 void DataGrid::renameColumn_()
 {
-	int column = selectedColumns()[0];
+	int column = selectedColumns().at(0);
 	QString header = data_->column(column).header();
 	bool ok = true;
 	header = QInputDialog::getText(this, "Set column header", "Header:", QLineEdit::Normal, header, &ok);
@@ -360,10 +361,11 @@ void DataGrid::convertNumericNan_()
 	}
 
 	//replace column
-	QString header = data_->column(col_index).header();
-    data_->replaceColumn(col_index, header, new_data, new_decimals);
+	NumericColumn* col = new NumericColumn();
+	col->setHeader(data_->column(col_index).header());
+	col->setValues(new_data, new_decimals);
+	data_->replaceColumn(col_index, col);
 }
-
 
 void DataGrid::convertNumericSingle_()
 {
@@ -394,8 +396,10 @@ void DataGrid::convertNumericSingle_()
 	}
 
 	//replace column
-	QString header = data_->column(col_index).header();
-    data_->replaceColumn(col_index, header, new_data, new_decimals);
+	NumericColumn* col = new NumericColumn();
+	col->setHeader(data_->column(col_index).header());
+	col->setValues(new_data, new_decimals);
+	data_->replaceColumn(col_index, col);
 }
 
 
@@ -445,9 +449,11 @@ void DataGrid::convertNumericDict_()
             new_decimals << tmp.second;
 		}
 
-		//replace column
-		QString header = data_->column(col_index).header();
-        data_->replaceColumn(col_index, header, new_data, new_decimals);
+		//replace column		
+		NumericColumn* col = new NumericColumn();
+		col->setHeader(data_->column(col_index).header());
+		col->setValues(new_data, new_decimals);
+		data_->replaceColumn(col_index, col);
 	}
 }
 
@@ -701,6 +707,10 @@ void DataGrid::pasteColumn_(int index)
 		{
             data_->addColumn(data_tmp.column(i).header(), data_tmp.numericColumn(i).values(), data_tmp.numericColumn(i).decimals(), index);
 		}
+		else if (col.type()==BaseColumn::DATE)
+		{
+			data_->addColumn(data_tmp.column(i).header(), data_tmp.dateColumn(i).values(), index);
+		}
 		else
 		{
             data_->addColumn(data_tmp.column(i).header(), data_tmp.stringColumn(i).values(), index);
@@ -817,11 +827,13 @@ void DataGrid::renderHeaders()
 	{
 		QString header = data_->column(c).headerOrIndex(c, show_column_index);
 		QTableWidgetItem* item  = new QTableWidgetItem(header);
-		if (data_->column(c).type()==BaseColumn::STRING)
+		if (data_->column(c).type()==BaseColumn::NUMERIC)
 		{
-			QFont font;
-			font.setItalic(true);
-			item->setFont(font);
+			item->setIcon(QPixmap(":/Icons/ColumnNumeric.png"));
+		}
+		else if (data_->column(c).type()==BaseColumn::DATE)
+		{
+			item->setIcon(QPixmap(":/Icons/ColumnDate.png"));
 		}
 		setHorizontalHeaderItem(c, item);
 		item->setTextAlignment(Qt::AlignLeft);
@@ -988,6 +1000,23 @@ void DataGrid::reduceToFiltered()
 
             column.setValues(values, decimals);
 		}
+		//date column
+		else if (data_->column(c).type()==BaseColumn::DATE)
+		{
+			DateColumn& column = data_->dateColumn(c);
+
+			QVector<QDate> values;
+			values.reserve(filtered_rows.count());
+			for (int r=0; r<filtered_rows.count(); ++r)
+			{
+				if (filtered_rows[r])
+				{
+					values.append(column.value(r));
+				}
+			}
+
+			column.setValues(values);
+		}
 		//string column
 		else
 		{
@@ -1153,6 +1182,26 @@ void DataGrid::editCurrentItem(QTableWidgetItem* item)
 		if (new_value != value)
 		{
             column.setValue(row, new_value);
+		}
+	}
+	//edit date columns
+	if (data_->column(col).type() == BaseColumn::DATE) //TODO improve: date edit dialog
+	{
+		DateColumn& column = data_->dateColumn(col);
+		QDate value = column.value(row);
+		QString text = QInputDialog::getText(this, "Edit date item", "Date", QLineEdit::Normal, value.toString(Qt::ISODate));
+		if (text=="")
+		{
+			column.setValue(row, QDate());
+		}
+		else
+		{
+			QDate new_value = QDate::fromString(text, Qt::ISODate);
+			if (new_value.isValid())
+			{
+				column.setValue(row, new_value);
+
+			}
 		}
 	}
 	//edit string column

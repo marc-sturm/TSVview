@@ -738,7 +738,17 @@ void MainWindow::on_actionGenerateExampleData_triggered(bool)
     }
     tmp.addColumn("col_float", c2, QVector<char>(rows, 2));
 
-    //store
+	//add date column
+	QVector<QDate> c3;
+	for(int i=0; i<rows; ++i)
+	{
+		QString text = "202"+QString::number(std::round(Helper::randomNumber(1, 9)))+"-0"+QString::number(std::round(Helper::randomNumber(1, 9)))+"-"+QString::number(std::round(Helper::randomNumber(10, 31)));
+		qDebug() << text;
+		c3 << QDate::fromString(text, Qt::ISODate);
+	}
+	tmp.addColumn("col_date1", c3);
+
+
     tmp.store(QApplication::applicationDirPath() + "/example_data.tsv", QList<int>(tmp.columnCount(), -1));
 }
 

@@ -16,6 +16,7 @@ INCLUDEPATH += Signal
 LIBS += -lz
 
 SOURCES += \
+    Base/DateColumn.cpp \
     GrepDialog.cpp \
     Main.cpp \
     MainWindow.cpp \
@@ -49,6 +50,7 @@ SOURCES += \
     TextItemEditDialog.cpp
     
 HEADERS += \
+    Base/DateColumn.h \
     GrepDialog.h \
     MainWindow.h \
     Base/Parameters.h \

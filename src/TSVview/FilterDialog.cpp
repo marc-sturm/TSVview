@@ -23,6 +23,13 @@ FilterDialog::FilterDialog(BaseColumn* column, QWidget* parent)
 		addOperation_(Filter::FLOAT_GREATER);
 		addOperation_(Filter::FLOAT_GREATER_EQUAL);
 	}
+	else if (column_->type() == BaseColumn::NUMERIC)
+	{
+		addOperation_(Filter::DATE_EXACT);
+		addOperation_(Filter::DATE_EXACT_NOT);
+		addOperation_(Filter::DATE_LESS_EQUAL);
+		addOperation_(Filter::DATE_GREATER_EQUAL);
+	}
 	else
 	{
 		addOperation_(Filter::STRING_EXACT);

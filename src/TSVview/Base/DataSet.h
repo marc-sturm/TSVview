@@ -3,6 +3,7 @@
 
 #include "StringColumn.h"
 #include "NumericColumn.h"
+#include "DateColumn.h"
 #include <Helper.h>
 #include <QSet>
 
@@ -47,13 +48,13 @@ public:
 		Q_ASSERT(column<columns_.size());
 		return *(columns_[column]);
 	}
+
 	const StringColumn& stringColumn(int column) const
 	{
 		Q_ASSERT(column<columns_.size());
 		Q_ASSERT(columns_[column]->type()==BaseColumn::STRING);
 		return *dynamic_cast<const StringColumn*>(columns_[column]);
 	}
-
 	StringColumn& stringColumn(int column)
 	{
 		Q_ASSERT(column<columns_.size());
@@ -61,6 +62,7 @@ public:
 
 		return *dynamic_cast<StringColumn*>(columns_[column]);
 	}
+
 	const NumericColumn& numericColumn(int column) const
 	{
 		Q_ASSERT(column<columns_.size());
@@ -74,6 +76,21 @@ public:
 		Q_ASSERT(columns_[column]->type()==BaseColumn::NUMERIC);
 
 		return *dynamic_cast<NumericColumn*>(columns_[column]);
+	}
+
+	const DateColumn& dateColumn(int column) const
+	{
+		Q_ASSERT(column<columns_.size());
+		Q_ASSERT(columns_[column]->type()==BaseColumn::NUMERIC);
+
+		return *dynamic_cast<const DateColumn*>(columns_[column]);
+	}
+	DateColumn& dateColumn(int column)
+	{
+		Q_ASSERT(column<columns_.size());
+		Q_ASSERT(columns_[column]->type()==BaseColumn::NUMERIC);
+
+		return *dynamic_cast<DateColumn*>(columns_[column]);
 	}
 
 	/// Retruns the column header list.
@@ -102,11 +119,13 @@ public:
 	void removeColumns(QSet<int> columns);
     void addColumn(QString header, const QVector<double>& data, const QVector<char>& decimals, int index = -1);
     void addColumn(QString header, const QVector<QString>& data, int index = -1);
-    void replaceColumn(int index, QString header, const QVector<double>& data, const QVector<char>& decimals);
+	void addColumn(QString header, const QVector<QDate>& data, int index = -1);
+	void replaceColumn(int index, BaseColumn* new_col);
 	void sortByColumn(int column, bool reverse);
 	void mergeColumns(QList<int> cols, QString header, QString sep);
 	void reduceToRows(QSet<int> rows);
 	void convertStringToNumeric(int c);
+	void convertStringToDate(int c);
 
 	bool modified() const
 	{
@@ -141,6 +160,12 @@ public:
     {
         return str=="inf" || str=="INF" || str=="nan" || str=="NAN" || Helper::isNumeric(str);
     }
+
+	static bool isDate(const QString& str)
+	{
+		return str=="" || QDate::fromString(str, Qt::ISODate).isValid();
+	}
+
 
 signals:
 	void headersChanged();

@@ -63,7 +63,8 @@ public:
 		values_.reserve(rows);
         decimals_.reserve(rows);
 	}
-	virtual void sort(bool reverse=false);
+	virtual QVector<int> getSortOrder(bool reverse);
+	virtual void reorder(const QVector<int>& order);
     virtual qsizetype count() const
 	{
 		return values_.count();

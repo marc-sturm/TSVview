@@ -65,6 +65,14 @@ QString Filter::typeToString(Filter::Type type, bool human_readable)
 				return "<";
 			case Filter::FLOAT_LESS_EQUAL:
 				return "<=";
+			case Filter::DATE_EXACT:
+				return "=";
+			case Filter::DATE_EXACT_NOT:
+				return "!=";
+			case Filter::DATE_GREATER_EQUAL:
+				return "<=";
+			case Filter::DATE_LESS_EQUAL:
+				return ">=";
 		}
 	}
 	else
@@ -97,6 +105,14 @@ QString Filter::typeToString(Filter::Type type, bool human_readable)
 				return "FLOAT_LESS";
 			case Filter::FLOAT_LESS_EQUAL:
 				return "FLOAT_LESS_EQUAL";
+			case Filter::DATE_EXACT:
+				return "DATE_EXACT";
+			case Filter::DATE_EXACT_NOT:
+				return "DATE_EXACT_NOT";
+			case Filter::DATE_GREATER_EQUAL:
+				return "DATE_GREATER_EQUAL";
+			case Filter::DATE_LESS_EQUAL:
+				return "DATE_LESS_EQUAL";
 		}
 	}
 
