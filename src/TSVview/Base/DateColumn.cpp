@@ -41,8 +41,9 @@ void DateColumn::appendString(const QString& value)
 
 QVector<int> DateColumn::getSortOrder(bool reverse)
 {
-	//create tmp datastructure with value and index
 	const int size = count();
+
+	//create tmp datastructure with value and index
 	QVector<QPair<QDate, int>> tmp;
 	tmp.reserve(size);
 	for (int i=0; i<size; ++i)
@@ -76,6 +77,7 @@ QVector<int> DateColumn::getSortOrder(bool reverse)
 void DateColumn::reorder(const QVector<int>& order)
 {
 	const int size = count();
+	Q_ASSERT(size==order.count());
 
 	QVector<QDate> new_col;
 	new_col.reserve(size);

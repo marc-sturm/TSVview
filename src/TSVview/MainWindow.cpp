@@ -484,9 +484,14 @@ void MainWindow::tableContextMenu(QPoint point)
 		QList<int> selected = ui_.grid->selectedColumns();
 		int selected_count = selected.size();
 		int text_count = 0;
+		int date_count = 0;
+		int num_count = 0;
 		for (int i=0; i<selected.size(); ++i)
 		{
-			text_count += (data_.column(selected[i]).type()==BaseColumn::STRING);
+			BaseColumn::Type type = data_.column(selected[i]).type();
+			if (type==BaseColumn::STRING) text_count += 1;
+			else if (type==BaseColumn::NUMERIC) num_count += 1;
+			else date_count += 1;
 		}
 
 		//separator
@@ -494,11 +499,11 @@ void MainWindow::tableContextMenu(QPoint point)
 
 		//statistics
 		QAction* action = main_menu->addAction("Basic statistics", this, SLOT(basicStatistics()));
-		action->setEnabled(selected_count==1 && text_count==0);
+		action->setEnabled(selected_count==1 && num_count==1);
 
 		//plots
 		QMenu* menu = main_menu->addMenu("Plots");
-		menu->setEnabled(selected_count>0 && text_count==0);
+		menu->setEnabled(selected_count>0 && num_count==selected_count);
 		action = menu->addAction(QIcon(":/Icons/Histogram.png"), "Histogram", this, SLOT(histogram()));
 		action->setEnabled(selected_count==1);
 		action = menu->addAction(QIcon(":/Icons/Scatterplot.png"), "Scatter plot", this, SLOT(scatterPlot()));
@@ -510,7 +515,7 @@ void MainWindow::tableContextMenu(QPoint point)
 
 		//signal processing
         menu = main_menu->addMenu("Smoothing");
-		menu->setEnabled(selected_count==1 && text_count==0);
+		menu->setEnabled(selected_count==1 && num_count==1);
 		menu->addAction("Moving average", this, SLOT(smoothAverage()));
 		menu->addAction("Moving median", this, SLOT(smoothMedian()));
 		menu->addAction("Savitzky-Golay", this, SLOT(smoothSavitzkyGolay()));

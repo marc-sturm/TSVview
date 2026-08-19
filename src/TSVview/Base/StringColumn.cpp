@@ -34,7 +34,7 @@ QVector<int> StringColumn::getSortOrder(bool reverse)
 
 	//create output
 	QVector<int> indices;
-	indices.resize(size);
+	indices.reserve(size);
 	foreach(const auto& pair, tmp)
 	{
 		indices << pair.second;
@@ -46,6 +46,7 @@ QVector<int> StringColumn::getSortOrder(bool reverse)
 void StringColumn::reorder(const QVector<int>& order)
 {
 	const int size = count();
+	Q_ASSERT(size==order.count());
 
 	QVector<QString> new_col;
 	new_col.reserve(size);

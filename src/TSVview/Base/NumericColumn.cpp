@@ -107,6 +107,7 @@ QVector<int> NumericColumn::getSortOrder(bool reverse)
 void NumericColumn::reorder(const QVector<int>& order)
 {
 	const int size = count();
+	Q_ASSERT(size==order.count());
 
 	QVector<double> new_col;
 	new_col.reserve(size);
