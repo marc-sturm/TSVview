@@ -2,12 +2,14 @@
 #include <QLineSeries>
 #include "Helper.h"
 #include "ScatterPlot.h"
-#include "StatisticsSummary.h"
 #include "BasicStatistics.h"
 #include "math.h"
+#include <QValueAxis>
+#include <QDateTimeAxis>
 
 ScatterPlot::ScatterPlot(QWidget *parent)
 	: BasePlot(parent)
+	, x_is_date_(false)
 {
 	//set default parameters
 	params_.addColor("color", "", Qt::darkBlue);
@@ -38,17 +40,47 @@ ScatterPlot::ScatterPlot(QWidget *parent)
 
 void ScatterPlot::setData(const DataSet& data, int col1, int col2, QString filename)
 {
+	//one date and one numeric column > make sure date column is X
+	BaseColumn::Type type1 = data.column(col1).type();
+	BaseColumn::Type type2 = data.column(col2).type();
+	if (type1==BaseColumn::NUMERIC && type2==BaseColumn::DATE)
+	{
+		int tmp = col1;
+		col1 = col2;
+		col2 = tmp;
+		x_is_date_ = true;
+	}
+	else if (type1==BaseColumn::DATE && type2==BaseColumn::NUMERIC)
+	{
+		x_is_date_ = true;
+	}
+
+	//determine rows that are skipped because of non-numeric data
+	//TODO use QBitArray
+
+	//set base data
 	filter_ = data.getRowFilter(false);
-	col1_ = data.numericColumn(col1).values();
-	col2_ = data.numericColumn(col2).values();
+	if (x_is_date_)
+	{
+		values_x_.clear();
+		foreach(const QDate& date, data.dateColumn(col1).values())
+		{
+			values_x_ << (date.isValid() ? date.startOfDay().toMSecsSinceEpoch() : std::numeric_limits<double>::quiet_NaN());
+		}
+	}
+	else
+	{
+		values_x_ = data.numericColumn(col1).values();
+	}
+	values_y_ = data.numericColumn(col2).values();
 	filename_ = filename;
 
 	//create series of visible data
 	addSeries();
 
 	//set axes labels
-	chart_->axes(Qt::Horizontal).at(0)->setTitleText(data.numericColumn(col1).headerOrIndex(col1));
-	chart_->axes(Qt::Vertical).at(0)->setTitleText(data.numericColumn(col2).headerOrIndex(col2));
+	chart_->axes(Qt::Horizontal).at(0)->setTitleText(data.column(col1).headerOrIndex(col1));
+	chart_->axes(Qt::Vertical).at(0)->setTitleText(data.column(col2).headerOrIndex(col2));
 
 	//show chart
 	chart_view_->setChart(chart_);
@@ -83,8 +115,8 @@ void ScatterPlot::parameterChanged(QString parameter)
 			{
 				if (filter_[i])
 				{
-					x << col1_[i];
-					y << col2_[i];
+					x << values_x_[i];
+					y << values_y_[i];
 				}
 			}
 
@@ -128,7 +160,7 @@ void ScatterPlot::parameterChanged(QString parameter)
 		}
 		else
 		{
-			addSeriesFiltered();
+			addSeries(true);
 		}
 
 		//reset zoom range
@@ -158,13 +190,14 @@ void ScatterPlot::parameterChanged(QString parameter)
 		if (series!=nullptr)
 		{
 			chart_->removeSeries(series);
-			addSeriesFiltered();
+			addSeries(true);
 		}
 	}
 }
 
-void ScatterPlot::addSeries()
+void ScatterPlot::addSeries(bool filtered_out)
 {
+	//determine 1% noise value
 	double noise_perc_x = params_.getInt("position noise") / 100.0;
 	double noise_perc_y = params_.getInt("position noise") / 100.0;
 	bool add_noise = noise_perc_x>0;
@@ -173,74 +206,57 @@ void ScatterPlot::addSeries()
 		QRectF bb = getBoundingBox();
 		noise_perc_x *= bb.width();
 		noise_perc_y *= bb.height();
+		qDebug() << noise_perc_x << noise_perc_y;
 	}
 
+	//add series to chart
 	QScatterSeries* series = new QScatterSeries();
-	series->setName("visible");
-	setSymbol(series, params_.getInt("symbol size"), params_.getColor("color"));
+	series->setName(filtered_out ? "filtered" : "visible");
+	setSymbol(series, params_.getInt(filtered_out ? "filtered symbol size" : "symbol size"), params_.getColor(filtered_out ? "filtered color" : "color"));
 	for(int i=0; i<filter_.count(); ++i)
 	{
-		if (filter_[i])
+		if (filtered_out && filter_[i]) continue;
+		if (!filtered_out && !filter_[i]) continue;
+
+		double x = values_x_.value(i);
+		double y = values_y_.value(i);
+
+		if (!BasicStatistics::isValidFloat(x) || !BasicStatistics::isValidFloat(y)) continue;
+
+		if (add_noise)
 		{
-			double x = col1_.value(i);
-			double y = col2_.value(i);
-
-			if (!BasicStatistics::isValidFloat(x) || !BasicStatistics::isValidFloat(y)) continue;
-
-			if (add_noise)
-			{
-				x += Helper::randomNumber(-1,1) * noise_perc_x;
-				y += Helper::randomNumber(-1,1) * noise_perc_y;
-			}
-			series->append(x, y);
+			x += Helper::randomNumber(-1,1) * noise_perc_x;
+			y += Helper::randomNumber(-1,1) * noise_perc_y;
 		}
+		series->append(x, y);
 	}
 	chart_->addSeries(series);
 
 	//add/attach axes
 	if (chart_->axes().count()==0)
 	{
-		chart_->createDefaultAxes();
+		if (x_is_date_)
+		{
+			QDateTimeAxis* x_axis = new QDateTimeAxis();
+			x_axis->setFormat("yyyy-MM-dd");
+			chart_->addAxis(x_axis, Qt::AlignBottom);
+
+			QValueAxis* y_axis = new QValueAxis();
+			chart_->addAxis(y_axis, Qt::AlignLeft);
+
+			series->attachAxis(chart_->axes(Qt::Horizontal).at(0));
+			series->attachAxis(chart_->axes(Qt::Vertical).at(0));
+		}
+		else
+		{
+			chart_->createDefaultAxes();
+		}
 	}
 	else
 	{
 		series->attachAxis(chart_->axes(Qt::Horizontal).at(0));
 		series->attachAxis(chart_->axes(Qt::Vertical).at(0));
 	}
-}
-
-void ScatterPlot::addSeriesFiltered()
-{
-	double noise_perc_x = params_.getInt("position noise") / 100.0;
-	double noise_perc_y = params_.getInt("position noise") / 100.0;
-	bool add_noise = noise_perc_x>0;
-	if (add_noise)
-	{
-		QRectF bb = getBoundingBox();
-		noise_perc_x *= bb.width();
-		noise_perc_y *= bb.height();
-	}
-
-	QScatterSeries* series = new QScatterSeries();
-	series->setName("filtered");
-	setSymbol(series, params_.getInt("filtered symbol size"), params_.getColor("filtered color"));
-	for(int i=0; i<filter_.count(); ++i)
-	{
-		if (!filter_[i])
-		{
-			double x = col1_.value(i);
-			double y = col2_.value(i);
-			if (add_noise)
-			{
-				x += Helper::randomNumber(-1,1) * noise_perc_x;
-				y += Helper::randomNumber(-1,1) * noise_perc_y;
-			}
-			series->append(x, y);
-		}
-	}
-	chart_->addSeries(series);
-	series->attachAxis(chart_->axes(Qt::Horizontal).at(0));
-	series->attachAxis(chart_->axes(Qt::Vertical).at(0));
 }
 
 QRectF ScatterPlot::getBoundingBox() const
@@ -255,8 +271,9 @@ QRectF ScatterPlot::getBoundingBox() const
 	{
 		if (use_filtered || filter_[i])
 		{
-			double x = col1_[i];
-			double y = col2_[i];
+			double x = values_x_[i];
+			double y = values_y_[i];
+			if (!BasicStatistics::isValidFloat(x) || !BasicStatistics::isValidFloat(y)) continue;
 			if (x<x_min) x_min = x;
 			if (x>x_max) x_max = x;
 			if (y<y_min) y_min = y;
