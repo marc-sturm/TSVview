@@ -69,19 +69,56 @@ void NumericColumn::appendString(const QString& value)
 	emit dataChanged();
 }
 
-
-void NumericColumn::sort(bool reverse)
+QVector<int> NumericColumn::getSortOrder(bool reverse)
 {
+	const int size = count();
+
+	//create tmp datastructor with value and index
+	QVector<QPair<double, int>> tmp;
+	tmp.reserve(size);
+	for (int i=0; i<size; ++i)
+	{
+		double value = values_[i];
+		if (!BasicStatistics::isValidFloat(value)) value = std::numeric_limits<double>::max();
+		tmp.push_back(std::make_pair(value, i));
+	}
+
+	//sort the vector according to the value
 	if (!reverse)
 	{
-		std::sort(values_.begin(), values_.end(), NanAwareDoubleComp());
+		std::sort(tmp.begin(), tmp.end());
 	}
 	else
 	{
-		std::sort(values_.begin(), values_.end(), NanAwareDoubleComp(true));
+		std::sort(tmp.begin(), tmp.end(), std::greater<std::pair<double, int> >());
 	}
 
-	emit dataChanged();
+	//crete output
+	QVector<int> indices;
+	indices.reserve(size);
+	foreach (const auto& pair, tmp)
+	{
+		indices << pair.second;
+	}
+
+	return indices;
+}
+
+void NumericColumn::reorder(const QVector<int>& order)
+{
+	const int size = count();
+	Q_ASSERT(size==order.count());
+
+	QVector<double> new_col;
+	new_col.reserve(size);
+	QVector<char> new_col_dec;
+	new_col_dec.reserve(size);
+	for (int i=0; i<size; ++i)
+	{
+		new_col << values_[order[i]];
+		new_col_dec << decimals_[order[i]];
+	}
+	setValues(new_col, new_col_dec);
 }
 
 void NumericColumn::setFilter(Filter filter)

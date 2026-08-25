@@ -36,6 +36,15 @@ public:
 	QList<int> selectedColumns() const;
 	QList<int> selectedRows() const;
 
+	struct SelectionCount
+	{
+		int text=0;
+		int numeric=0;
+		int date=0;
+		int all=0;
+	};
+	SelectionCount selectionCount() const;
+
 	void setData(DataSet& dataset, int preview = 0);
 
 	QMenu* createStandardContextMenu();
@@ -46,7 +55,7 @@ public:
 
 	//Returns a parsable string representation of the current filter settings
 	QString filtersAsString();
-	//Applis the filter settings corrsponding to the given string representation
+	//Applies the filter settings corrsponding to the given string representation
 	void filtersFromString(QString filters);
 
     //Resize column width

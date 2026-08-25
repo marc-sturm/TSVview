@@ -10,18 +10,51 @@ StringColumn::StringColumn()
 {
 }
 
-void StringColumn::sort(bool reverse)
+QVector<int> StringColumn::getSortOrder(bool reverse)
 {
+	const int size = count();
+
+	//crete tmp datastructure with value and index
+	QVector<QPair<QString, int>> tmp;
+	tmp.reserve(size);
+	for (int i=0; i<size; ++i)
+	{
+		tmp << std::make_pair(values_[i], i);
+	}
+
+	//sort the vector according to the value
 	if (!reverse)
 	{
-		std::sort(values_.begin(), values_.end());
+		std::sort(tmp.begin(), tmp.end());
 	}
 	else
 	{
-		std::sort(values_.begin(), values_.end(), std::greater<QString>());
+		std::sort(tmp.begin(), tmp.end(), std::greater<std::pair<QString, int> >());
 	}
 
-	emit dataChanged();
+	//create output
+	QVector<int> indices;
+	indices.reserve(size);
+	foreach(const auto& pair, tmp)
+	{
+		indices << pair.second;
+	}
+
+	return indices;
+}
+
+void StringColumn::reorder(const QVector<int>& order)
+{
+	const int size = count();
+	Q_ASSERT(size==order.count());
+
+	QVector<QString> new_col;
+	new_col.reserve(size);
+	for (int i=0; i<size; ++i)
+	{
+		new_col << values_[order[i]];
+	}
+	setValues(new_col);
 }
 
 void StringColumn::setFilter(Filter filter)

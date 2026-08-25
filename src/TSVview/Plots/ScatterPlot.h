@@ -16,13 +16,14 @@ public:
 
 private slots:
 	void parameterChanged(QString parameter);
-	void addSeries();
-	void addSeriesFiltered();
+	//Adds points as a new series. If filtered_out==true, invisible rows are added, otherwise the visible rows are added.
+	void addSeries(bool filtered_out=false);
 
 protected:
 	QBitArray filter_;
-	QVector<double> col1_;
-	QVector<double> col2_;
+	QVector<double> values_x_;
+	QVector<double> values_y_;
+	bool x_is_date_;
 
 	QRectF getBoundingBox() const;
 	static void setSymbol(QScatterSeries* series, int size, QColor color);

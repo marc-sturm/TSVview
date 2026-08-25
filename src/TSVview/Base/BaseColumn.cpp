@@ -53,10 +53,17 @@ bool BaseColumn::setHeader(const QString& header)
   return true;
 }
 
+void BaseColumn::sort(bool reverse)
+{
+	reorder(getSortOrder(reverse));
+	emit dataChanged();
+}
+
 QString BaseColumn::typeToString(Type type)
 {
     if (type==BaseColumn::NUMERIC) return "numeric";
     else if (type==BaseColumn::STRING) return "string";
+	else if (type==BaseColumn::DATE) return "date";
     else THROW(ProgrammingException, "Unhandled column type "+QString::number(type));
 }
 
@@ -64,5 +71,6 @@ BaseColumn::Type BaseColumn::stringToType(QString str)
 {
     if (str=="numeric") return BaseColumn::NUMERIC;
     else if (str=="string") return BaseColumn::STRING;
+	else if (str=="date") return BaseColumn::DATE;
     else THROW(ProgrammingException, "Unhandled column name "+str);
 }

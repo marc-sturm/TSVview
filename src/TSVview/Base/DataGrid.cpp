@@ -25,6 +25,7 @@
 #include "AddColumnDialog.h"
 #include "TextItemEditDialog.h"
 #include "Helper.h"
+#include "DateColumn.h"
 
 DataGrid::DataGrid(QWidget* parent)
 	: QTableWidget(parent)
@@ -129,6 +130,23 @@ QList<int> DataGrid::selectedRows() const
 	}
 
 	return rows;
+}
+
+DataGrid::SelectionCount DataGrid::selectionCount() const
+{
+	SelectionCount output;
+
+	QList<int> selected = selectedColumns();
+	for (int i=0; i<selected.size(); ++i)
+	{
+		BaseColumn::Type type = data_->column(selected[i]).type();
+		if (type==BaseColumn::STRING) ++output.text;
+		if (type==BaseColumn::NUMERIC) ++output.numeric;
+		if (type==BaseColumn::DATE) ++output.date;
+	}
+	output.all = selected.size();
+
+	return output;
 }
 
 void DataGrid::setData(DataSet& dataset, int preview)
@@ -247,40 +265,35 @@ QMenu* DataGrid::createStandardContextMenu()
 	if (info.isColumnSelection)
 	{
 		QList<int> selected = selectedColumns();
-		int selected_count = selected.size();
-		int text_count = 0;
-		for (int i=0; i<selected.size(); ++i)
-		{
-			text_count += (data_->column(selected[i]).type()==BaseColumn::STRING);
-		}
+		DataGrid::SelectionCount counts = selectionCount();
 
 		action = menu->addAction(QIcon(":/Icons/Paste.png"), "Paste column(s)", this, SLOT(pasteColumn_()));
 		action->setEnabled(data_!=0);
 		action = menu->addAction(QIcon(":/Icons/Remove.png"), "Remove column(s)", this, SLOT(removeSelectedColumns()));
-		action->setEnabled(selected_count>0);
+		action->setEnabled(counts.all>0);
         action = menu->addAction(QIcon(":/Icons/Add.png"), "Add column", this, SLOT(addColumn_()));
 		action->setEnabled(data_!=0 && data_->columnCount()!=0);
 
 		menu->addSeparator();
 		QMenu* edit_menu = menu->addMenu("Edit");
 		action = edit_menu->addAction(QIcon(":/Icons/Rename.png"), "Rename", this, SLOT(renameColumn_()));
-		action->setEnabled(selected_count==1);
+		action->setEnabled(counts.all==1);
 		action = edit_menu->addAction(QIcon(":/Icons/Merge.png"), "Merge", this, SLOT(mergeColumns_()));
-		action->setEnabled(selected_count>1);
+		action->setEnabled(counts.all>1);
         action = edit_menu->addAction("Set decimals", this, SLOT(setDecimals_()));
-        action->setEnabled(selected_count>0 && text_count==0);
+		action->setEnabled(counts.all>0 && counts.all==counts.numeric);
 		action = edit_menu->addAction("Remove duplicates", this, SLOT(removeDuplicates_()));
 		action = edit_menu->addAction("Keep duplicates", this, SLOT(keepDuplicates_()));
-		action->setEnabled(selected_count==1);
+		action->setEnabled(counts.all==1);
 
 		QMenu* convert_menu = menu->addMenu("Convert to numeric column");
-		convert_menu->setEnabled(selected_count==1 && text_count==1);
+		convert_menu->setEnabled(counts.all==1 && counts.text==1);
 		action = convert_menu->addAction("'nan' if fails", this, SLOT(convertNumericNan_()));
 		action = convert_menu->addAction("Single value if fails", this, SLOT(convertNumericSingle_()));
 		action = convert_menu->addAction("By dictionary", this, SLOT(convertNumericDict_()));
 
 		QMenu* sort_menu = menu->addMenu(QIcon(":/Icons/Sort.png"), "Sort");
-		sort_menu->setEnabled(selected_count==1);
+		sort_menu->setEnabled(counts.all==1);
 		action = sort_menu->addAction("All columns (asc)", this, SLOT(sortByColumn_()));
 		action = sort_menu->addAction("All columns (desc)", this, SLOT(sortByColumnReverse_()));
 		sort_menu->addSeparator();
@@ -288,7 +301,7 @@ QMenu* DataGrid::createStandardContextMenu()
 		action = sort_menu->addAction("Single column (desc)", this, SLOT(sortColumnReverse_()));
 
 		action = menu->addAction(QIcon(":/Icons/Filter.png"), "Filter", this, SLOT(editFilter_()));
-		action->setEnabled(selected_count==1);
+		action->setEnabled(counts.all==1);
 	}
 
 	return menu;
@@ -311,7 +324,7 @@ void DataGrid::removeSelectedColumns()
 
 void DataGrid::renameColumn_()
 {
-	int column = selectedColumns()[0];
+	int column = selectedColumns().at(0);
 	QString header = data_->column(column).header();
 	bool ok = true;
 	header = QInputDialog::getText(this, "Set column header", "Header:", QLineEdit::Normal, header, &ok);
@@ -360,10 +373,11 @@ void DataGrid::convertNumericNan_()
 	}
 
 	//replace column
-	QString header = data_->column(col_index).header();
-    data_->replaceColumn(col_index, header, new_data, new_decimals);
+	NumericColumn* col = new NumericColumn();
+	col->setHeader(data_->column(col_index).header());
+	col->setValues(new_data, new_decimals);
+	data_->replaceColumn(col_index, col);
 }
-
 
 void DataGrid::convertNumericSingle_()
 {
@@ -394,8 +408,10 @@ void DataGrid::convertNumericSingle_()
 	}
 
 	//replace column
-	QString header = data_->column(col_index).header();
-    data_->replaceColumn(col_index, header, new_data, new_decimals);
+	NumericColumn* col = new NumericColumn();
+	col->setHeader(data_->column(col_index).header());
+	col->setValues(new_data, new_decimals);
+	data_->replaceColumn(col_index, col);
 }
 
 
@@ -445,9 +461,11 @@ void DataGrid::convertNumericDict_()
             new_decimals << tmp.second;
 		}
 
-		//replace column
-		QString header = data_->column(col_index).header();
-        data_->replaceColumn(col_index, header, new_data, new_decimals);
+		//replace column		
+		NumericColumn* col = new NumericColumn();
+		col->setHeader(data_->column(col_index).header());
+		col->setValues(new_data, new_decimals);
+		data_->replaceColumn(col_index, col);
 	}
 }
 
@@ -701,6 +719,10 @@ void DataGrid::pasteColumn_(int index)
 		{
             data_->addColumn(data_tmp.column(i).header(), data_tmp.numericColumn(i).values(), data_tmp.numericColumn(i).decimals(), index);
 		}
+		else if (col.type()==BaseColumn::DATE)
+		{
+			data_->addColumn(data_tmp.column(i).header(), data_tmp.dateColumn(i).values(), index);
+		}
 		else
 		{
             data_->addColumn(data_tmp.column(i).header(), data_tmp.stringColumn(i).values(), index);
@@ -817,11 +839,13 @@ void DataGrid::renderHeaders()
 	{
 		QString header = data_->column(c).headerOrIndex(c, show_column_index);
 		QTableWidgetItem* item  = new QTableWidgetItem(header);
-		if (data_->column(c).type()==BaseColumn::STRING)
+		if (data_->column(c).type()==BaseColumn::NUMERIC)
 		{
-			QFont font;
-			font.setItalic(true);
-			item->setFont(font);
+			item->setIcon(QPixmap(":/Icons/ColumnNumeric.png"));
+		}
+		else if (data_->column(c).type()==BaseColumn::DATE)
+		{
+			item->setIcon(QPixmap(":/Icons/ColumnDate.png"));
 		}
 		setHorizontalHeaderItem(c, item);
 		item->setTextAlignment(Qt::AlignLeft);
@@ -988,6 +1012,23 @@ void DataGrid::reduceToFiltered()
 
             column.setValues(values, decimals);
 		}
+		//date column
+		else if (data_->column(c).type()==BaseColumn::DATE)
+		{
+			DateColumn& column = data_->dateColumn(c);
+
+			QVector<QDate> values;
+			values.reserve(filtered_rows.count());
+			for (int r=0; r<filtered_rows.count(); ++r)
+			{
+				if (filtered_rows[r])
+				{
+					values.append(column.value(r));
+				}
+			}
+
+			column.setValues(values);
+		}
 		//string column
 		else
 		{
@@ -1153,6 +1194,26 @@ void DataGrid::editCurrentItem(QTableWidgetItem* item)
 		if (new_value != value)
 		{
             column.setValue(row, new_value);
+		}
+	}
+	//edit date columns
+	if (data_->column(col).type() == BaseColumn::DATE) //TODO improve: date edit dialog
+	{
+		DateColumn& column = data_->dateColumn(col);
+		QDate value = column.value(row);
+		QString text = QInputDialog::getText(this, "Edit date item", "Date", QLineEdit::Normal, value.toString(Qt::ISODate));
+		if (text=="")
+		{
+			column.setValue(row, QDate());
+		}
+		else
+		{
+			QDate new_value = QDate::fromString(text, Qt::ISODate);
+			if (new_value.isValid())
+			{
+				column.setValue(row, new_value);
+
+			}
 		}
 	}
 	//edit string column

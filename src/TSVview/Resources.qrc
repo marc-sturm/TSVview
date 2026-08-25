@@ -22,5 +22,7 @@
         <file>Icons/Enabled.png</file>
         <file>Icons/ReduceData.png</file>
         <file>Icons/Add.png</file>
+        <file>Icons/ColumnDate.png</file>
+        <file>Icons/ColumnNumeric.png</file>
     </qresource>
 </RCC>

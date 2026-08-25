@@ -482,35 +482,30 @@ void MainWindow::tableContextMenu(QPoint point)
 	{
 		//overall and selected columns count
 		QList<int> selected = ui_.grid->selectedColumns();
-		int selected_count = selected.size();
-		int text_count = 0;
-		for (int i=0; i<selected.size(); ++i)
-		{
-			text_count += (data_.column(selected[i]).type()==BaseColumn::STRING);
-		}
-
+		const DataGrid::SelectionCount counts = ui_.grid->selectionCount();
+		qDebug() << counts.all << counts.text << counts.numeric << counts.date;
 		//separator
 		main_menu->addSeparator();
 
 		//statistics
 		QAction* action = main_menu->addAction("Basic statistics", this, SLOT(basicStatistics()));
-		action->setEnabled(selected_count==1 && text_count==0);
+		action->setEnabled(counts.all==1 && counts.numeric==1);
 
 		//plots
 		QMenu* menu = main_menu->addMenu("Plots");
-		menu->setEnabled(selected_count>0 && text_count==0);
+		menu->setEnabled(counts.all>0 && (counts.numeric==counts.all || (counts.numeric==1 && counts.date==1)));
 		action = menu->addAction(QIcon(":/Icons/Histogram.png"), "Histogram", this, SLOT(histogram()));
-		action->setEnabled(selected_count==1);
+		action->setEnabled(counts.all==1 && counts.numeric==counts.all);
 		action = menu->addAction(QIcon(":/Icons/Scatterplot.png"), "Scatter plot", this, SLOT(scatterPlot()));
-		action->setEnabled(selected_count==2);
+		action->setEnabled(counts.all==2 && (counts.numeric==counts.all || (counts.numeric==1 && counts.date==1)));
 		action = menu->addAction(QIcon(":/Icons/Lineplot.png"), "Plot", this, SLOT(dataPlot()));
-		action->setEnabled(selected_count>0);
+		action->setEnabled(counts.all>0 && counts.numeric==counts.all);
 		action = menu->addAction(QIcon(":/Icons/Boxplot.png"), "Box plot", this, SLOT(boxPlot()));
-		action->setEnabled(selected_count>0);
+		action->setEnabled(counts.all>0 && counts.numeric==counts.all);
 
 		//signal processing
         menu = main_menu->addMenu("Smoothing");
-		menu->setEnabled(selected_count==1 && text_count==0);
+		menu->setEnabled(counts.all==1 &&  counts.numeric==1);
 		menu->addAction("Moving average", this, SLOT(smoothAverage()));
 		menu->addAction("Moving median", this, SLOT(smoothMedian()));
 		menu->addAction("Savitzky-Golay", this, SLOT(smoothSavitzkyGolay()));
@@ -738,7 +733,17 @@ void MainWindow::on_actionGenerateExampleData_triggered(bool)
     }
     tmp.addColumn("col_float", c2, QVector<char>(rows, 2));
 
-    //store
+	//add date column
+	QVector<QDate> c3;
+	for(int i=0; i<rows; ++i)
+	{
+		QString text = "202"+QString::number(std::round(Helper::randomNumber(1, 9)))+"-0"+QString::number(std::round(Helper::randomNumber(1, 9)))+"-"+QString::number(std::round(Helper::randomNumber(10, 31)));
+		qDebug() << text;
+		c3 << QDate::fromString(text, Qt::ISODate);
+	}
+	tmp.addColumn("col_date1", c3);
+
+
     tmp.store(QApplication::applicationDirPath() + "/example_data.tsv", QList<int>(tmp.columnCount(), -1));
 }
 

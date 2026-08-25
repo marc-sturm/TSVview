@@ -16,7 +16,8 @@ public:
 	enum Type
 		{
 		NUMERIC,
-		STRING
+		STRING,
+		DATE
 		};
 
 	BaseColumn(Type type);
@@ -37,7 +38,9 @@ public:
 	QString headerOrIndex(int index, bool force_index = false) const;
 	///Returns @p false if the header contains invalid characters and was thus not accepted.
 	bool setHeader(const QString& header);
-
+	///Sort column
+	void sort(bool reverse);
+	///Reorder column using the given order
 	/// Returns a string representation of a value for displaying.
 	virtual QString string(int row) const = 0;
 	virtual void setString(int row, const QString& value) = 0;
@@ -45,7 +48,8 @@ public:
 
 	virtual void resize(int rows) = 0;
 	virtual void reserve(int rows) = 0;
-	virtual void sort(bool reverse=false) = 0;
+	virtual QVector<int> getSortOrder(bool reverse) = 0;
+	virtual void reorder(const QVector<int>& order) = 0;
     virtual qsizetype count() const = 0;
     virtual qsizetype capacity() const = 0;
 	virtual BaseColumn* clone() const = 0;

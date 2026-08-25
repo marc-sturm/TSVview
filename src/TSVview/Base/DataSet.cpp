@@ -147,15 +147,35 @@ void DataSet::addColumn(QString header, const QVector<QString>& data, int index)
     setModified(true);
 }
 
-void DataSet::replaceColumn(int index, QString header, const QVector<double>& data, const QVector<char>& decimals)
+void DataSet::addColumn(QString header, const QVector<QDate>& data, int index)
 {
-    Q_ASSERT(data.size()==decimals.size());
 	Q_ASSERT(rowCount()==0 || data.size()==rowCount());
-	Q_ASSERT(index < data.size());
 
-	NumericColumn* new_col = new NumericColumn();
-    new_col->setValues(data, decimals);
+	DateColumn* new_col = new DateColumn();
+	new_col->setValues(data);
 	new_col->setHeader(header);
+
+	connect(new_col, SIGNAL(dataChanged()), this, SLOT(columnDataChanged()));
+	connect(new_col, SIGNAL(filterChanged()), this, SLOT(filterDataChanged()));
+	connect(new_col, SIGNAL(headerChanged()), this, SLOT(headerDataChanged()));
+
+	if (index<0 || index>=data.size())
+	{
+		columns_.append(new_col);
+	}
+	else
+	{
+		columns_.insert(index, new_col);
+	}
+
+	emit dataChanged();
+	setModified(true);
+}
+
+void DataSet::replaceColumn(int index, BaseColumn* new_col)
+{
+	Q_ASSERT(rowCount()==0 || new_col->count()==rowCount());
+	Q_ASSERT(index>=0 && index < columns_.size());
 
 	connect(new_col, SIGNAL(dataChanged()), this, SLOT(columnDataChanged()));
 	connect(new_col, SIGNAL(filterChanged()), this, SLOT(filterDataChanged()));
@@ -186,93 +206,15 @@ void DataSet::sortByColumn(int column, bool reverse)
 {
 	Q_ASSERT(column<columns_.size());
 
-	int size = rowCount();
-	QVector<int> indices(size);
+	//get sort order (indices)
+	QVector<int> indices = columns_[column]->getSortOrder(reverse);
 
-    //create temporary vector with column data and index //TODO move to column: QList<int> getSortedOrder() const
-	if (columns_[column]->type()==BaseColumn::NUMERIC)
-	{
-		std::vector<std::pair<double, int> > tmp;
-		tmp.reserve(size);
-		QVector<double> col = dynamic_cast<NumericColumn*>(columns_[column])->values();
-		for (int i=0; i<size; ++i)
-		{
-			double value = col[i];
-			if (!BasicStatistics::isValidFloat(value)) value = std::numeric_limits<double>::max();
-			tmp.push_back(std::make_pair(value, i));
-		}
-
-		//sort the vector according to the value
-		if (!reverse)
-		{
-			std::sort(tmp.begin(), tmp.end());
-		}
-		else
-		{
-			std::sort(tmp.begin(), tmp.end(), std::greater<std::pair<double, int> >());
-		}
-
-		for (int i=0; i<size; ++i)
-		{
-			indices[i] = tmp[i].second;
-		}
-	}
-	else
-	{
-		std::vector<std::pair<QString, int> > tmp;
-		tmp.reserve(size);
-		QVector<QString> col = dynamic_cast<StringColumn*>(columns_[column])->values();
-		for (int i=0; i<size; ++i)
-		{
-			tmp.push_back(std::make_pair(col[i], i));
-		}
-
-		//sort the vector according to the value
-		if (!reverse)
-		{
-			std::sort(tmp.begin(), tmp.end());
-		}
-		else
-		{
-			std::sort(tmp.begin(), tmp.end(), std::greater<std::pair<QString, int> >());
-		}
-
-		for (int i=0; i<size; ++i)
-		{
-			indices[i] = tmp[i].second;
-		}
-	}
-
-    //use the indices to change the order of all columns //TODO move to column: void reorder(QList<int> order)
+	//use the indices to change the order of all columns
 	for (int c=0; c<columns_.size(); ++c)
 	{
-		if (columns_[c]->type()==BaseColumn::NUMERIC)
-		{
-            NumericColumn* column = dynamic_cast<NumericColumn*>(columns_[c]);
-            const QVector<double>& col_values = column->values();
-            const QVector<char>& col_decimals = column->decimals();
-			QVector<double> new_col(size);
-            QVector<char> new_col_dec(size);
-			for (int i=0; i<size; ++i)
-			{
-                new_col[i] = col_values[indices[i]];
-                new_col_dec[i] = col_decimals[indices[i]];
-			}
-            column->setValues(new_col, new_col_dec);
-		}
-		else
-		{
-			QVector<QString> col = dynamic_cast<StringColumn*>(columns_[c])->values();
-			QVector<QString> new_col(size);
-			for (int i=0; i<size; ++i)
-			{
-				new_col[i] = col[indices[i]];
-			}
-			dynamic_cast<StringColumn*>(columns_[c])->setValues(new_col);
-		}
+		columns_[c]->reorder(indices);
 	}
 
-    emit dataChanged();
     setModified(true);
 }
 
@@ -326,6 +268,19 @@ void DataSet::reduceToRows(QSet<int> rows)
             }
             column.setValues(values, decimals);
 		}
+		else if (column(c).type()==BaseColumn::DATE)
+		{
+			DateColumn& column = dateColumn(c);
+			const QList<QDate>& old_values = column.values();
+
+			QVector<QDate> values;
+			values.reserve(keep_rows.count());
+			for (int r=0; r<keep_rows.count(); ++r)
+			{
+				values << old_values[keep_rows[r]];
+			}
+			column.setValues(values);
+		}
 		//string column
 		else
 		{
@@ -366,7 +321,31 @@ void DataSet::convertStringToNumeric(int c)
 	}
 
 	//replace string by numeric column
-    replaceColumn(c, column(c).header(), numbers, decimals);
+	NumericColumn* col = new NumericColumn();
+	col->setHeader(column(c).header());
+	col->setValues(numbers, decimals);
+	replaceColumn(c, col);
+}
+
+void DataSet::convertStringToDate(int c)
+{
+	Q_ASSERT(c>=0);
+	Q_ASSERT(c<columns_.size());
+
+	//create numeric data
+	const QVector<QString>& values = stringColumn(c).values();
+	QVector<QDate> dates;
+	dates.reserve(values.count());
+	foreach(const QString& value, values)
+	{
+		dates << DateColumn::toDate(value);
+	}
+
+	//replace string by numeric column
+	DateColumn* col = new DateColumn();
+	col->setHeader(column(c).header());
+	col->setValues(dates);
+	replaceColumn(c, col);
 }
 
 void DataSet::setFiltersEnabled(bool enabled)
@@ -443,6 +422,7 @@ QHash<int, ColumnInfo> DataSet::load(QString filename, QString display_name)
     timer.start();
 
     QSet<int> numeric_columns;
+	QSet<int> date_columns;
     QStringList comments;
     QStringList filters;
     QHash<int, ColumnInfo> col_infos;
@@ -515,16 +495,27 @@ QHash<int, ColumnInfo> DataSet::load(QString filename, QString display_name)
                             values.reserve(rows);
                             decimals.reserve(rows);
                         }
-                        addColumn(parts[c], values, decimals, false);
-                    }
+						addColumn(parts[c], values, decimals);
+					}
+					else if (col_infos_complete && col_infos[c].type==BaseColumn::DATE)
+					{
+						QVector<QDate> values;
+						if (rows!=-1)
+						{
+							values.reserve(rows);
+						}
+						addColumn(parts[c], values);
+					}
                     else
                     {
                         QVector<QString> values;
                         if (rows!=-1) values.reserve(rows);
                         addColumn(parts[c], values);
 
-                        numeric_columns << c;
-                    }
+						//no header info > try to convert after loading
+						numeric_columns << c;
+						date_columns << c;
+					}
                 }
             }
             continue;
@@ -543,22 +534,26 @@ QHash<int, ColumnInfo> DataSet::load(QString filename, QString display_name)
             column(c).appendString(parts[c]);
         }
 
-        //try to convert numbers
+		//try to convert numbers/dates
         if (!col_infos_complete)
         {
             foreach(int c, numeric_columns)
             {
-                if (!isNumeric(parts[c])) numeric_columns.remove(c);
-            }
-        }
-    }
+				if (!isNumeric(parts[c])) numeric_columns.remove(c);
+			}
+			foreach(int c, date_columns)
+			{
+				if (!isDate(parts[c])) date_columns.remove(c);
+			}
+		}
+	}
 
     //add comments
     setComments(comments);
 
     qDebug() << "loading data from file: c=" << columnCount() << "r=" << rowCount() << "ms=" << timer.restart();
 
-    //convert numeric columns
+	//check if numeric/date columns
     if (!col_infos_complete)
     {
         foreach(int c, numeric_columns)
@@ -566,6 +561,11 @@ QHash<int, ColumnInfo> DataSet::load(QString filename, QString display_name)
             convertStringToNumeric(c);
         }
         qDebug() << "converting numeric columns: ms=" << timer.restart();
+		foreach(int c, date_columns)
+		{
+			convertStringToDate(c);
+		}
+		qDebug() << "converting date columns: ms=" << timer.restart();
     }
 
     //apply filters
@@ -663,7 +663,7 @@ void DataSet::import(QString filename, QString display_name, Parameters params, 
             for (int i=0; i<cols; ++i)
             {
                 numeric_columns << i;
-                addColumn("", QVector<QString>(), false);
+				addColumn("", QVector<QString>());
             }
         }
 
