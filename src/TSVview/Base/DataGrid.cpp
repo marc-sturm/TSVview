@@ -132,6 +132,23 @@ QList<int> DataGrid::selectedRows() const
 	return rows;
 }
 
+DataGrid::SelectionCount DataGrid::selectionCount() const
+{
+	SelectionCount output;
+
+	QList<int> selected = selectedColumns();
+	for (int i=0; i<selected.size(); ++i)
+	{
+		BaseColumn::Type type = data_->column(selected[i]).type();
+		if (type==BaseColumn::STRING) ++output.text;
+		if (type==BaseColumn::NUMERIC) ++output.numeric;
+		if (type==BaseColumn::DATE) ++output.date;
+	}
+	output.all = selected.size();
+
+	return output;
+}
+
 void DataGrid::setData(DataSet& dataset, int preview)
 {
 	data_ = &dataset;
@@ -248,40 +265,35 @@ QMenu* DataGrid::createStandardContextMenu()
 	if (info.isColumnSelection)
 	{
 		QList<int> selected = selectedColumns();
-		int selected_count = selected.size();
-		int text_count = 0;
-		for (int i=0; i<selected.size(); ++i)
-		{
-			text_count += (data_->column(selected[i]).type()==BaseColumn::STRING);
-		}
+		DataGrid::SelectionCount counts = selectionCount();
 
 		action = menu->addAction(QIcon(":/Icons/Paste.png"), "Paste column(s)", this, SLOT(pasteColumn_()));
 		action->setEnabled(data_!=0);
 		action = menu->addAction(QIcon(":/Icons/Remove.png"), "Remove column(s)", this, SLOT(removeSelectedColumns()));
-		action->setEnabled(selected_count>0);
+		action->setEnabled(counts.all>0);
         action = menu->addAction(QIcon(":/Icons/Add.png"), "Add column", this, SLOT(addColumn_()));
 		action->setEnabled(data_!=0 && data_->columnCount()!=0);
 
 		menu->addSeparator();
 		QMenu* edit_menu = menu->addMenu("Edit");
 		action = edit_menu->addAction(QIcon(":/Icons/Rename.png"), "Rename", this, SLOT(renameColumn_()));
-		action->setEnabled(selected_count==1);
+		action->setEnabled(counts.all==1);
 		action = edit_menu->addAction(QIcon(":/Icons/Merge.png"), "Merge", this, SLOT(mergeColumns_()));
-		action->setEnabled(selected_count>1);
+		action->setEnabled(counts.all>1);
         action = edit_menu->addAction("Set decimals", this, SLOT(setDecimals_()));
-        action->setEnabled(selected_count>0 && text_count==0);
+		action->setEnabled(counts.all>0 && counts.all==counts.numeric);
 		action = edit_menu->addAction("Remove duplicates", this, SLOT(removeDuplicates_()));
 		action = edit_menu->addAction("Keep duplicates", this, SLOT(keepDuplicates_()));
-		action->setEnabled(selected_count==1);
+		action->setEnabled(counts.all==1);
 
 		QMenu* convert_menu = menu->addMenu("Convert to numeric column");
-		convert_menu->setEnabled(selected_count==1 && text_count==1);
+		convert_menu->setEnabled(counts.all==1 && counts.text==1);
 		action = convert_menu->addAction("'nan' if fails", this, SLOT(convertNumericNan_()));
 		action = convert_menu->addAction("Single value if fails", this, SLOT(convertNumericSingle_()));
 		action = convert_menu->addAction("By dictionary", this, SLOT(convertNumericDict_()));
 
 		QMenu* sort_menu = menu->addMenu(QIcon(":/Icons/Sort.png"), "Sort");
-		sort_menu->setEnabled(selected_count==1);
+		sort_menu->setEnabled(counts.all==1);
 		action = sort_menu->addAction("All columns (asc)", this, SLOT(sortByColumn_()));
 		action = sort_menu->addAction("All columns (desc)", this, SLOT(sortByColumnReverse_()));
 		sort_menu->addSeparator();
@@ -289,7 +301,7 @@ QMenu* DataGrid::createStandardContextMenu()
 		action = sort_menu->addAction("Single column (desc)", this, SLOT(sortColumnReverse_()));
 
 		action = menu->addAction(QIcon(":/Icons/Filter.png"), "Filter", this, SLOT(editFilter_()));
-		action->setEnabled(selected_count==1);
+		action->setEnabled(counts.all==1);
 	}
 
 	return menu;

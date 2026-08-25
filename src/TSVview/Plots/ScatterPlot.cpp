@@ -206,7 +206,6 @@ void ScatterPlot::addSeries(bool filtered_out)
 		QRectF bb = getBoundingBox();
 		noise_perc_x *= bb.width();
 		noise_perc_y *= bb.height();
-		qDebug() << noise_perc_x << noise_perc_y;
 	}
 
 	//add series to chart

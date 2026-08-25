@@ -482,40 +482,30 @@ void MainWindow::tableContextMenu(QPoint point)
 	{
 		//overall and selected columns count
 		QList<int> selected = ui_.grid->selectedColumns();
-		int selected_count = selected.size();
-		int text_count = 0;
-		int date_count = 0;
-		int num_count = 0;
-		for (int i=0; i<selected.size(); ++i)
-		{
-			BaseColumn::Type type = data_.column(selected[i]).type();
-			if (type==BaseColumn::STRING) text_count += 1;
-			else if (type==BaseColumn::NUMERIC) num_count += 1;
-			else date_count += 1;
-		}
-
+		const DataGrid::SelectionCount counts = ui_.grid->selectionCount();
+		qDebug() << counts.all << counts.text << counts.numeric << counts.date;
 		//separator
 		main_menu->addSeparator();
 
 		//statistics
 		QAction* action = main_menu->addAction("Basic statistics", this, SLOT(basicStatistics()));
-		action->setEnabled(selected_count==1 && num_count==1);
+		action->setEnabled(counts.all==1 && counts.numeric==1);
 
 		//plots
 		QMenu* menu = main_menu->addMenu("Plots");
-		menu->setEnabled(selected_count>0 && num_count==selected_count);
+		menu->setEnabled(counts.all>0 && (counts.numeric==counts.all || (counts.numeric==1 && counts.date==1)));
 		action = menu->addAction(QIcon(":/Icons/Histogram.png"), "Histogram", this, SLOT(histogram()));
-		action->setEnabled(selected_count==1);
+		action->setEnabled(counts.all==1 && counts.numeric==counts.all);
 		action = menu->addAction(QIcon(":/Icons/Scatterplot.png"), "Scatter plot", this, SLOT(scatterPlot()));
-		action->setEnabled(selected_count==2);
+		action->setEnabled(counts.all==2 && (counts.numeric==counts.all || (counts.numeric==1 && counts.date==1)));
 		action = menu->addAction(QIcon(":/Icons/Lineplot.png"), "Plot", this, SLOT(dataPlot()));
-		action->setEnabled(selected_count>0);
+		action->setEnabled(counts.all>0 && counts.numeric==counts.all);
 		action = menu->addAction(QIcon(":/Icons/Boxplot.png"), "Box plot", this, SLOT(boxPlot()));
-		action->setEnabled(selected_count>0);
+		action->setEnabled(counts.all>0 && counts.numeric==counts.all);
 
 		//signal processing
         menu = main_menu->addMenu("Smoothing");
-		menu->setEnabled(selected_count==1 && num_count==1);
+		menu->setEnabled(counts.all==1 &&  counts.numeric==1);
 		menu->addAction("Moving average", this, SLOT(smoothAverage()));
 		menu->addAction("Moving median", this, SLOT(smoothMedian()));
 		menu->addAction("Savitzky-Golay", this, SLOT(smoothSavitzkyGolay()));
