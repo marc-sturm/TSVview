@@ -625,6 +625,7 @@ void DataSet::import(QString filename, QString display_name, Parameters params, 
     }
     bool first_line_is_comment = params.getBool("first_line_is_comment");
     QSet<int> numeric_columns;
+	QSet<int> date_columns;
 
     QStringList comments;
     bool is_first_content_line = true;
@@ -663,6 +664,7 @@ void DataSet::import(QString filename, QString display_name, Parameters params, 
             for (int i=0; i<cols; ++i)
             {
                 numeric_columns << i;
+				date_columns << i;
 				addColumn("", QVector<QString>());
             }
         }
@@ -693,6 +695,10 @@ void DataSet::import(QString filename, QString display_name, Parameters params, 
         {
             if (!isNumeric(parts[c])) numeric_columns.remove(c);
         }
+		foreach(int c, date_columns)
+		{
+			if (!isDate(parts[c])) date_columns.remove(c);
+		}
 
         ++row;
     }
@@ -740,6 +746,10 @@ void DataSet::import(QString filename, QString display_name, Parameters params, 
     {
         convertStringToNumeric(c);
     }
+	foreach(int c, date_columns)
+	{
+		convertStringToDate(c);
+	}
 
 	setModified(first_line_is_comment, true);
 
