@@ -91,12 +91,10 @@ void DateColumn::reorder(const QVector<int>& order)
 void DateColumn::setFilter(Filter filter)
 {
 	if ( filter.type()!=Filter::NONE
-		 && filter.type()!=Filter::FLOAT_EXACT
-		 && filter.type()!=Filter::FLOAT_EXACT_NOT
-		 && filter.type()!=Filter::FLOAT_GREATER
-		 && filter.type()!=Filter::FLOAT_GREATER_EQUAL
-		 && filter.type()!=Filter::FLOAT_LESS
-		 && filter.type()!=Filter::FLOAT_LESS_EQUAL
+		&& filter.type()!=Filter::DATE_EXACT
+		&& filter.type()!=Filter::DATE_EXACT_NOT
+		&& filter.type()!=Filter::DATE_GREATER_EQUAL
+		&& filter.type()!=Filter::DATE_LESS_EQUAL
 		 )
 	{
 		THROW(FilterTypeException,"Cannot add a non-numeric filter to a numeric column!");
@@ -113,6 +111,7 @@ void DateColumn::matchFilter(QBitArray& array) const
 	if (type == Filter::NONE) return;
 
 	QDate value = QDate::fromString(filter().value(), Qt::ISODate);
+	if (!value.isValid()) return;
 
 	if (type == Filter::DATE_EXACT)
 	{
@@ -134,7 +133,7 @@ void DateColumn::matchFilter(QBitArray& array) const
 			}
 		}
 	}
-	else if (type == Filter::FLOAT_GREATER_EQUAL)
+	else if (type == Filter::DATE_GREATER_EQUAL)
 	{
 		for (int r=0; r<count(); ++r)
 		{
@@ -144,7 +143,7 @@ void DateColumn::matchFilter(QBitArray& array) const
 			}
 		}
 	}
-	else if (type == Filter::FLOAT_LESS_EQUAL)
+	else if (type == Filter::DATE_LESS_EQUAL)
 	{
 		for (int r=0; r<count(); ++r)
 		{

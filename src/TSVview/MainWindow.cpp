@@ -483,8 +483,8 @@ void MainWindow::tableContextMenu(QPoint point)
 		//overall and selected columns count
 		QList<int> selected = ui_.grid->selectedColumns();
 		const DataGrid::SelectionCount counts = ui_.grid->selectionCount();
-		qDebug() << counts.all << counts.text << counts.numeric << counts.date;
-		//separator
+
+		 //separator
 		main_menu->addSeparator();
 
 		//statistics
@@ -738,7 +738,6 @@ void MainWindow::on_actionGenerateExampleData_triggered(bool)
 	for(int i=0; i<rows; ++i)
 	{
 		QString text = "202"+QString::number(std::round(Helper::randomNumber(1, 9)))+"-0"+QString::number(std::round(Helper::randomNumber(1, 9)))+"-"+QString::number(std::round(Helper::randomNumber(10, 31)));
-		qDebug() << text;
 		c3 << QDate::fromString(text, Qt::ISODate);
 	}
 	tmp.addColumn("col_date1", c3);

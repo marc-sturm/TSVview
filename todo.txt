@@ -1,5 +1,3 @@
-- bug: filtering dates does not work
-- allow converting numeric/date columns to string column
 - color dots in scatter plot according to ENUM column
 - add date histogram?
 - show outliers in bar plot?

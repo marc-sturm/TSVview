@@ -17,6 +17,7 @@ LIBS += -lz
 
 SOURCES += \
     Base/DateColumn.cpp \
+    DateValidator.cpp \
     GrepDialog.cpp \
     Main.cpp \
     MainWindow.cpp \
@@ -51,6 +52,7 @@ SOURCES += \
     
 HEADERS += \
     Base/DateColumn.h \
+    DateValidator.h \
     GrepDialog.h \
     MainWindow.h \
     Base/Parameters.h \

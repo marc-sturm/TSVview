@@ -1188,31 +1188,35 @@ void DataGrid::editCurrentItem(QTableWidgetItem* item)
 	//edit numeric columns
 	if (data_->column(col).type() == BaseColumn::NUMERIC)
 	{
-        NumericColumn& column = data_->numericColumn(col);
-        double value = column.value(row);
-		double new_value = QInputDialog::getDouble(this, "Edit numeric item", "Value", value, -std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), 5);
-		if (new_value != value)
+		NumericColumn& column = data_->numericColumn(col);
+		double value = column.value(row);
+		bool ok = false;
+		double new_value = QInputDialog::getDouble(this, "Edit numeric item", "Value", value, -std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), 5, &ok);
+		if (ok && new_value != value)
 		{
-            column.setValue(row, new_value);
+			column.setValue(row, new_value);
 		}
 	}
 	//edit date columns
-	if (data_->column(col).type() == BaseColumn::DATE) //TODO improve: date edit dialog
+	else if (data_->column(col).type() == BaseColumn::DATE)
 	{
 		DateColumn& column = data_->dateColumn(col);
 		QDate value = column.value(row);
-		QString text = QInputDialog::getText(this, "Edit date item", "Date", QLineEdit::Normal, value.toString(Qt::ISODate));
-		if (text=="")
+		bool ok = false;
+		QString text = QInputDialog::getText(this, "Edit date item", "Date", QLineEdit::Normal, value.toString(Qt::ISODate), &ok);
+		if (ok)
 		{
-			column.setValue(row, QDate());
-		}
-		else
-		{
-			QDate new_value = QDate::fromString(text, Qt::ISODate);
-			if (new_value.isValid())
+			if (text=="")
 			{
-				column.setValue(row, new_value);
-
+				column.setValue(row, QDate());
+			}
+			else
+			{
+				QDate new_value = QDate::fromString(text, Qt::ISODate);
+				if (new_value.isValid())
+				{
+					column.setValue(row, new_value);
+				}
 			}
 		}
 	}

@@ -1,9 +1,8 @@
 #include "FilterDialog.h"
-
 #include <QMenu>
 #include <QSet>
-#include "cppCORE_global.h"
 #include "Helper.h"
+#include "DateValidator.h"
 
 FilterDialog::FilterDialog(BaseColumn* column, QWidget* parent)
 	: QDialog(parent)
@@ -23,7 +22,7 @@ FilterDialog::FilterDialog(BaseColumn* column, QWidget* parent)
 		addOperation_(Filter::FLOAT_GREATER);
 		addOperation_(Filter::FLOAT_GREATER_EQUAL);
 	}
-	else if (column_->type() == BaseColumn::NUMERIC)
+	else if (column_->type() == BaseColumn::DATE)
 	{
 		addOperation_(Filter::DATE_EXACT);
 		addOperation_(Filter::DATE_EXACT_NOT);
@@ -41,7 +40,7 @@ FilterDialog::FilterDialog(BaseColumn* column, QWidget* parent)
 	}
 
 	//prepare dropdown list of texts
-	if (column_->type() == BaseColumn::NUMERIC)
+	if (column_->type() != BaseColumn::STRING)
 	{
 		ui_.text_dropdown->hide();
 	}
@@ -51,11 +50,16 @@ FilterDialog::FilterDialog(BaseColumn* column, QWidget* parent)
 		connect(ui_.text_dropdown->menu(), SIGNAL(aboutToShow()), this, SLOT(updateDropdownText()));
 	}
 
-	//set validator (for float)
+	//set validator
 	if (column->type() == BaseColumn::NUMERIC)
 	{
 		QDoubleValidator* validator = new QDoubleValidator(this);
 		validator->setLocale(QLocale::C);
+		ui_.value->setValidator(validator);
+	}
+	else if (column->type() == BaseColumn::DATE)
+	{
+		DateValidator* validator = new DateValidator(this);
 		ui_.value->setValidator(validator);
 	}
 
