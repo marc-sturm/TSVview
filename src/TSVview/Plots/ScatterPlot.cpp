@@ -56,9 +56,6 @@ void ScatterPlot::setData(const DataSet& data, int col1, int col2, QString filen
 	}
 
 	//determine rows that are skipped because of non-numeric data
-	//TODO use QBitArray
-
-	//set base data
 	filter_ = data.getRowFilter(false);
 	if (x_is_date_)
 	{
