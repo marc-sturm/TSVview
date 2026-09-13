@@ -70,9 +70,9 @@ QString Filter::typeToString(Filter::Type type, bool human_readable)
 			case Filter::DATE_EXACT_NOT:
 				return "!=";
 			case Filter::DATE_GREATER_EQUAL:
-				return "<=";
-			case Filter::DATE_LESS_EQUAL:
 				return ">=";
+			case Filter::DATE_LESS_EQUAL:
+				return "<=";
 		}
 	}
 	else

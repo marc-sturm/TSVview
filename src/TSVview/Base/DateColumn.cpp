@@ -139,7 +139,7 @@ void DateColumn::matchFilter(QBitArray& array) const
 		{
 			if (array[r])
 			{
-				array[r] = values_[r] >= value;
+				array[r] = values_[r].isValid() && values_[r] >= value;
 			}
 		}
 	}
@@ -149,7 +149,7 @@ void DateColumn::matchFilter(QBitArray& array) const
 		{
 			if (array[r])
 			{
-				array[r] = values_[r] <= value;
+				array[r] = values_[r].isValid() && values_[r] <= value;
 			}
 		}
 	}
