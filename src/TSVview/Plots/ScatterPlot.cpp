@@ -3,28 +3,18 @@
 #include "Helper.h"
 #include "ScatterPlot.h"
 #include "BasicStatistics.h"
+#include "Exceptions.h"
 #include "math.h"
 #include <QValueAxis>
 #include <QDateTimeAxis>
+#include <QLegendMarker>
+#include <QSignalBlocker>
 
 ScatterPlot::ScatterPlot(QWidget *parent)
 	: BasePlot(parent)
 	, x_is_date_(false)
+	, color_by_column_(false)
 {
-	//set default parameters
-	params_.addColor("color", "", Qt::darkBlue);
-	params_.addInt("symbol size", "", 5, 1, 999);
-	params_.addSeparator();
-	params_.addBool("linear regression", "Show linear regression of unfiltered data.", false);
-	params_.addSeparator();
-	params_.addBool("filtered", "Show filtered-out data points.", false);
-	params_.addColor("filtered color", "", QColor(200, 0, 0));
-	params_.addInt("filtered symbol size", "", 5, 1, 999);
-	params_.addSeparator();
-	params_.addInt("position noise", "", 0 , 0, 20);
-
-	//connect parameters, editor and plot
-	editor_->setParameters(params_);
 	connect(&params_, SIGNAL(valueChanged(QString)), this, SLOT(parameterChanged(QString)));
 
 	//format plot
@@ -38,8 +28,68 @@ ScatterPlot::ScatterPlot(QWidget *parent)
 	enableMouseTracking();
 }
 
-void ScatterPlot::setData(const DataSet& data, int col1, int col2, QString filename)
+void ScatterPlot::setData(const DataSet& data, int col1, int col2, QString filename, int color_col)
 {
+	//Validate and assign colors before modifying the plot. Include all rows so
+	//filtering and skipped coordinates do not affect the category mapping.
+	if (color_col < -1 || color_col >= data.columnCount())
+	{
+		THROW(ArgumentException, "Invalid scatterplot color column index: " + QString::number(color_col));
+	}
+	QVector<QColor> row_colors;
+	QStringList category_names;
+	QVector<QColor> legend_colors;
+	if (color_col != -1)
+	{
+		//Matplotlib's classic b, g, r, c, m, y, k cycle, followed by
+		//additional colors to support 20 categories without repeating the cycle.
+		static const QVector<QColor> palette = {
+			QColor("#0000ff"), QColor("#008000"), QColor("#ff0000"), QColor("#00bfbf"),
+			QColor("#bf00bf"), QColor("#bfbf00"), QColor("#000000"),
+			QColor("#ff8000"), QColor("#8000ff"), QColor("#a52a2a"), QColor("#ff1493"),
+			QColor("#008080"), QColor("#80c000"), QColor("#4169e1"), QColor("#800000"),
+			QColor("#808080"), QColor("#d2691e"), QColor("#00a050"), QColor("#c060c0"),
+			QColor("#c0a060")
+		};
+		QHash<QString, QColor> category_colors;
+		row_colors.reserve(data.rowCount());
+		for (int row=0; row<data.rowCount(); ++row)
+		{
+			const QString value = data.column(color_col).string(row);
+			if (!category_colors.contains(value))
+			{
+				if (category_colors.size() == palette.size())
+				{
+					THROW(ArgumentException, "Scatterplot color column '" + data.column(color_col).headerOrIndex(color_col) + "' contains more than 20 distinct values.");
+				}
+				const QColor color = palette.at(category_colors.size());
+				category_colors.insert(value, color);
+				category_names.append(value);
+				legend_colors.append(color);
+			}
+			row_colors.append(category_colors.value(value));
+		}
+	}
+	color_by_column_ = color_col != -1;
+	row_colors_ = row_colors;
+
+	//set parameters for the selected coloring mode
+	const QSignalBlocker blocker(&params_);
+	params_.clear();
+	if (!color_by_column_) params_.addColor("color", "", Qt::darkBlue);
+	params_.addInt("symbol size", "", 5, 1, 999);
+	params_.addSeparator();
+	params_.addBool("linear regression", "Show linear regression of unfiltered data.", false);
+	params_.addSeparator();
+	params_.addBool("filtered", "Show filtered-out data points.", false);
+	if (!color_by_column_) params_.addColor("filtered color", "", QColor(200, 0, 0));
+	params_.addInt("filtered symbol size", "", color_by_column_ ? 3 : 5, 1, 999);
+	params_.addSeparator();
+	params_.addInt("position noise", "", 0 , 0, 20);
+
+	//populate the editor once the coloring mode is known
+	editor_->setParameters(params_);
+
 	//one date and one numeric column > make sure date column is X
 	BaseColumn::Type type1 = data.column(col1).type();
 	BaseColumn::Type type2 = data.column(col2).type();
@@ -75,9 +125,35 @@ void ScatterPlot::setData(const DataSet& data, int col1, int col2, QString filen
 	//create series of visible data
 	addSeries();
 
+	updateAxisRanges();
+
 	//set axes labels
 	chart_->axes(Qt::Horizontal).at(0)->setTitleText(data.column(col1).headerOrIndex(col1));
 	chart_->axes(Qt::Vertical).at(0)->setTitleText(data.column(col2).headerOrIndex(col2));
+
+	//Empty series provide category legend entries without adding plotted points.
+	//Keep their internal names separate from the visible/filtered/regression names.
+	chart_->legend()->setVisible(color_by_column_);
+	if (color_by_column_)
+	{
+		chart_->legend()->setAlignment(Qt::AlignRight);
+		for (int i=0; i<category_names.size(); ++i)
+		{
+			QScatterSeries* entry = new QScatterSeries();
+			entry->setName("category legend " + QString::number(i));
+			entry->setMarkerShape(QScatterSeries::MarkerShapeCircle);
+			entry->setColor(legend_colors.at(i));
+			entry->setBorderColor(legend_colors.at(i));
+			chart_->addSeries(entry);
+			for (QLegendMarker* marker : chart_->legend()->markers(entry))
+			{
+				marker->setShape(QLegend::MarkerShapeCircle);
+				marker->setLabel(category_names.at(i).isEmpty() ? "(empty)" : category_names.at(i));
+				marker->setBrush(legend_colors.at(i));
+				marker->setPen(QPen(Qt::NoPen));
+			}
+		}
+	}
 
 	//show chart
 	chart_view_->setChart(chart_);
@@ -88,12 +164,12 @@ void ScatterPlot::parameterChanged(QString parameter)
 	if (parameter=="color")
 	{
 		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("visible"));
-		setSymbol(series, params_.getInt("symbol size"), params_.getColor("color"));
+		setSymbol(series, params_.getInt("symbol size"), (color_by_column_ ? QColor(Qt::darkBlue) : params_.getColor("color")));
 	}
 	else if (parameter=="symbol size")
 	{
 		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("visible"));
-		setSymbol(series, params_.getInt("symbol size"), params_.getColor("color"));
+		setSymbol(series, params_.getInt("symbol size"), (color_by_column_ ? QColor(Qt::darkBlue) : params_.getColor("color")));
 	}
 	else if (parameter=="linear regression")
 	{
@@ -129,6 +205,10 @@ void ScatterPlot::parameterChanged(QString parameter)
 			series->append(x_min_max.second, offset + slope * x_min_max.second);
 			series->setColor(Qt::darkGray);
 			chart_->addSeries(series);
+			if (color_by_column_)
+			{
+				for (QLegendMarker* marker : chart_->legend()->markers(series)) marker->setVisible(false);
+			}
 			series->attachAxis(chart_->axes(Qt::Horizontal).at(0));
 			series->attachAxis(chart_->axes(Qt::Vertical).at(0));
 
@@ -160,20 +240,17 @@ void ScatterPlot::parameterChanged(QString parameter)
 			addSeries(true);
 		}
 
-		//reset zoom range
-		QRectF bb = getBoundingBox();
-		chart_->axes(Qt::Horizontal).at(0)->setRange(bb.x(), bb.x() + bb.width());
-		chart_->axes(Qt::Vertical).at(0)->setRange(bb.y() + bb.height(), bb.y());
+		updateAxisRanges();
 	}
 	else if (parameter=="filtered color")
 	{
 		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("filtered"));
-		setSymbol(series, params_.getInt("filtered symbol size"), params_.getColor("filtered color"));
+		setSymbol(series, params_.getInt("filtered symbol size"), (color_by_column_ ? QColor(Qt::darkBlue) : params_.getColor("filtered color")));
 	}
 	else if (parameter=="filtered symbol size")
 	{
 		QScatterSeries* series = qobject_cast<QScatterSeries*>(search("filtered"));
-		setSymbol(series, params_.getInt("filtered symbol size"), params_.getColor("filtered color"));
+		setSymbol(series, params_.getInt("filtered symbol size"), (color_by_column_ ? QColor(Qt::darkBlue) : params_.getColor("filtered color")));
 	}
 	else if (parameter=="position noise")
 	{
@@ -189,6 +266,7 @@ void ScatterPlot::parameterChanged(QString parameter)
 			chart_->removeSeries(series);
 			addSeries(true);
 		}
+		updateAxisRanges();
 	}
 }
 
@@ -208,7 +286,8 @@ void ScatterPlot::addSeries(bool filtered_out)
 	//add series to chart
 	QScatterSeries* series = new QScatterSeries();
 	series->setName(filtered_out ? "filtered" : "visible");
-	setSymbol(series, params_.getInt(filtered_out ? "filtered symbol size" : "symbol size"), params_.getColor(filtered_out ? "filtered color" : "color"));
+	setSymbol(series, params_.getInt(filtered_out ? "filtered symbol size" : "symbol size"), (color_by_column_ ? QColor(Qt::darkBlue) : params_.getColor(filtered_out ? "filtered color" : "color")));
+	QHash<int, QHash<QXYSeries::PointConfiguration, QVariant>> point_colors;
 	for(int i=0; i<filter_.count(); ++i)
 	{
 		if (filtered_out && filter_[i]) continue;
@@ -225,8 +304,17 @@ void ScatterPlot::addSeries(bool filtered_out)
 			y += Helper::randomNumber(-1,1) * noise_perc_y;
 		}
 		series->append(x, y);
+		if (color_by_column_)
+		{
+			point_colors[series->count() - 1].insert(QXYSeries::PointConfiguration::Color, row_colors_.at(i));
+		}
 	}
 	chart_->addSeries(series);
+	if (color_by_column_)
+	{
+		series->setPointsConfiguration(point_colors);
+		for (QLegendMarker* marker : chart_->legend()->markers(series)) marker->setVisible(false);
+	}
 
 	//add/attach axes
 	if (chart_->axes().count()==0)
@@ -253,6 +341,46 @@ void ScatterPlot::addSeries(bool filtered_out)
 		series->attachAxis(chart_->axes(Qt::Horizontal).at(0));
 		series->attachAxis(chart_->axes(Qt::Vertical).at(0));
 	}
+}
+
+void ScatterPlot::updateAxisRanges()
+{
+	//Use plotted coordinates so position noise is included in the range.
+	double x_min = std::numeric_limits<double>::max();
+	double x_max = -std::numeric_limits<double>::max();
+	double y_min = x_min;
+	double y_max = x_max;
+	for (QAbstractSeries* abstract_series : chart_->series())
+	{
+		const QScatterSeries* series = qobject_cast<QScatterSeries*>(abstract_series);
+		if (series==nullptr) continue;
+		for (const QPointF& point : series->points())
+		{
+			x_min = qMin(x_min, point.x());
+			x_max = qMax(x_max, point.x());
+			y_min = qMin(y_min, point.y());
+			y_max = qMax(y_max, point.y());
+		}
+	}
+	if (x_min>x_max) return;
+
+	//Give constant-valued axes a non-zero span as well.
+	const double x_span = x_max>x_min ? x_max-x_min : (x_is_date_ ? 86400000.0 : qMax(1.0, qAbs(x_min)));
+	const double y_span = y_max>y_min ? y_max-y_min : qMax(1.0, qAbs(y_min));
+	const double x_margin = x_span * 0.01;
+	const double y_margin = y_span * 0.01;
+	chart_->zoomReset();
+	if (x_is_date_)
+	{
+		QDateTimeAxis* axis = qobject_cast<QDateTimeAxis*>(chart_->axes(Qt::Horizontal).at(0));
+		axis->setRange(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(floor(x_min-x_margin))),
+			QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(ceil(x_max+x_margin))));
+	}
+	else
+	{
+		chart_->axes(Qt::Horizontal).at(0)->setRange(x_min-x_margin, x_max+x_margin);
+	}
+	chart_->axes(Qt::Vertical).at(0)->setRange(y_min-y_margin, y_max+y_margin);
 }
 
 QRectF ScatterPlot::getBoundingBox() const
@@ -282,6 +410,16 @@ QRectF ScatterPlot::getBoundingBox() const
 
 void ScatterPlot::setSymbol(QScatterSeries* series, int size, QColor color)
 {
+	if (series==nullptr) return;
+	if (color_by_column_)
+	{
+		series->setMarkerShape(QScatterSeries::MarkerShapeCircle);
+		series->setMarkerSize(size);
+		series->setBrush(QBrush(color));
+		series->setPen(QPen(Qt::NoPen));
+		return;
+	}
+
 	size+=2; //we need a transparent 1px border - otherwise the strage artefacts can occur at the borders
 
 	series->setMarkerShape(QScatterSeries::MarkerShapeRectangle);

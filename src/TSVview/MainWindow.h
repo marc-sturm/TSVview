@@ -55,6 +55,7 @@ public slots:
 	void histogram();
 	void basicStatistics();
 	void scatterPlot();
+	void scatterPlotColorColumn();
 	void dataPlot();
 	void boxPlot();
 

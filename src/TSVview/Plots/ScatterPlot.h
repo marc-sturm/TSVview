@@ -12,7 +12,7 @@ class ScatterPlot
 
 public:
 	ScatterPlot(QWidget* parent = 0);
-	void setData(const DataSet& data, int col1, int col2, QString filename);
+	void setData(const DataSet& data, int col1, int col2, QString filename, int color_col=-1);
 
 private slots:
 	void parameterChanged(QString parameter);
@@ -24,9 +24,12 @@ protected:
 	QVector<double> values_x_;
 	QVector<double> values_y_;
 	bool x_is_date_;
+	bool color_by_column_;
+	QVector<QColor> row_colors_;
 
+	void updateAxisRanges();
 	QRectF getBoundingBox() const;
-	static void setSymbol(QScatterSeries* series, int size, QColor color);
+	void setSymbol(QScatterSeries* series, int size, QColor color);
 };
 
 #endif

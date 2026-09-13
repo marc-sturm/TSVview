@@ -2,6 +2,7 @@
 #include <QClipboard>
 #include <QCloseEvent>
 #include <QInputDialog>
+#include <cmath>
 #include <QMessageBox>
 #include <QDebug>
 #include <QDesktopServices>
@@ -498,6 +499,8 @@ void MainWindow::tableContextMenu(QPoint point)
 		action->setEnabled(counts.all==1 && counts.numeric==counts.all);
 		action = menu->addAction(QIcon(":/Icons/Scatterplot.png"), "Scatter plot", this, SLOT(scatterPlot()));
 		action->setEnabled(counts.all==2 && (counts.numeric==counts.all || (counts.numeric==1 && counts.date==1)));
+		action = menu->addAction(QIcon(":/Icons/Scatterplot.png"), "Scatter plot (color column)", this, SLOT(scatterPlotColorColumn()));
+		action->setEnabled(counts.all==2 && (counts.numeric==counts.all || (counts.numeric==1 && counts.date==1)));
 		action = menu->addAction(QIcon(":/Icons/Lineplot.png"), "Plot", this, SLOT(dataPlot()));
 		action->setEnabled(counts.all>0 && counts.numeric==counts.all);
 		action = menu->addAction(QIcon(":/Icons/Boxplot.png"), "Box plot", this, SLOT(boxPlot()));
@@ -584,6 +587,40 @@ void MainWindow::scatterPlot()
 	int y = ui_.grid->selectedColumns().at(1);
 	ScatterPlot* plot = new ScatterPlot();
     plot->setData(data_, x, y, QFileInfo(filename_).baseName());
+	auto dlg = GUIHelper::createDialog(plot, "Scatterplot of '" + data_.column(x).headerOrIndex(x) + "' and '" + data_.column(y).headerOrIndex(y) + "'" + fileNameLabel());
+	dlg->exec();
+}
+
+void MainWindow::scatterPlotColorColumn()
+{
+	//get column name for coloring
+	QStringList column_names;
+	for (int col=0; col<data_.columnCount(); ++col)
+	{
+		column_names.append(data_.column(col).headerOrIndex(col, true));
+	}
+	bool ok = false;
+	QString selected = QInputDialog::getItem(this, "Scatter plot color column", "Color by column:", column_names, 0, false, &ok);
+	if (!ok) return;
+	int color_col = Helper::toInt(selected.mid(1, selected.indexOf("]")-1), "column");
+
+	//check if number of distinct values is below 20
+	QSet<QString> values;
+	for (int row=0; row<data_.rowCount(); ++row)
+	{
+		values.insert(data_.column(color_col).string(row));
+		if (values.size()>20)
+		{
+			QMessageBox::warning(this, "Scatter plot color column", "The selected column contains more than 20 distinct values. The scatter plot only supports up to 20 colors.");
+			return;
+		}
+	}
+
+	//show plot
+	int x = ui_.grid->selectedColumns().at(0);
+	int y = ui_.grid->selectedColumns().at(1);
+	ScatterPlot* plot = new ScatterPlot();
+	plot->setData(data_, x, y, QFileInfo(filename_).baseName(), color_col);
 	auto dlg = GUIHelper::createDialog(plot, "Scatterplot of '" + data_.column(x).headerOrIndex(x) + "' and '" + data_.column(y).headerOrIndex(y) + "'" + fileNameLabel());
 	dlg->exec();
 }
