@@ -110,6 +110,9 @@ protected slots:
     void setDecimals_();
 
 protected:
+	void paintEvent(QPaintEvent* event) override;
+	void selectionChanged(const QItemSelection& selected, const QItemSelection& deselected) override;
+
 	DataSet* data_;
 	int preview_;
 

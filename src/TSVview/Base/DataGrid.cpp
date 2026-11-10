@@ -6,6 +6,7 @@
 #include <QClipboard>
 #include <QKeyEvent>
 #include <QHeaderView>
+#include <QPainter>
 #include <QTextStream>
 #include <QDebug>
 #include <QTime>
@@ -53,6 +54,32 @@ DataGrid::DataGrid(QWidget* parent)
     setStyleSheet("QTableWidget:!active { selection-color: "+fg+"; selection-background-color: "+bg+"; }");
 
 	connect(this, SIGNAL(itemDoubleClicked(QTableWidgetItem*)), this, SLOT(editCurrentItem(QTableWidgetItem*)));
+}
+
+void DataGrid::paintEvent(QPaintEvent* event)
+{
+	QTableWidget::paintEvent(event);
+
+	const auto ranges = selectedRanges();
+	if (ranges.isEmpty()) return;
+
+	const int row = ranges.first().topRow();
+	for (const auto& range : ranges)
+	{
+		if (range.topRow()!=row || range.bottomRow()!=row) return;
+	}
+	if (isRowHidden(row)) return;
+
+	const int bottom = rowViewportPosition(row) + rowHeight(row) - 1;
+	QPainter painter(viewport());
+	painter.fillRect(0, bottom - 1, viewport()->width(), 2, QColor(0, 120, 215));
+}
+
+void DataGrid::selectionChanged(const QItemSelection& selected, const QItemSelection& deselected)
+{
+	QTableWidget::selectionChanged(selected, deselected);
+	//The row indicator extends beyond the cells repainted by the default implementation.
+	viewport()->update();
 }
 
 void DataGrid::horizontalHeaderContextMenu(const QPoint& pos)
