@@ -71,8 +71,9 @@ void DataGrid::paintEvent(QPaintEvent* event)
 	if (isRowHidden(row)) return;
 
 	const int bottom = rowViewportPosition(row) + rowHeight(row) - 1;
+	const int width = std::max(0, std::min(viewport()->width(), horizontalHeader()->length() - horizontalHeader()->offset()));
 	QPainter painter(viewport());
-	painter.fillRect(0, bottom - 1, viewport()->width(), 2, QColor(0, 120, 215));
+	painter.fillRect(0, bottom - 1, width, 2, QColor(0, 120, 215));
 }
 
 void DataGrid::selectionChanged(const QItemSelection& selected, const QItemSelection& deselected)
