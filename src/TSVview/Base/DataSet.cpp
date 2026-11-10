@@ -423,6 +423,7 @@ QHash<int, ColumnInfo> DataSet::load(QString filename, QString display_name)
 
     QSet<int> numeric_columns;
 	QSet<int> date_columns;
+	QSet<int> non_empty_columns;
     QStringList comments;
     QStringList filters;
     QHash<int, ColumnInfo> col_infos;
@@ -532,6 +533,7 @@ QHash<int, ColumnInfo> DataSet::load(QString filename, QString display_name)
         for (int c=0; c<cols; ++c)
         {
             column(c).appendString(parts[c]);
+            if (!parts[c].isEmpty()) non_empty_columns << c;
         }
 
 		//try to convert numbers/dates
@@ -547,6 +549,10 @@ QHash<int, ColumnInfo> DataSet::load(QString filename, QString display_name)
 			}
 		}
 	}
+
+    //Infer types only for columns containing at least one non-empty value.
+    numeric_columns.intersect(non_empty_columns);
+    date_columns.intersect(non_empty_columns);
 
     //add comments
     setComments(comments);
@@ -626,6 +632,7 @@ void DataSet::import(QString filename, QString display_name, Parameters params, 
     bool first_line_is_comment = params.getBool("first_line_is_comment");
     QSet<int> numeric_columns;
 	QSet<int> date_columns;
+	QSet<int> non_empty_columns;
 
     QStringList comments;
     bool is_first_content_line = true;
@@ -688,6 +695,7 @@ void DataSet::import(QString filename, QString display_name, Parameters params, 
         for (int c=0; c<cols; ++c)
         {
             column(c).appendString(parts[c]);
+            if (!parts[c].isEmpty()) non_empty_columns << c;
         }
 
         //try to convert numbers
@@ -740,6 +748,10 @@ void DataSet::import(QString filename, QString display_name, Parameters params, 
             break;
         }
     }
+
+    //Infer types only for columns containing at least one non-empty value.
+    numeric_columns.intersect(non_empty_columns);
+    date_columns.intersect(non_empty_columns);
 
     //convert numeric columns
     foreach(int c, numeric_columns)
