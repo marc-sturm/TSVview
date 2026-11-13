@@ -727,9 +727,19 @@ void DataGrid::pasteColumn_(int index)
         Helper::storeTextFile(tmp_filename, QApplication::clipboard()->text().split('\n'));
 
         //load data
-        data_tmp.load(tmp_filename, "[clipboard]");
+        try
+        {
+            data_tmp.load(tmp_filename, "[clipboard]");
+        }
+        catch (FileParseException&)
+        {
+            TextImportPreview preview(tmp_filename, "[clipboard]", false, this);
+            if (!preview.exec()) return;
+
+            data_tmp.import(tmp_filename, "[clipboard]", preview.parameters());
+        }
 	}
-    catch (FileAccessException& e)
+    catch (Exception& e)
 	{
 		QMessageBox::warning(this, "Error parsing data from clipboard!", e.message());
 		return;
