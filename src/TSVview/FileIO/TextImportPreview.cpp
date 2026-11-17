@@ -5,13 +5,14 @@
 #include "FilePreview.h"
 #include "Exceptions.h"
 
-TextImportPreview::TextImportPreview(QString filename, QString display_name, bool csv_mode, QWidget* parent)
+TextImportPreview::TextImportPreview(QString filename, QString display_name, bool csv_mode, QWidget* parent, bool keep_empty_lines)
 	: QDialog(parent)
 	, ui_()
     , filename_(filename)
     , display_name_(display_name)
     , params_(defaultParameters())
 	, data_()
+    , keep_empty_lines_(keep_empty_lines)
 {
 	ui_.setupUi(this);
 
@@ -125,7 +126,7 @@ void TextImportPreview::tryImport()
 	try
     {
 		data_.blockSignals(true);
-        data_.import(filename_, display_name_, params_, 20);
+        data_.import(filename_, display_name_, params_, 20, keep_empty_lines_);
         data_.blockSignals(false);
         ui_.error_message->setText("");
         grid_->render();

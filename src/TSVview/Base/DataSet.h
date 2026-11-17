@@ -30,9 +30,9 @@ public:
 	~DataSet();
 
     //load TSV or TSV.GZ file. If display name is not set, the filename is used.
-    QHash<int, ColumnInfo> load(QString filename, QString display_name="");
+    QHash<int, ColumnInfo> load(QString filename, QString display_name="", bool keep_empty_lines = false);
     //import data from TXT file.
-    void import(QString filename, QString display_name, Parameters params, int preview_lines = -1);
+    void import(QString filename, QString display_name, Parameters params, int preview_lines = -1, bool keep_empty_lines = false);
     //store TSV of TSV.GZ file. Column widths have to be given, but can be -1 if unkonwn.
     void store(QString filename, const QList<int>& widths);
     //export

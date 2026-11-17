@@ -14,7 +14,7 @@ class TextImportPreview
 	Q_OBJECT
 
 public:
-    TextImportPreview(QString filename, QString display_name, bool csv_mode, QWidget* parent);
+    TextImportPreview(QString filename, QString display_name, bool csv_mode, QWidget* parent, bool keep_empty_lines = false);
 	Parameters parameters() const;
 
 public slots:
@@ -30,6 +30,7 @@ private:
     QString display_name_;
 	Parameters params_;
 	DataSet data_;
+    bool keep_empty_lines_;
 
     static Parameters defaultParameters();
 

@@ -411,7 +411,7 @@ QBitArray DataSet::getRowFilter(bool update) const
 	return filtered_rows_;
 }
 
-QHash<int, ColumnInfo> DataSet::load(QString filename, QString display_name)
+QHash<int, ColumnInfo> DataSet::load(QString filename, QString display_name, bool keep_empty_lines)
 {
     if (display_name.isEmpty()) display_name = filename;
 
@@ -438,10 +438,10 @@ QHash<int, ColumnInfo> DataSet::load(QString filename, QString display_name)
         ++line_nr;
 
         //skip empty lines
-        if (line.isEmpty()) continue;
+        if (line.isEmpty() && !keep_empty_lines) continue;
 
         //header/comment lines
-        if (line[0]=='#')
+        if (line.startsWith('#'))
         {
             if (line.startsWith("##")) //comment
             {
@@ -613,7 +613,7 @@ QHash<int, ColumnInfo> DataSet::load(QString filename, QString display_name)
     return col_infos;
 }
 
-void DataSet::import(QString filename, QString display_name, Parameters params, int preview_lines)
+void DataSet::import(QString filename, QString display_name, Parameters params, int preview_lines, bool keep_empty_lines)
 {
     //clear
     clear(true);
@@ -644,10 +644,10 @@ void DataSet::import(QString filename, QString display_name, Parameters params, 
         QString line = file.readLine(true);
 
         //skip empty lines
-        if (line.isEmpty()) continue;
+        if (line.isEmpty() && !keep_empty_lines) continue;
 
         //skip comment lines
-        if (comment_char!=QChar::Null && line[0]==comment_char)
+        if (comment_char!=QChar::Null && line.startsWith(comment_char))
         {
             comments << line;
             continue;

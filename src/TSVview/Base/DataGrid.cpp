@@ -650,6 +650,8 @@ void DataGrid::copySelectionToClipboard_(QChar decimal_point)
 				selected_text.append(itemText(row, cols[col], data_->column(cols[col]).type()==BaseColumn::NUMERIC, decimal_point));
 			}
 		}
+		//Terminate the final row so an empty last cell survives copying and pasting.
+		selected_text.append('\n');
 	}
 	//row selection
 	else if (info.isRowSelection)
@@ -724,19 +726,22 @@ void DataGrid::pasteColumn_(int index)
         auto cleanup = qScopeGuard([&] { QFile::remove(tmp_filename); });
 
         //store clipboard to tmp file
-        Helper::storeTextFile(tmp_filename, QApplication::clipboard()->text().split('\n'));
+        QStringList lines = QApplication::clipboard()->text().split('\n');
+        //A final newline terminates the last row; it does not add another row.
+        if (lines.last().isEmpty()) lines.removeLast();
+        Helper::storeTextFile(tmp_filename, lines);
 
         //load data
         try
         {
-            data_tmp.load(tmp_filename, "[clipboard]");
+            data_tmp.load(tmp_filename, "[clipboard]", true);
         }
         catch (FileParseException&)
         {
-            TextImportPreview preview(tmp_filename, "[clipboard]", false, this);
+            TextImportPreview preview(tmp_filename, "[clipboard]", false, this, true);
             if (!preview.exec()) return;
 
-            data_tmp.import(tmp_filename, "[clipboard]", preview.parameters());
+            data_tmp.import(tmp_filename, "[clipboard]", preview.parameters(), -1, true);
         }
 	}
     catch (Exception& e)
@@ -783,14 +788,16 @@ void DataGrid::pasteDataset_()
     auto cleanup = qScopeGuard([&] { QFile::remove(tmp_filename); });
 
     //store clipboard to tmp file
-    Helper::storeTextFile(tmp_filename, QApplication::clipboard()->text().split('\n'));
+    QStringList lines = QApplication::clipboard()->text().split('\n');
+    if (lines.last().isEmpty()) lines.removeLast();
+    Helper::storeTextFile(tmp_filename, lines);
 
     //show import dialog
-    TextImportPreview preview(tmp_filename, "[clipboard]", false, this);
+    TextImportPreview preview(tmp_filename, "[clipboard]", false, this, true);
     if(!preview.exec()) return;
 
 	data_->blockSignals(true);
-    data_->import(tmp_filename, "[clipboard]", preview.parameters());
+    data_->import(tmp_filename, "[clipboard]", preview.parameters(), -1, true);
     data_->blockSignals(false);
     data_->setModified(true, true);
 	render();
