@@ -318,11 +318,17 @@ QMenu* DataGrid::createStandardContextMenu()
 		action = edit_menu->addAction("Keep duplicates", this, SLOT(keepDuplicates_()));
 		action->setEnabled(counts.all==1);
 
-		QMenu* convert_menu = menu->addMenu("Convert to numeric column");
-		convert_menu->setEnabled(counts.all==1 && counts.text==1);
-		action = convert_menu->addAction("'nan' if fails", this, SLOT(convertNumericNan_()));
-		action = convert_menu->addAction("Single value if fails", this, SLOT(convertNumericSingle_()));
-		action = convert_menu->addAction("By dictionary", this, SLOT(convertNumericDict_()));
+		if (counts.all==1 && (counts.numeric==1 || counts.date==1))
+		{
+			action = menu->addAction("Convert to string column", this, SLOT(convertString_()));
+		}
+		else if (counts.all==1 && counts.text==1)
+		{
+			QMenu* convert_menu = menu->addMenu("Convert to numeric column");
+			action = convert_menu->addAction("'nan' if fails", this, SLOT(convertNumericNan_()));
+			action = convert_menu->addAction("Single value if fails", this, SLOT(convertNumericSingle_()));
+			action = convert_menu->addAction("By dictionary", this, SLOT(convertNumericDict_()));
+		}
 
 		QMenu* sort_menu = menu->addMenu(QIcon(":/Icons/Sort.png"), "Sort");
 		sort_menu->setEnabled(counts.all==1);
@@ -386,6 +392,23 @@ void DataGrid::mergeColumns_()
 
 	//merge columns
 	data_->mergeColumns(columns, dialog.header(), dialog.separator());
+}
+
+void DataGrid::convertString_()
+{
+	int col_index = selectedColumns().at(0);
+	const BaseColumn& source = data_->column(col_index);
+	QVector<QString> new_data;
+	new_data.reserve(source.count());
+	for (int i=0; i<source.count(); ++i)
+	{
+		new_data << source.string(i);
+	}
+
+	StringColumn* col = new StringColumn();
+	col->setHeader(source.header());
+	col->setValues(new_data);
+	data_->replaceColumn(col_index, col);
 }
 
 void DataGrid::convertNumericNan_()

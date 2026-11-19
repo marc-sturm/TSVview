@@ -92,6 +92,7 @@ protected slots:
 	void addColumn_();
 	void renameColumn_();
     void mergeColumns_();
+	void convertString_();
 	void convertNumericNan_();
 	void convertNumericSingle_();
 	void convertNumericDict_();
